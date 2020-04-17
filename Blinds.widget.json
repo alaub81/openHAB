@@ -1,0 +1,15 @@
+{
+    "template": "<style>\n  button {\n  border: 0px solid white;\n  background: rgba(0,0,0,0.5);\n  color: white; \n  height: 2em;\n  width: 2em;\n  float: left;\n  font-size: 1.4em;\n  margin-right: 12px;\n  line-height: 50%;\n  padding: 0 0 0 0;\n  }\n</style>\n\n<div style=\"border: 0px solid white;\n            border-radius: 15px;       \n            display: flex;\n            position: relative; \n            background-color: initial;\n            top: 0%; left: 0%; width: 100%; height: 100%;         \n            align-items: center;\n  \t\t\t   \">\n <div style=\"border: 0px solid white;\n            width: 100%;\n            text-align:left;\n            align-items:left;\n            background-color:inherit;\n            display:flex;\n            justify-content:left;\n            font-size:1.4em;\n            margin-left:10px;\n            margin-right:10px;\n            \">\n    {{ngModel.name}}\n </div> \n  <span style=\"border: 0px solid white;\n             width: 100%;\n             height: 1000%;\n             align-items: center;\n             display:flex;\n             padding-right: 10px;\n             \">  \n    <button ng-click=\"sendCmd(config.blind_item, 'UP')\">\n      <i class=\"glyphicon glyphicon-menu-up\"></i>\n    </button>     \n    <button ng-click=\"sendCmd(config.blind_item, 'STOP')\">\n     <widget-icon iconset=\"'eclipse-smarthome-classic'\" icon=\"'blinds'\" size=\"32\" state=\"itemValue(config.blind_item)\" />\n    </button>\n    <button style=\"margin-right: 0\" ng-click=\"sendCmd(config.blind_item, 'DOWN')\">\n      <i class=\"glyphicon glyphicon-menu-down\"></i>\n    </button>\n  </span>               \n</div>",
+    "name": "Blinds",
+    "author": "Andreas Laub",
+    "description": "A control of blinds up/down/stop + status",
+    "settings": [
+        {
+            "type": "item",
+            "id": "blind_item",
+            "label": "Item",
+            "description": "Item of blinds"
+        }
+    ],
+    "readme_url": "https://community.openhab.org/t/30181"
+}

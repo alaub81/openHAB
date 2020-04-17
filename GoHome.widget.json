@@ -1,0 +1,54 @@
+{
+    "template": "<META HTTP-EQUIV=\"refresh\" CONTENT=\"{{config.time}}; URL={{config.url}}\">\n  <div ng-style=\"{ 'background-color': (config.background)}\" style=\"top:0;bottom:0;left:0;right:0;position:absolute\" ng-init=\"model={ action_type: 'navigate', navigate_dashboard: (config.dashboard), foreground: (config.foreground), name: (config.label), font_size: (config.font_size) , backdrop_iconset: (config.backdrop_icon_iconset), backdrop_icon: (config.backdrop_icon), backdrop_center: 'true' }\">\n\t\t<widget-button ng-model=\"model\"></widget-button>\n  </div>\t\n",
+    "name": "GoHome",
+    "author": "Andreas Laub",
+    "description": "This widget is a Button, to switch a Dashboard and goes automatically back to home or another URL",
+    "settings": [
+        {
+            "type": "string",
+            "id": "label",
+            "label": "Name",
+            "description": "",
+            "default": "Home"
+        },
+        {
+            "type": "number",
+            "id": "font_size",
+            "label": "Font Size",
+            "default": "",
+            "description": ""
+        },
+        {
+            "type": "number",
+            "id": "time",
+            "label": "Time",
+            "default": "60",
+            "description": "refresh time in seconds"
+        },
+        {
+            "type": "string",
+            "id": "url",
+            "label": "URL",
+            "default": "/habpanel/#/",
+            "description": "URL to go after refresh"
+        },
+        {
+            "type": "string",
+            "id": "dashboard",
+            "label": "Dashboard Switch",
+            "default": "#",
+            "description": "Dashboard to go when clicking on the button"
+        },
+        {
+            "type": "icon",
+            "id": "backdrop_icon",
+            "label": "Background Icon",
+            "description": "Background Icon"
+        },
+        {
+            "type": "color",
+            "id": "foreground",
+            "label": "Font Color"
+        }
+    ]
+}

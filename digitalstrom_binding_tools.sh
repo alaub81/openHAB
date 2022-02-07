@@ -47,40 +47,40 @@ LOGFILE=/var/lib/docker/volumes/openhab_data_openhab_userdata/_data/logs/openhab
 
 #do the things
 function getstatus {
-	FULLSTATUSBRIDGE=$(curl -s -k -X GET --header "Accept: application/json" "$OPENHAB/rest/things/$BRIDGE/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
-	FULLSTATUSROLLO=$(curl -s -k -X GET --header "Accept: application/json" "$OPENHAB/rest/things/$ROLLO/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
-	FULLSTATUSWATT=$(curl -s -k -X GET --header "Accept: application/json" "$OPENHAB/rest/things/$WATT/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
-	STATUSBRIDGE=$(echo $FULLSTATUSBRIDGE | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
-	STATUSROLLO=$(echo $FULLSTATUSROLLO | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
-	STATUSWATT=$(echo $FULLSTATUSWATT | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
+        FULLSTATUSBRIDGE=$(curl -s -k -X GET "$OPENHAB/rest/things/$BRIDGE/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
+        FULLSTATUSROLLO=$(curl -s -k -X GET "$OPENHAB/rest/things/$ROLLO/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
+        FULLSTATUSWATT=$(curl -s -k -X GET "$OPENHAB/rest/things/$WATT/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
+        STATUSBRIDGE=$(echo $FULLSTATUSBRIDGE | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
+        STATUSROLLO=$(echo $FULLSTATUSROLLO | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
+        STATUSWATT=$(echo $FULLSTATUSWATT | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
         STATUSBRIDGEDETAIL=$(echo $FULLSTATUSWATT | cut -d":" -f3 | cut -d"," -f1 | cut -d'"' -f2)
 }
 
 function status {
-	echo "Bridge Status: $STATUSBRIDGE"
-	echo "Bridge Status Detail: $STATUSBRIDGEDETAIL"
-	echo "Rolladen Status: $STATUSROLLO"
-	echo "Verbrauch Status: $STATUSWATT"
+        echo "Bridge Status: $STATUSBRIDGE"
+        echo "Bridge Status Detail: $STATUSBRIDGEDETAIL"
+        echo "Rolladen Status: $STATUSROLLO"
+        echo "Verbrauch Status: $STATUSWATT"
 }
 
 function fullstatus {
-	echo "Bridge Fullstatus: $FULLSTATUSBRIDGE"
-	echo "Rolladen Fullstatus: $FULLSTATUSROLLO"
-	echo "Verbrauch Fullstatus: $FULLSTATUSWATT"
+        echo "Bridge Fullstatus: $FULLSTATUSBRIDGE"
+        echo "Rolladen Fullstatus: $FULLSTATUSROLLO"
+        echo "Verbrauch Fullstatus: $FULLSTATUSWATT"
 }
 
 function refresh {
-	for i in $ALL; do
-		curl -s -k -X POST --header "Content-Type: text/plain" --header "Accept: application/json" -d "REFRESH" "$OPENHAB/rest/items/$i" -H "accept: application/json" -H "Authorization: Bearer $AUTH"
-		echo "Refresh $i Done!"
-	done
+        for i in $ALL; do
+                curl -s -k -X POST "$OPENHAB/rest/items/$i" -H "Content-Type: text/plain" -H "accept: */*" -H "Authorization: Bearer $AUTH" -d "REFRESH" 
+                echo "Refresh $i Done!"
+        done
 }
 
 function restart {
-	echo "Restarting $BRIDGE"
-        curl -s -k -X PUT --header "Content-Type: application/json" --header "Accept: application/json" -d "false" "$OPENHAB/rest/things/$BRIDGE/enable" -H "accept: application/json" -H "Authorization: Bearer $AUTH" > /dev/null
-	sleep 3
-        curl -s -k -X PUT --header "Content-Type: application/json" --header "Accept: application/json" -d "true" "$OPENHAB/rest/things/$BRIDGE/enable" -H "accept: application/json" -H "Authorization: Bearer $AUTH" > /dev/null
+        echo "Restarting $BRIDGE"
+        curl -s -k -X PUT "$OPENHAB/rest/things/$BRIDGE/enable" -H "Content-Type: text/plain" -H "accept: */*" -H "Authorization: Bearer $AUTH" -d "false" > /dev/null
+        sleep 3
+        curl -s -k -X PUT "$OPENHAB/rest/things/$BRIDGE/enable" -H "Content-Type: text/plain" -H "accept: */*" -H "Authorization: Bearer $AUTH" -d "true" > /dev/null
 }
 
 function autorestart {

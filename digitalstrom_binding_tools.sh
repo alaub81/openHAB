@@ -25,7 +25,7 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 #openHAB URL
 OPENHAB=https://localhost:8443
 #API Authentification Token for openhab3
-AUTH="oh.tokenname.hkkjbkjbQVizb8P82bKQUh7epUXFnyRJ83pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEWtrWQLf2RhTg"
+AUTH="oh.tokenname.hkkxsacdfVizb8P82bKQUh7exasd3433pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEWtrWQLf2RhTg"
 #digitalSTROM Things UID (%3A is :)
 #digitalSTROM Bridge
 BRIDGE=digitalstrom:dssBridge:eb907aa7

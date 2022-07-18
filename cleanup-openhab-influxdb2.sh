@@ -30,8 +30,6 @@ OPENHABSERVER=localhost
 # openHAB API Authentification Token
 OPENHABAUTH="oh.laubraspi4.5hZjIGQVizb8P8UXFnyRJ83pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEasdae34353Tg"
 
-# InfluxDB Command
-INFLUX="docker exec -ti openhab3_influxdb_1 influx"
 # InfluxDB Host
 INFLUXHOST=localhost
 # openHAB Database

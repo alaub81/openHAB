@@ -45,7 +45,7 @@ curl -s -k -X GET "https://$OPENHABSERVER:8443/rest/items?recursive=false&fields
 curl -s --get http://$INFLUXHOST:8086/query?db=$INFLUXDB \
   --header "Authorization: Token $INFLUXDBAUTH" \
   --data-urlencode "q=SHOW measurements" |\
-  awk -F '"values":\[' '{ print $2 }' |\
+  awk -F '"values":' '{ print $2 }' |\
   sed 's/,/\n/g' |\
   awk -F '"' '{ print $2 }' |\
   sort -n > $TMPDIR/measurements.txt

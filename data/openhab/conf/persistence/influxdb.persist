@@ -1,0 +1,6 @@
+Strategies {
+}
+ 
+Items {
+   *: strategy = everyUpdate, restoreOnStartup
+}

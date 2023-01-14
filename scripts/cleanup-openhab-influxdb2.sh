@@ -28,14 +28,14 @@ TMPDIR=/tmp/
 # openHAB Server
 OPENHABSERVER=localhost
 # openHAB API Authentification Token
-OPENHABAUTH="oh.laubraspi4.5hZjIGQVizb8P8UXFnyRJ83pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEasdae34353Tg"
+OPENHABAUTH="oh.yourtokenname.5dwffGdfeizb8P82bKQUh7epUXFnyRJ83pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEWtrWQLf2RhTg"
 
 # InfluxDB Host
 INFLUXHOST=localhost
 # openHAB Database
 INFLUXDB=openhab_db
 # InflusDB API Key
-INFLUXDBAUTH="TkrV8yQ8G2Wb1pk4WnXXVGgtzsb_bxsasdca33333fucYeAQwqduAHSeTID-JlB7AKBZjE47TCwf8w-jGCFzpChw=="
+INFLUXDBAUTH="TkrV8yQ8G2Wb1pk4WsdWDBKb_bxsasdca33333fucYeAQwqduAHSeTID-JlB7AKBZjE47TCwf8w-jGCFzpChw=="
 
 # do the stuff
 # generate Items list

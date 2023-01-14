@@ -34,11 +34,11 @@ INFLUXHOST=localhost
 # openHAB Database
 INFLUXDB=openhab_db
 # openHAB API Authentification Token
-AUTH="oh.yourtokenname.5dwffGdfeizb8P82bKQUh7epUXFnyRJ83pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEWtrWQLf2RhTg"
+OPENHABAUTH="oh.yourtokenname.5dwffGdfeizb8P82bKQUh7epUXFnyRJ83pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEWtrWQLf2RhTg"
 
 # do the stuff
 # generate Items list
-curl -s -k -X GET "https://$OPENHABSERVER:8443/rest/items?recursive=false&fields=name" -H "accept: application/json" -H "Authorization: Bearer $AUTH" | sed 's/,/\n/g' | awk -F '"' '{ print $4}' | sort -n > $TMPDIR/items.txt
+curl -s -k -X GET "https://$OPENHABSERVER:8443/rest/items?recursive=false&fields=name" -H "accept: application/json" -H "Authorization: Bearer $OPENHABAUTH" | sed 's/,/\n/g' | awk -F '"' '{ print $4}' | sort -n > $TMPDIR/items.txt
 
 # read Measurements from InfluxDB
 $INFLUX -host $INFLUXHOST -port '8086' -database $INFLUXDB -execute 'show measurements' | tail +4 | sort -n > $TMPDIR/measurements.txt

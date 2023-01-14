@@ -30,7 +30,7 @@ useradd -u 9001 -g openhab -r -s /sbin/nologin openhab
 
 Now we need the certificates for the secure mqtt connection of Mosquitto. For the generation of the certs we will use the `generate-certs.sh`. Just configure the script upfront:
 
-* Configure at least the `IP` Variable, use the FQDN 
+* Configure at least the `IP` Variable, use the FQDN
 * Change all other variables to your needs!
 
 ```bash
@@ -48,9 +48,9 @@ docker compose up -d
 
 Now the Setup should be reachable:
 
-* openHAB: http://YOURSERVERNAME:8080 und https://YOURSERVERNAME:8433
-* Grafana: http://YOURSERVERNAME:3000
-* InfluxDB 2: http://YOURSERVERNAME:8086
+* openHAB: <http://YOURSERVERNAME:8080> und <https://YOURSERVERNAME:8433>
+* Grafana: <http://YOURSERVERNAME:3000>
+* InfluxDB 2: <http://YOURSERVERNAME:8086>
 
 ### Configure Mosquitto User
 
@@ -65,4 +65,4 @@ docker compose exec mosquitto mosquitto_passwd -c /mosquitto/config/mosquitto.pa
 
 If you need more Details about the setup:
 
-* https://www.laub-home.de/wiki/OpenHAB_3_Docker_Installation
+* <https://www.laub-home.de/wiki/OpenHAB_3_Docker_Installation>

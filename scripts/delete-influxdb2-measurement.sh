@@ -26,7 +26,7 @@ INFLUXHOST=localhost
 # openHAB Database
 INFLUXDB=openhab_db
 # InflusDB API Key
-INFLUXDBAUTH="TkrV8yQ8G2hjtziuhf5V1OhXoE9xVTGgtzsb_bfucYeAQ7i8uAHSeTID-JlB7AKBZjE47TCwf8w-jGCFzpChw=="
+INFLUXDBAUTH="TkrV8yQ8G2hjtwedsiuhf5V1OhXasdfadfeGgtzsb_bfucYeAQ7i8uAHSeTID-JlB7AKBZjE47TCwf8w-jGCFzpChw=="
 # Measurements to delete (seperated by space)
 MEASUREMENTS="LaubIot07BME680_Gas LaubIot07BME680_Temperature LaubIot07BME680_Altitude LaubIot07BME680_Pressure"
 

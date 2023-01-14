@@ -21,7 +21,7 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # set the variables
 
 # Just change to your belongings
-COMPOSE_PROJECT_DIR="/opt/openhab"
+COMPOSE_PROJECT_DIR="/opt/openHAB"
 IP="FQDN / IP ADRESS"
 SUBJECT_CA="/C=SE/ST=Mannheim/L=Mannheim/O=himinds/OU=CA/CN=$IP"
 SUBJECT_SERVER="/C=SE/ST=Mannheim/L=Mannheim/O=himinds/OU=Server/CN=$IP"
@@ -44,6 +44,12 @@ function generate_client () {
    openssl x509 -req -sha256 -in $COMPOSE_PROJECT_DIR/certs/client.csr -CA $COMPOSE_PROJECT_DIR/certs/ca.crt -CAkey $COMPOSE_PROJECT_DIR/certs/ca.key -CAcreateserial -out $COMPOSE_PROJECT_DIR/certs/client.crt -days 3650
 }
 
+function check_cert_dir () {
+   if [ ! -d $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/ ]; then
+        mkdir -p $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/
+   fi
+}
+
 function copy_keys_to_broker () {
    cp $COMPOSE_PROJECT_DIR/certs/ca.crt $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/
    cp $COMPOSE_PROJECT_DIR/certs/server.crt $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/
@@ -53,4 +59,5 @@ function copy_keys_to_broker () {
 generate_CA
 generate_server
 generate_client
+check_cert_dir
 copy_keys_to_broker

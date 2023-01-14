@@ -10,7 +10,13 @@ In this repsoitory I collect everything needed to have a good running openHAB Se
 
 ## Docker compose project
 
-Just clone that complete repository (`/opt/openhab`) and configure the `.env`file. 
+Just clone that complete repository (`/opt/openHAB`):
+
+```bash
+git clone https://github.com/alaub81/openHAB.git
+```
+
+And configure the `.env`file.
 
 * Change the passwords!
 * If you like to have grafana configured for mailing, change `GF_SMTP_ENABLED=true` and configure you mail setup.
@@ -28,7 +34,7 @@ Now we need the certificates for the secure mqtt connection of Mosquitto. For th
 * Change all other variables to your needs!
 
 ```bash
-cd /opt/openhab/certs
+cd /opt/openHAB/certs
 chmod +x generate-certs.sh
 ./generate-certs.sh
 ```
@@ -36,7 +42,7 @@ chmod +x generate-certs.sh
 After that you schould be able to start the whole setup with:
 
 ```bash
-cd /opt/openhab
+cd /opt/openHAB
 docker compose up -d
 ```
 
@@ -51,7 +57,7 @@ Now the Setup should be reachable:
 to connect to the secure MQTT Broker, you need at minimum one configured user. Just create the first one:
 
 ```bash
-cd /opt/openhab
+cd /opt/openHAB
 docker compose exec mosquitto mosquitto_passwd -c /mosquitto/config/mosquitto.passwd mosquitto
 ```
 

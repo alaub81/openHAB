@@ -61,6 +61,10 @@ cd /opt/openHAB
 docker compose exec mosquitto mosquitto_passwd -c /mosquitto/config/mosquitto.passwd mosquitto
 ```
 
+## Scripts / Tools
+
+here you can find some usefull scripts I am using to administrate my openHAB setup. For example there are some scripts to do things in the persistnece layer, influxDB. Or to bring more stability into the digitalstrom binding. Just have a look at the Script Descriptions on top of each script.
+
 ## Links
 
 If you need more Details about the setup:

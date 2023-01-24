@@ -65,6 +65,14 @@ docker compose exec mosquitto mosquitto_passwd -c /mosquitto/config/mosquitto.pa
 
 here you can find some usefull scripts I am using to administrate my openHAB setup. For example there are some scripts to do things in the persistnece layer, influxDB. Or to bring more stability into the digitalstrom binding. Just have a look at the Script Descriptions on top of each script.
 
+To make the scripts running, please add the execute right to them and then just start it, e.g.:
+
+```bash
+cd scripts
+chmod +x cleanup-influxdb-integer.sh
+./cleanup-influxdb-integer.sh
+```
+
 ## Links
 
 If you need more Details about the setup:

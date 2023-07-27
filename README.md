@@ -79,4 +79,3 @@ If you need more Details about the setup:
 
 * <https://www.laub-home.de/wiki/OpenHAB_4_Docker_Installation>
 * <https://www.laub-home.de/wiki/OpenHAB_3_Docker_Installation>
-* <https://www.laub-home.de/wiki/OpenHAB_4_Docker_Installation>

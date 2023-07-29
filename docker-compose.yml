@@ -17,15 +17,15 @@ services:
       - "./data/openhab/addons:/openhab/addons"
       - data_openhab_userdata:/openhab/userdata
     environment:
-      TZ: ${TZ}
-      OPENHAB_HTTP_PORT: ${OPENHAB_HTTP_PORT}
-      OPENHAB_HTTPS_PORT: ${OPENHAB_HTTPS_PORT}
-      CRYPTO_POLICY: "unlimited"
-      EXTRA_JAVA_OPTS: "-Duser.timezone=${TZ}"
+      - TZ=${TZ}
+      - OPENHAB_HTTP_PORT=${OPENHAB_HTTP_PORT}
+      - OPENHAB_HTTPS_PORT=${OPENHAB_HTTPS_PORT}
+      - CRYPTO_POLICY="unlimited"
+      - EXTRA_JAVA_OPTS="-Duser.timezone=${TZ}"
       # If you need more memory
-      #EXTRA_JAVA_OPTS: "-Xms1024m -Xmx2048m -Duser.timezone=${TZ}"
-      USER_ID: 9001
-      GROUP_ID: 9001
+      #- EXTRA_JAVA_OPTS="-Xms1024m -Xmx2048m -Duser.timezone=${TZ}"
+      - USER_ID=9001
+      - GROUP_ID=9001
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     network_mode: host
@@ -41,7 +41,7 @@ services:
       - ${MOSQUITTO_MQTT_PORT}:1883
       - ${MOSQUITTO_MQTTS_PORT}:8883
     environment:
-      TZ: ${TZ}
+      - TZ=${TZ}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     networks:
@@ -72,7 +72,7 @@ services:
       app-nw:
       backend-nw:
         aliases:
-          - influxdb
+          - db
   
   postgres:
     image: postgres:${POSTGRES_VERSION}
@@ -101,7 +101,8 @@ services:
     image: hferreira/grafana-image-renderer:latest
     restart: always
     environment:
-      ENABLE_METRICS: 'true'
+      - ENABLE_METRICS=true
+      - TZ=${TZ}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     networks:
@@ -127,22 +128,22 @@ services:
       - GF_SMTP_USER=${GRAFANA_SMTP_USER}
       - GF_SMTP_PASSWORD=${GRAFANA_SMTP_PASSWORD}
       - GF_SMTP_FROM_ADDRESS=${GRAFANA_SMTP_FROM_ADDRESS}
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_SECURITY_ALLOW_EMBEDDING=true
-      - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE=true
-      - GF_RENDERING_SERVER_URL=http://renderer:8081/render
-      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
-      - GF_LOG_FILTERS=rendering:debug
       - GF_DATABASE_TYPE=postgres
       - GF_DATABASE_HOST=postgresdb
       - GF_DATABASE_NAME=${POSTGRES_DB}
       - GF_DATABASE_USER=${POSTGRES_USER}
       - GF_DATABASE_PASSWORD=${POSTGRES_PASSWORD}
       - GF_DATABASE_SSL_MODE=disable
+      - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE=true
+      - GF_RENDERING_SERVER_URL=http://renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      - GF_LOG_FILTERS=rendering:debug
+      # for anonymous access to embedding graphs
+      #- GF_AUTH_ANONYMOUS_ENABLED=true
+      #- GF_SECURITY_ALLOW_EMBEDDING=true      
       - TZ=${TZ}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-#    network_mode: host      
     networks:
       - app-nw
       - backend-nw
@@ -150,10 +151,10 @@ services:
 volumes:
   data_openhab_userdata:
   data_influxdb:
+  data_postgres:
   data_grafana:
   data_mosquitto_data:
   data_mosquitto_log:
-  data_postgres:
 
 networks:
   app-nw:

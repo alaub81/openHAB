@@ -20,7 +20,7 @@ services:
       - TZ=${TZ}
       - OPENHAB_HTTP_PORT=${OPENHAB_HTTP_PORT}
       - OPENHAB_HTTPS_PORT=${OPENHAB_HTTPS_PORT}
-      - CRYPTO_POLICY="unlimited"
+      - "CRYPTO_POLICY=unlimited"
       - "EXTRA_JAVA_OPTS=-Duser.timezone=${TZ}"
       # If you need more memory
       #- "EXTRA_JAVA_OPTS=-Xms1024m -Xmx2048m -Duser.timezone=${TZ}"

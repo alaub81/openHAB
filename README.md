@@ -4,13 +4,13 @@ In this repsoitory I collect everything needed to have a good running openHAB Se
 
 * openHAB - Smart Home Hub
 * InfluxDB2 - for persistence
-* grafana inclusive renderer - for the grafics
+* grafana inclusive renderer - for the visualization of data
 * postgres - for grafana configuration
 * Mosquitto MQTT - MQTT Broker for IoT Devices
 
 ## Docker compose project
 
-Just clone that complete repository (`/opt/openHAB`):
+Just clone that complete repository (e.g. under `/opt/`):
 
 ```bash
 git clone https://github.com/alaub81/openHAB.git
@@ -50,7 +50,7 @@ Now the Setup should be reachable:
 
 * openHAB: <http://YOURSERVERNAME:8080> und <https://YOURSERVERNAME:8433>
 * Grafana: <http://YOURSERVERNAME:3000>
-* InfluxDB 2: <http://YOURSERVERNAME:8086>
+* InfluxDB: <http://YOURSERVERNAME:8086>
 
 ### Configure Mosquitto User
 
@@ -63,7 +63,7 @@ docker compose exec mosquitto mosquitto_passwd -c /mosquitto/config/mosquitto.pa
 
 ## Scripts / Tools
 
-here you can find some usefull scripts I am using to administrate my openHAB setup. For example there are some scripts to do things in the persistnece layer, influxDB. Or to bring more stability into the digitalstrom binding. Just have a look at the Script Descriptions on top of each script.
+here you can find some usefull scripts I am using to administrate my openHAB setup. For example there are some scripts to do things in the persistence layer - influxDB. Or to bring more stability into the digitalstrom binding. Just have a look at the descriptions on top of each script.
 
 To make the scripts running, please add the execute right to them and then just start it, e.g.:
 

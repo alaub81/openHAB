@@ -93,12 +93,12 @@ services:
           
   renderer:
     # official image
-    #image: grafana/grafana-image-renderer:latest
-    # inofficial ones working on Raspberry Pi
+    image: grafana/grafana-image-renderer:latest
+    # inofficial ones working on Raspberry Pi's
     #image: adejong/grafana-image-renderer-pi:1.0.8-beta2
     #image: serhiymakarenko/grafanalabs-image-renderer:latest
     #image: asksven/grafana-image-renderer:1
-    image: hferreira/grafana-image-renderer:latest
+    #image: hferreira/grafana-image-renderer:latest
     restart: always
     environment:
       - ENABLE_METRICS=true

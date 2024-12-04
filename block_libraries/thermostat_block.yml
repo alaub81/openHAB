@@ -15,9 +15,10 @@ slots:
     - component: BlockType
       config:
         type: thermostat_control
+        inputsInline: false
         message0: Control thermostat (thermostat switch item) %1 with setpoint temperature (setpoint item) %2, heating valve (switch item) %3,
           temperature sensor (temperature item) %4, hysteresis (°C) %5, absence reduction (°C) %6, green
-          increase (°C) %7, night start (time) %8, night stop (time) %9 and night reduction (°C) %10
+          increase (°C) %7, night start (time) %8, night stop (time) %9, night reduction (°C) %10, (optional) Absence (switch item) %11, (optional) Booster (switch item) %12, (optional) Smart-Grid Mode (red-orange-green item) %13, and set loglevel %14
         args0:
           - name: THERMOSTAT
             type: input_value
@@ -39,6 +40,23 @@ slots:
             type: input_value
           - name: NIGHTREDUCTION
             type: input_value
+          - name: ABSENCE
+            type: input_value
+          - name: BOOSTER
+            type: input_value
+          - name: SMARTGRID
+            type: input_value     
+          - name: LOGLEVEL
+            options:
+              - - info
+                - "info"
+              - - warn
+                - "warn"
+              - - error
+                - "error"
+              - - debug
+                - "debug"      
+            type: field_dropdown
         colour: 90
         tooltip: Control a thermostat with dynamic parameters and OpenHAB items.
         helpUrl: ""
@@ -62,57 +80,83 @@ slots:
                     nightstart,
                     nightstop,
                     nightreduction,
+                    loglevel,
+                    absence,
+                    booster,
+                    smartgrid,
                   } = config;
 
+                  // Loglevel-Methoden als sichere Funktionen definieren
+                  const logMethods = {
+                    info: (msg) => logger.info(msg),
+                    warn: (msg) => logger.warn(msg),
+                    error: (msg) => logger.error(msg),
+                    debug: (msg) => logger.debug(msg),
+                  };
+
+                  // Sicherstellen, dass das angegebene Loglevel existiert
+                  let log;
+                  if (logMethods[loglevel]) {
+                    log = logMethods[loglevel];
+                  } else {
+                    logger.error(`Ungültiges Loglevel "${loglevel}" angegeben. Standardmäßig wird 'error' verwendet.`);
+                    log = logger.error;
+                  }
+
+                  // Testlog, um sicherzustellen, dass die Loglevel-Zuweisung funktioniert
+                  log(`Logger-Level gesetzt auf: ${loglevel}`);
+
+
                   if (!items.getItem(setpointTemperature)) {
-                    logger.error(`Item ${setpointTemperature} not found!`);
+                    log(`Item ${setpointTemperature} not found!`);
                     return;
                   }
                   if (!items.getItem(heatingvalve)) {
-                    logger.error(`Item ${heatingvalve} not found!`);
+                    log(`Item ${heatingvalve} not found!`);
                     return;
                   }
                   if (!items.getItem(temperaturesensor)) {
-                    logger.error(`Item ${temperaturesensor} not found!`);
+                    log(`Item ${temperaturesensor} not found!`);
                     return;
                   }
                   if (!items.getItem(thermostat)) {
-                    logger.error(`Item ${thermostat} not found!`);
+                    log(`Item ${thermostat} not found!`);
                     return;
                   }
 
-                  logger.error(`Thermostat - running: ${items.getItem(thermostat).label} - Valve: ${items.getItem(heatingvalve).state}`);
+                  log(`Thermostat - running: ${items.getItem(thermostat).label} - Valve: ${items.getItem(heatingvalve).state}`);
 
                   const currentTemperature = Quantity(items.getItem(temperaturesensor).state);
                   const thermostatTemperature = Quantity(items.getItem(setpointTemperature).state);
 
-                  logger.error(`OFF Temperature: ${thermostatTemperature}`);
-                  logger.error(`ON Temperature: ${thermostatTemperature.subtract(Quantity(hysteresis + '°C'))}`);
-                  logger.error(`Temperature: ${currentTemperature} - Thermostat: ${thermostatTemperature}`);
+                  log(`OFF Temperature: ${thermostatTemperature}`);
+                  log(`ON Temperature: ${thermostatTemperature.subtract(Quantity(hysteresis + '°C'))}`);
+                  log(`Temperature: ${currentTemperature} - Thermostat: ${thermostatTemperature}`);
 
                   let setpoint = thermostatTemperature;
 
-                  if (items.getItem('Fussbodenheizung_Boost').state === 'OFF') {
-                    logger.error('Booster is OFF');
+                  if (items.getItem(booster).state === 'OFF') {
+                    log('Booster is OFF');
                     if (items.getItem(thermostat).state === 'ON') {
-                      logger.error('Thermostat - ON');
+                      log('Thermostat - ON');
 
                       // Abwesenheitsprüfung
-                      if (items.getItem('Anwesenheit').state === 'OFF') {
+                      if (items.getItem(absence).state === 'OFF') {
                         // -- sollte ungleich red sein und muss getestet werden, hier sollte die regel umgebaut werden --- Wenn in Abwesenheit Green / Orange geschaltet wird sollte dies auch geschehen
-                        if (items.getItem('Waermepumpe_SG_Modus').state === 'orange') {
+                        // wie ist es mit der nacht absenkung bei abwesenheit   
+                        if (items.getItem(smartgrid).state === 'orange') {
                           setpoint = thermostatTemperature;
-                          logger.error(`Abwesenheitsabsenkung SG-Orange: ${setpoint}`);
+                          log(`Abwesenheitsabsenkung SG-Orange: ${setpoint}`);
                         } else {
                           setpoint = thermostatTemperature.subtract(Quantity(absencereduction + '°C'));
-                          logger.error(`Abwesenheitsabsenkung: ${setpoint}`);
+                          log(`Abwesenheitsabsenkung: ${setpoint}`);
                         }
                       }
 
                       // SG-Modus Grün
-                      if (items.getItem('Waermepumpe_SG_Modus').state === 'green') {
+                      if (items.getItem(smartgrid).state === 'green') {
                         setpoint = thermostatTemperature.add(Quantity(greenincrease + '°C'));
-                        logger.error(`Wärmepumpe SG-Green: ${setpoint}`);
+                        log(`Wärmepumpe SG-Green: ${setpoint}`);
                       }
 
                       // Nachtabsenkung
@@ -122,16 +166,16 @@ slots:
                       const parsedNightStart = time.toZDT(nightstart);
                       const parsedNightStop = time.toZDT(nightstop);
 
-                      logger.error(`Aktuelle Zeit: ${now}`);
-                      logger.error(`Nachtstart: ${parsedNightStart}`);
-                      logger.error(`Nachtende: ${parsedNightStop}`);
+                      log(`Aktuelle Zeit: ${now}`);
+                      log(`Nachtstart: ${parsedNightStart}`);
+                      log(`Nachtende: ${parsedNightStop}`);
 
                       // Prüfung, ob die aktuelle Zeit innerhalb des Nachtzeitraums liegt
                       if (now.isAfter(parsedNightStart) || now.isBefore(parsedNightStop)) {
                         setpoint = thermostatTemperature.subtract(Quantity(nightreduction + '°C'));
-                        logger.error(`Nachtabsenkung aktiv: ${setpoint}`);
+                        log(`Nachtabsenkung aktiv: ${setpoint}`);
                       } else {
-                        logger.error(`Keine Nachtabsenkung: ${setpoint}`);
+                        log(`Keine Nachtabsenkung: ${setpoint}`);
                       }
 
                       // Heizregelung
@@ -140,19 +184,19 @@ slots:
                         currentTemperature.lessThanOrEqual(setpoint.subtract(Quantity(hysteresis + '°C')))
                       ) {
                         items.getItem(heatingvalve).sendCommand('ON');
-                        logger.error('Thermostat - heating on');
+                        log('Thermostat - heating on');
                       } else if (
                         items.getItem(heatingvalve).state === 'ON' &&
                         currentTemperature.greaterThanOrEqual(setpoint)
                       ) {
                         items.getItem(heatingvalve).sendCommand('OFF');
-                        logger.error('Thermostat - heating off');
+                        log('Thermostat - heating off');
                       }
                     } else {
                       if (items.getItem(heatingvalve).state === 'ON') {
                         items.getItem(heatingvalve).sendCommand('OFF');
                       }
-                      logger.error('Thermostat - OFF');
+                      log('Thermostat - OFF');
                     }
                   }
                 }
@@ -167,7 +211,11 @@ slots:
                   greenincrease: {{input:GREENINCREASE}}, 
                   nightstart: {{input:NIGHTSTART}}, 
                   nightstop: {{input:NIGHTSTOP}}, 
-                  nightreduction: {{input:NIGHTREDUCTION}}
+                  nightreduction: {{input:NIGHTREDUCTION}},
+                  loglevel: "{{field:LOGLEVEL}}",
+                  absence: {{input:ABSENCE}},
+                  booster: {{input:BOOSTER}},
+                  smartgrid: {{input:SMARTGRID}}
                 });
         toolbox:
           - component: PresetInput
@@ -232,3 +280,18 @@ slots:
                 NUM: "0.5"
               shadow: true
               type: math_number
+          - component: PresetInput
+            config:
+              name: ABSENCE
+              shadow: true
+              type: oh_item
+          - component: PresetInput
+            config:
+              name: BOOSTER
+              shadow: true
+              type: oh_item
+          - component: PresetInput
+            config:
+              name: SMARTGRID
+              shadow: true
+              type: oh_item                  

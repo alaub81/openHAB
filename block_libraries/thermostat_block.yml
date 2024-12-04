@@ -1,0 +1,234 @@
+uid: blocklibrary_thermostat_control
+tags:
+  - heating
+  - thermostat
+  - control
+props:
+  parameters: []
+  parameterGroups: []
+timestamp: Dec 3, 2024, 2:27:32 PM
+component: BlockLibrary
+config:
+  name: Thermostat Control Block Library
+slots:
+  blocks:
+    - component: BlockType
+      config:
+        type: thermostat_control
+        message0: Control thermostat (thermostat switch item) %1 with setpoint temperature (setpoint item) %2, heating valve (switch item) %3,
+          temperature sensor (temperature item) %4, hysteresis (°C) %5, absence reduction (°C) %6, green
+          increase (°C) %7, night start (time) %8, night stop (time) %9 and night reduction (°C) %10
+        args0:
+          - name: THERMOSTAT
+            type: input_value
+          - name: SETPOINTTEMPERATURE
+            type: input_value
+          - name: HEATINGVALVE
+            type: input_value
+          - name: TEMPERATURESENSOR
+            type: input_value
+          - name: HYSTERESIS
+            type: input_value
+          - name: ABSENCEREDUCTION
+            type: input_value
+          - name: GREENINCREASE
+            type: input_value
+          - name: NIGHTSTART
+            type: input_value
+          - name: NIGHTSTOP
+            type: input_value
+          - name: NIGHTREDUCTION
+            type: input_value
+        colour: 90
+        tooltip: Control a thermostat with dynamic parameters and OpenHAB items.
+        helpUrl: ""
+      slots:
+        code:
+          - component: BlockCodeTemplate
+            config:
+              template: >
+                var { time, items } = require('openhab');
+                var logger = Java.type('org.slf4j.LoggerFactory').getLogger('org.openhab.rule.ThermostatControl');
+
+                function controlThermostat(config) {
+                  const {
+                    setpointTemperature,
+                    heatingvalve,
+                    hysteresis,
+                    temperaturesensor,
+                    thermostat,
+                    absencereduction,
+                    greenincrease,
+                    nightstart,
+                    nightstop,
+                    nightreduction,
+                  } = config;
+
+                  if (!items.getItem(setpointTemperature)) {
+                    logger.error(`Item ${setpointTemperature} not found!`);
+                    return;
+                  }
+                  if (!items.getItem(heatingvalve)) {
+                    logger.error(`Item ${heatingvalve} not found!`);
+                    return;
+                  }
+                  if (!items.getItem(temperaturesensor)) {
+                    logger.error(`Item ${temperaturesensor} not found!`);
+                    return;
+                  }
+                  if (!items.getItem(thermostat)) {
+                    logger.error(`Item ${thermostat} not found!`);
+                    return;
+                  }
+
+                  logger.error(`Thermostat - running: ${items.getItem(thermostat).label} - Valve: ${items.getItem(heatingvalve).state}`);
+
+                  const currentTemperature = Quantity(items.getItem(temperaturesensor).state);
+                  const thermostatTemperature = Quantity(items.getItem(setpointTemperature).state);
+
+                  logger.error(`OFF Temperature: ${thermostatTemperature}`);
+                  logger.error(`ON Temperature: ${thermostatTemperature.subtract(Quantity(hysteresis + '°C'))}`);
+                  logger.error(`Temperature: ${currentTemperature} - Thermostat: ${thermostatTemperature}`);
+
+                  let setpoint = thermostatTemperature;
+
+                  if (items.getItem('Fussbodenheizung_Boost').state === 'OFF') {
+                    logger.error('Booster is OFF');
+                    if (items.getItem(thermostat).state === 'ON') {
+                      logger.error('Thermostat - ON');
+
+                      // Abwesenheitsprüfung
+                      if (items.getItem('Anwesenheit').state === 'OFF') {
+                        // -- sollte ungleich red sein und muss getestet werden, hier sollte die regel umgebaut werden --- Wenn in Abwesenheit Green / Orange geschaltet wird sollte dies auch geschehen
+                        if (items.getItem('Waermepumpe_SG_Modus').state === 'orange') {
+                          setpoint = thermostatTemperature;
+                          logger.error(`Abwesenheitsabsenkung SG-Orange: ${setpoint}`);
+                        } else {
+                          setpoint = thermostatTemperature.subtract(Quantity(absencereduction + '°C'));
+                          logger.error(`Abwesenheitsabsenkung: ${setpoint}`);
+                        }
+                      }
+
+                      // SG-Modus Grün
+                      if (items.getItem('Waermepumpe_SG_Modus').state === 'green') {
+                        setpoint = thermostatTemperature.add(Quantity(greenincrease + '°C'));
+                        logger.error(`Wärmepumpe SG-Green: ${setpoint}`);
+                      }
+
+                      // Nachtabsenkung
+                      const now = time.ZonedDateTime.now();
+
+                      // Umwandlung der Eingaben in gültige Zeitstempel
+                      const parsedNightStart = time.toZDT(nightstart);
+                      const parsedNightStop = time.toZDT(nightstop);
+
+                      logger.error(`Aktuelle Zeit: ${now}`);
+                      logger.error(`Nachtstart: ${parsedNightStart}`);
+                      logger.error(`Nachtende: ${parsedNightStop}`);
+
+                      // Prüfung, ob die aktuelle Zeit innerhalb des Nachtzeitraums liegt
+                      if (now.isAfter(parsedNightStart) || now.isBefore(parsedNightStop)) {
+                        setpoint = thermostatTemperature.subtract(Quantity(nightreduction + '°C'));
+                        logger.error(`Nachtabsenkung aktiv: ${setpoint}`);
+                      } else {
+                        logger.error(`Keine Nachtabsenkung: ${setpoint}`);
+                      }
+
+                      // Heizregelung
+                      if (
+                        items.getItem(heatingvalve).state === 'OFF' &&
+                        currentTemperature.lessThanOrEqual(setpoint.subtract(Quantity(hysteresis + '°C')))
+                      ) {
+                        items.getItem(heatingvalve).sendCommand('ON');
+                        logger.error('Thermostat - heating on');
+                      } else if (
+                        items.getItem(heatingvalve).state === 'ON' &&
+                        currentTemperature.greaterThanOrEqual(setpoint)
+                      ) {
+                        items.getItem(heatingvalve).sendCommand('OFF');
+                        logger.error('Thermostat - heating off');
+                      }
+                    } else {
+                      if (items.getItem(heatingvalve).state === 'ON') {
+                        items.getItem(heatingvalve).sendCommand('OFF');
+                      }
+                      logger.error('Thermostat - OFF');
+                    }
+                  }
+                }
+
+                controlThermostat({
+                  setpointTemperature: {{input:SETPOINTTEMPERATURE}},
+                  heatingvalve: {{input:HEATINGVALVE}},
+                  temperaturesensor: {{input:TEMPERATURESENSOR}},
+                  thermostat: {{input:THERMOSTAT}},
+                  hysteresis: {{input:HYSTERESIS}},              
+                  absencereduction: {{input:ABSENCEREDUCTION}}, 
+                  greenincrease: {{input:GREENINCREASE}}, 
+                  nightstart: {{input:NIGHTSTART}}, 
+                  nightstop: {{input:NIGHTSTOP}}, 
+                  nightreduction: {{input:NIGHTREDUCTION}}
+                });
+        toolbox:
+          - component: PresetInput
+            config:
+              name: THERMOSTAT
+              shadow: true
+              type: oh_item
+          - component: PresetInput
+            config:
+              name: HEATINGVALVE
+              shadow: true
+              type: oh_item
+          - component: PresetInput
+            config:
+              name: SETPOINTTEMPERATURE
+              shadow: true
+              type: oh_item
+          - component: PresetInput
+            config:
+              name: TEMPERATURESENSOR
+              shadow: true
+              type: oh_item
+          - component: PresetInput
+            config:
+              name: NIGHTSTART
+              fields:
+                TEXT: 19:00
+              shadow: true
+              type: text
+          - component: PresetInput
+            config:
+              name: NIGHTSTOP
+              fields:
+                TEXT: 08:15
+              shadow: true
+              type: text
+          - component: PresetInput
+            config:
+              name: HYSTERESIS
+              fields:
+                NUM: "0.2"
+              shadow: true
+              type: math_number
+          - component: PresetInput
+            config:
+              name: ABSENCEREDUCTION
+              fields:
+                NUM: "1"
+              shadow: true
+              type: math_number
+          - component: PresetInput
+            config:
+              name: GREENINCREASE
+              fields:
+                NUM: "0.5"
+              shadow: true
+              type: math_number
+          - component: PresetInput
+            config:
+              name: NIGHTREDUCTION
+              fields:
+                NUM: "0.5"
+              shadow: true
+              type: math_number

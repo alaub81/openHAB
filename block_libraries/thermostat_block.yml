@@ -19,6 +19,8 @@ slots:
         message0: Control thermostat (thermostat switch item) %1 with setpoint temperature (setpoint item) %2, heating valve (switch item) %3,
           temperature sensor (temperature item) %4, hysteresis (°C) %5, absence reduction (°C) %6, green
           increase (°C) %7, night start (time) %8, night stop (time) %9, night reduction (°C) %10, (optional) Absence (switch item) %11, (optional) Booster (switch item) %12, (optional) Smart-Grid Mode (red-orange-green item) %13, and set loglevel %14
+        nextStatement: ""
+        previousStatement: ""  
         args0:
           - name: THERMOSTAT
             type: input_value
@@ -106,6 +108,24 @@ slots:
                   // Testlog, um sicherzustellen, dass die Loglevel-Zuweisung funktioniert
                   log(`Logger-Level gesetzt auf: ${loglevel}`);
 
+                  // Sicherstellen, dass Booster, Absence und SmartGrid einen Standardwert haben, wenn sie nicht gesetzt sind
+                  let boosterItem = items.getItem(booster);
+                  if (!boosterItem) {
+                    log('Booster item is not defined. Setting default state to OFF.');
+                    boosterItem = { state: 'OFF' }; // Temporäres Objekt mit Standardwert erstellen
+                  }
+
+                  let absenceItem = items.getItem(absence);
+                  if (!absenceItem) {
+                    log('Absence item is not defined. Setting default state to OFF.');
+                    absenceItem = { state: 'ON' }; // Temporäres Objekt mit Standardwert erstellen
+                  }
+
+                  let smartgridItem = items.getItem(smartgrid);
+                  if (!smartgridItem) {
+                    log('SmartGrid item is not defined. Setting default state to orange.');
+                    smartgridItem = { state: 'orange' }; // Temporäres Objekt mit Standardwert erstellen
+                  }
 
                   if (!items.getItem(setpointTemperature)) {
                     log(`Item ${setpointTemperature} not found!`);
@@ -141,42 +161,35 @@ slots:
                       log('Thermostat - ON');
 
                       // Abwesenheitsprüfung
-                      if (items.getItem(absence).state === 'OFF') {
-                        // -- sollte ungleich red sein und muss getestet werden, hier sollte die regel umgebaut werden --- Wenn in Abwesenheit Green / Orange geschaltet wird sollte dies auch geschehen
-                        // wie ist es mit der nacht absenkung bei abwesenheit   
-                        if (items.getItem(smartgrid).state === 'orange') {
-                          setpoint = thermostatTemperature;
-                          log(`Abwesenheitsabsenkung SG-Orange: ${setpoint}`);
-                        } else {
-                          setpoint = thermostatTemperature.subtract(Quantity(absencereduction + '°C'));
-                          log(`Abwesenheitsabsenkung: ${setpoint}`);
-                        }
-                      }
-
-                      // SG-Modus Grün
-                      if (items.getItem(smartgrid).state === 'green') {
-                        setpoint = thermostatTemperature.add(Quantity(greenincrease + '°C'));
-                        log(`Wärmepumpe SG-Green: ${setpoint}`);
-                      }
-
-                      // Nachtabsenkung
-                      const now = time.ZonedDateTime.now();
-
-                      // Umwandlung der Eingaben in gültige Zeitstempel
-                      const parsedNightStart = time.toZDT(nightstart);
-                      const parsedNightStop = time.toZDT(nightstop);
-
-                      log(`Aktuelle Zeit: ${now}`);
-                      log(`Nachtstart: ${parsedNightStart}`);
-                      log(`Nachtende: ${parsedNightStop}`);
-
-                      // Prüfung, ob die aktuelle Zeit innerhalb des Nachtzeitraums liegt
-                      if (now.isAfter(parsedNightStart) || now.isBefore(parsedNightStop)) {
-                        setpoint = thermostatTemperature.subtract(Quantity(nightreduction + '°C'));
-                        log(`Nachtabsenkung aktiv: ${setpoint}`);
+                      if (items.getItem(absence).state === 'OFF' && items.getItem(smartgrid).state === 'red') {
+                        setpoint = thermostatTemperature.subtract(Quantity(absencereduction + '°C'));
+                        log(`Abwesenheitsabsenkung: ${setpoint}`);
                       } else {
-                        log(`Keine Nachtabsenkung: ${setpoint}`);
-                      }
+                        // SG-Modus Grün
+                        if (items.getItem(smartgrid).state === 'green') {
+                          setpoint = thermostatTemperature.add(Quantity(greenincrease + '°C'));
+                          log(`Wärmepumpe SG-Green: ${setpoint}`);
+                        }
+
+                        // Nachtabsenkung
+                        const now = time.ZonedDateTime.now();
+
+                        // Umwandlung der Eingaben in gültige Zeitstempel
+                        const parsedNightStart = time.toZDT(nightstart);
+                        const parsedNightStop = time.toZDT(nightstop);
+
+                        log(`Aktuelle Zeit: ${now}`);
+                        log(`Nachtstart: ${parsedNightStart}`);
+                        log(`Nachtende: ${parsedNightStop}`);
+
+                        // Prüfung, ob die aktuelle Zeit innerhalb des Nachtzeitraums liegt
+                        if (now.isAfter(parsedNightStart) || now.isBefore(parsedNightStop)) {
+                          setpoint = thermostatTemperature.subtract(Quantity(nightreduction + '°C'));
+                          log(`Nachtabsenkung aktiv: ${setpoint}`);
+                        } else {
+                          log(`Keine Nachtabsenkung: ${setpoint}`);
+                        }
+                      }  
 
                       // Heizregelung
                       if (

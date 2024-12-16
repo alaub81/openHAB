@@ -1,0 +1,85 @@
+uid: thermostat_list_widget
+tags:
+  - heating
+  - temperature
+  - thermostat
+props:
+  parameters:
+    - description: The label for the widget
+      label: Title
+      name: title
+      required: false
+      type: TEXT
+    - context: item
+      description: Setpoint temperature item
+      label: Setpoint Temperature
+      name: item
+      required: false
+      type: TEXT
+    - context: item
+      description: Current Temp item
+      label: Current temperature
+      name: isttemp
+      required: false
+      type: TEXT
+    - context: item
+      description: Current Humidity item
+      label: Current humidity
+      name: isthumidity
+      required: false
+      type: TEXT
+    - context: item
+      description: Thermostat item
+      label: Thermostat
+      name: istthermostat
+      required: false
+      type: TEXT
+    - context: item
+      description: Heatingvalve item
+      label: Heatingvalve
+      name: istvalve
+      required: false
+      type: TEXT
+    - description: Icon
+      label: List Icon
+      name: seticon
+      required: false
+      type: TEXT
+    - description: Min Value
+      label: Min
+      name: minset
+      required: false
+      type: TEXT
+    - description: Min Value
+      label: Max
+      name: maxset
+      required: false
+      type: TEXT
+    - description: Min Value
+      label: step
+      name: stepset
+      required: false
+      type: TEXT
+  parameterGroups: []
+timestamp: Dec 3, 2024, 1:04:23 PM
+component: oh-stepper-item
+config:
+  actionAnalyzerCoordSystem: time
+  actionAnalyzerItems:
+    - =props.isttemp
+    - =props.item
+    - =props.istvalve
+  fill: true
+  icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
+  iconColor: "=(items[props.istvalve].state == 'ON') ? 'green' : 'red'"
+  item: =props.item
+  max: "=props.maxset ? props.maxset : 30"
+  min: "=props.minset ? props.minset : 18"
+  round: true
+  small: false
+  step: "=props.stepset ? props.stepset : 0.1"
+  subtitle: "= (items[props.istthermostat].state == 'ON' ? '🟢' : '🔴') + '
+    aktuell: ' + items[props.isttemp].state + ' (' +
+    items[props.isthumidity].state + ')'"
+  title: "=props.title ? props.title : props.item"
+  color: "=(items[props.istvalve].state == 'ON') ? 'yellow' : 'green'"

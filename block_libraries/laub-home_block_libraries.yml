@@ -1,20 +1,22 @@
-uid: blocklibrary_thermostat_control
+uid: Blocklibraries_laub-home.de
 tags:
   - heating
   - thermostat
   - control
+  - Thing
+  - laub-home
 props:
   parameters: []
   parameterGroups: []
 timestamp: Dec 3, 2024, 2:27:32 PM
 component: BlockLibrary
 config:
-  name: Thermostat Control Block Library
+  name: Blocklibraries laub-home.de
 slots:
   blocks:
     - component: BlockType
       config:
-        type: thermostat_control
+        type: Thermostat Control
         inputsInline: false
         message0: Control thermostat (thermostat switch item) %1 with setpoint temperature (setpoint item) %2, heating valve (switch item) %3,
           temperature sensor (temperature item) %4, hysteresis (°C) %5, absence reduction (°C) %6, green
@@ -68,7 +70,8 @@ slots:
             config:
               template: >
                 var { time, items } = require('openhab');
-                var logger = Java.type('org.slf4j.LoggerFactory').getLogger('org.openhab.rule.ThermostatControl');
+                var ruleUID = this.ruleUID;
+                var logger = Java.type('org.slf4j.LoggerFactory').getLogger(`org.openhab.rule.ThermoCtrl.${ruleUID}`);
 
                 function controlThermostat(config) {
                   const {
@@ -88,128 +91,89 @@ slots:
                     smartgrid,
                   } = config;
 
-                  // Loglevel-Methoden als sichere Funktionen definieren
-                  const logMethods = {
-                    info: (msg) => logger.info(msg),
-                    warn: (msg) => logger.warn(msg),
-                    error: (msg) => logger.error(msg),
-                    debug: (msg) => logger.debug(msg),
-                  };
+                  // Initialize logging
+                  const log = logger[loglevel] || logger.error;
+                  log(`Thermostat - Loglevel set to: ${loglevel}`);
 
-                  // Sicherstellen, dass das angegebene Loglevel existiert
-                  let log;
-                  if (logMethods[loglevel]) {
-                    log = logMethods[loglevel];
-                  } else {
-                    logger.error(`Ungültiges Loglevel "${loglevel}" angegeben. Standardmäßig wird 'error' verwendet.`);
-                    log = logger.error;
+                  // Ensure that Booster, Absence and SmartGrid have a default value if they are not set
+                  const boosterItem = items.getItem(booster) || { state: 'OFF' };
+                  const absenceItem = items.getItem(absence) || { state: 'ON' };
+                  const smartgridItem = items.getItem(smartgrid) || { state: 'orange' };
+                  
+                  // Item check
+                  const requiredItems = [setpointTemperature, heatingvalve, temperaturesensor, thermostat];
+                  for (const item of requiredItems) {
+                    if (!items.getItem(item)) {
+                      log(`Item ${item} not set or found!`);
+                      return;
+                    }
                   }
-
-                  // Testlog, um sicherzustellen, dass die Loglevel-Zuweisung funktioniert
-                  log(`Logger-Level gesetzt auf: ${loglevel}`);
-
-                  // Sicherstellen, dass Booster, Absence und SmartGrid einen Standardwert haben, wenn sie nicht gesetzt sind
-                  let boosterItem = items.getItem(booster);
-                  if (!boosterItem) {
-                    log('Booster item is not defined. Setting default state to OFF.');
-                    boosterItem = { state: 'OFF' }; // Temporäres Objekt mit Standardwert erstellen
-                  }
-
-                  let absenceItem = items.getItem(absence);
-                  if (!absenceItem) {
-                    log('Absence item is not defined. Setting default state to OFF.');
-                    absenceItem = { state: 'ON' }; // Temporäres Objekt mit Standardwert erstellen
-                  }
-
-                  let smartgridItem = items.getItem(smartgrid);
-                  if (!smartgridItem) {
-                    log('SmartGrid item is not defined. Setting default state to orange.');
-                    smartgridItem = { state: 'orange' }; // Temporäres Objekt mit Standardwert erstellen
-                  }
-
-                  if (!items.getItem(setpointTemperature)) {
-                    log(`Item ${setpointTemperature} not found!`);
-                    return;
-                  }
-                  if (!items.getItem(heatingvalve)) {
-                    log(`Item ${heatingvalve} not found!`);
-                    return;
-                  }
-                  if (!items.getItem(temperaturesensor)) {
-                    log(`Item ${temperaturesensor} not found!`);
-                    return;
-                  }
-                  if (!items.getItem(thermostat)) {
-                    log(`Item ${thermostat} not found!`);
-                    return;
-                  }
-
-                  log(`Thermostat - running: ${items.getItem(thermostat).label} - Valve: ${items.getItem(heatingvalve).state}`);
-
+                  
                   const currentTemperature = Quantity(items.getItem(temperaturesensor).state);
                   const thermostatTemperature = Quantity(items.getItem(setpointTemperature).state);
 
-                  log(`OFF Temperature: ${thermostatTemperature}`);
-                  log(`ON Temperature: ${thermostatTemperature.subtract(Quantity(hysteresis + '°C'))}`);
-                  log(`Temperature: ${currentTemperature} - Thermostat: ${thermostatTemperature}`);
+                  log(`Thermostat - running: ${items.getItem(thermostat).label} - Valve power: ${items.getItem(heatingvalve).state}`);
+                  log(`Current temperature: ${currentTemperature} - Thermostat setpoint temperature: ${thermostatTemperature}`);
+                  log(`Heating ON temperature value: ${thermostatTemperature.subtract(Quantity(hysteresis + '°C'))} - Heating OFF temperature value: ${thermostatTemperature}`);
 
                   let setpoint = thermostatTemperature;
 
                   if (items.getItem(booster).state === 'OFF') {
-                    log('Booster is OFF');
+                    log('Booster Switch is OFF');
                     if (items.getItem(thermostat).state === 'ON') {
-                      log('Thermostat - ON');
+                      log('Thermostat Switch is ON');
 
-                      // Abwesenheitsprüfung
+                      // Absence check
                       if (items.getItem(absence).state === 'OFF' && items.getItem(smartgrid).state === 'red') {
                         setpoint = thermostatTemperature.subtract(Quantity(absencereduction + '°C'));
-                        log(`Abwesenheitsabsenkung: ${setpoint}`);
+                        log(`Absence and SG-RED Mode - used setpoint temperature: ${setpoint}`);
                       } else {
-                        // SG-Modus Grün
+                        // SG-Modus green
                         if (items.getItem(smartgrid).state === 'green') {
                           setpoint = thermostatTemperature.add(Quantity(greenincrease + '°C'));
-                          log(`Wärmepumpe SG-Green: ${setpoint}`);
+                          log(`Heat pump SG-Green mode - used setpoint temperature: ${setpoint}`);
                         }
 
-                        // Nachtabsenkung
+                        // Night setback
                         const now = time.ZonedDateTime.now();
 
-                        // Umwandlung der Eingaben in gültige Zeitstempel
+                        // Conversion of inputs into valid time stamps
                         const parsedNightStart = time.toZDT(nightstart);
                         const parsedNightStop = time.toZDT(nightstop);
 
-                        log(`Aktuelle Zeit: ${now}`);
-                        log(`Nachtstart: ${parsedNightStart}`);
-                        log(`Nachtende: ${parsedNightStop}`);
+                        log(`Current Time: ${now}`);
+                        log(`night start:  ${parsedNightStart}`);
+                        log(`night end:    ${parsedNightStop}`);
 
-                        // Prüfung, ob die aktuelle Zeit innerhalb des Nachtzeitraums liegt
+                        // Check whether the current time is within the night period
                         if (now.isAfter(parsedNightStart) || now.isBefore(parsedNightStop)) {
                           setpoint = thermostatTemperature.subtract(Quantity(nightreduction + '°C'));
-                          log(`Nachtabsenkung aktiv: ${setpoint}`);
+                          log(`Night setback active - used setpoint temperature: ${setpoint}`);
                         } else {
-                          log(`Keine Nachtabsenkung: ${setpoint}`);
+                          log(`Night setback deactivated - used setpoint temperature: ${setpoint}`);
                         }
                       }  
 
-                      // Heizregelung
+                      // Heating control
                       if (
                         items.getItem(heatingvalve).state === 'OFF' &&
                         currentTemperature.lessThanOrEqual(setpoint.subtract(Quantity(hysteresis + '°C')))
                       ) {
                         items.getItem(heatingvalve).sendCommand('ON');
-                        log('Thermostat - heating on');
+                        log('Heating control - heating activated');
                       } else if (
                         items.getItem(heatingvalve).state === 'ON' &&
                         currentTemperature.greaterThanOrEqual(setpoint)
                       ) {
                         items.getItem(heatingvalve).sendCommand('OFF');
-                        log('Thermostat - heating off');
+                        log('Heating control - heating deactivated');
                       }
                     } else {
+                      log('Thermostat Switch is OFF');                     
                       if (items.getItem(heatingvalve).state === 'ON') {
                         items.getItem(heatingvalve).sendCommand('OFF');
+                        log('Heating control - heating deactivated');
                       }
-                      log('Thermostat - OFF');
                     }
                   }
                 }
@@ -307,4 +271,45 @@ slots:
             config:
               name: SMARTGRID
               shadow: true
-              type: oh_item                  
+              type: oh_item
+    - component: BlockType
+      config:
+        args0:
+          - name: METHOD
+            options:
+              - - disable
+                - "false"
+              - - enable
+                - "true"
+            type: field_dropdown
+          - name: THING_UID
+            type: input_value
+        colour: 0
+        helpUrl: ""
+        inputsInline: false
+        message0: set %1 for Thing %2
+        nextStatement: ""
+        previousStatement: ""
+        tooltip: Enable or disable a Thing by UID
+        type: Thing controller
+      slots:
+        code:
+          - component: BlockCodeTemplate
+            config:
+              template: >
+                var thingMgr =
+                osgi.getService('org.openhab.core.thing.ThingManager'); var
+                ThingUID = Java.type('org.openhab.core.thing.ThingUID');
+                thingMgr.setEnabled(new ThingUID({{input:THING_UID}}),
+                {{field:METHOD}});
+        toolbox:
+          - component: PresetInput
+            config:
+              name: THING_UID
+              shadow: true
+              type: oh_thing
+  utilities:
+    - component: UtilityJavaType
+      config:
+        javaClass: org.openhab.core.thing.ThingManager
+        name: thingMgr

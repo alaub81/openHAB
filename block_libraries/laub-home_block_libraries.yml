@@ -18,9 +18,20 @@ slots:
       config:
         type: Thermostat Control
         inputsInline: false
-        message0: Control thermostat (thermostat switch item) %1 with setpoint temperature (setpoint item) %2, heating valve (switch item) %3,
-          temperature sensor (temperature item) %4, hysteresis (°C) %5, absence reduction (°C) %6, green
-          increase (°C) %7, night start (time) %8, night stop (time) %9, night reduction (°C) %10, (optional) Absence (switch item) %11, (optional) Booster (switch item) %12, (optional) Smart-Grid Mode (red-orange-green item) %13, and set loglevel %14
+        message0: Control thermostat (thermostat switch item) %1 
+          with setpoint temperature (setpoint item) %2, 
+          heating valve (switch item) %3, 
+          temperature sensor (temperature item) %4, 
+          hysteresis (in °C) (Number) %5, 
+          absence reduction (in °C) (Number) %6, 
+          green increase (in °C) %7, 
+          night start (time) %8, 
+          night stop (time) %9, 
+          night reduction (in °C) (Number) %10, 
+          (optional) Absence (switch item state, or default "ON") %11,
+          (optional) Booster (switch item state, or default "OFF") %12, 
+          (optional) Smart-Grid Mode (red-orange-green item state, or default "orange") %13, 
+          and set loglevel %14
         nextStatement: ""
         previousStatement: ""  
         args0:
@@ -94,20 +105,6 @@ slots:
                   // Initialize logging
                   const log = logger[loglevel] || logger.error;
                   log(`Thermostat - Loglevel set to: ${loglevel}`);
-
-                  // Ensure that Booster, Absence and SmartGrid have a default value if they are not set
-                  const boosterItem = items.getItem(booster) || { state: 'OFF' };
-                  const absenceItem = items.getItem(absence) || { state: 'ON' };
-                  const smartgridItem = items.getItem(smartgrid) || { state: 'orange' };
-                  
-                  // Item check
-                  const requiredItems = [setpointTemperature, heatingvalve, temperaturesensor, thermostat];
-                  for (const item of requiredItems) {
-                    if (!items.getItem(item)) {
-                      log(`Item ${item} not set or found!`);
-                      return;
-                    }
-                  }
                   
                   const currentTemperature = Quantity(items.getItem(temperaturesensor).state);
                   const thermostatTemperature = Quantity(items.getItem(setpointTemperature).state);
@@ -118,18 +115,18 @@ slots:
 
                   let setpoint = thermostatTemperature;
 
-                  if (items.getItem(booster).state === 'OFF') {
+                  if (booster === 'OFF') {
                     log('Booster Switch is OFF');
                     if (items.getItem(thermostat).state === 'ON') {
                       log('Thermostat Switch is ON');
 
-                      // Absence check
-                      if (items.getItem(absence).state === 'OFF' && items.getItem(smartgrid).state === 'red') {
+                      // Absence and SG-red check
+                      if (absence === 'OFF' && smartgrid === 'red') {
                         setpoint = thermostatTemperature.subtract(Quantity(absencereduction + '°C'));
                         log(`Absence and SG-RED Mode - used setpoint temperature: ${setpoint}`);
                       } else {
                         // SG-Modus green
-                        if (items.getItem(smartgrid).state === 'green') {
+                        if (smartgrid === 'green') {
                           setpoint = thermostatTemperature.add(Quantity(greenincrease + '°C'));
                           log(`Heat pump SG-Green mode - used setpoint temperature: ${setpoint}`);
                         }
@@ -175,6 +172,8 @@ slots:
                         log('Heating control - heating deactivated');
                       }
                     }
+                  } else {
+                    log('Thermostat - Booster Mode is ON')
                   }
                 }
 
@@ -260,18 +259,24 @@ slots:
           - component: PresetInput
             config:
               name: ABSENCE
+              fields:
+                TEXT: ON
               shadow: true
-              type: oh_item
+              type: text
           - component: PresetInput
             config:
               name: BOOSTER
+              fields:
+                TEXT: OFF
               shadow: true
-              type: oh_item
+              type: text
           - component: PresetInput
             config:
               name: SMARTGRID
+              fields:
+                TEXT: orange
               shadow: true
-              type: oh_item
+              type: text
     - component: BlockType
       config:
         args0:

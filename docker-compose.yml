@@ -2,8 +2,10 @@ services:
   openhab:
     image: openhab/openhab:${OPENHAB_VERSION}
     depends_on:
-      - influxdb
-      - mosquitto
+      influxdb:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
     restart: unless-stopped
     # if you do not need persistent log files
     #tmpfs:
@@ -42,6 +44,13 @@ services:
       - TZ=${TZ}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      #test: ["CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t '$SYS/broker/uptime' -C 1 -W 10 > /dev/null 2>&1"]
+      test: ["CMD-SHELL", "nc -z localhost 1883"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     networks:
       app-nw:
         aliases:
@@ -66,12 +75,18 @@ services:
       - TZ=${TZ}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8086/health | grep -q '\"status\":\"pass\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     networks:
       app-nw:
       backend-nw:
         aliases:
           - db
-  
+
   postgres:
     image: postgres:${POSTGRES_VERSION}
     restart: unless-stopped
@@ -84,11 +99,18 @@ services:
       - TZ=${TZ}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      # $$ verhindert Compose-Expansion; Variablen werden erst IM Container ausgewertet
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     networks:
       backend-nw:
         aliases:
           - postgresdb
-          
+
   renderer:
     # official image
     image: grafana/grafana-image-renderer:latest
@@ -109,9 +131,12 @@ services:
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION}
     depends_on:
-      - influxdb
-      - renderer
-      - postgres
+      influxdb:
+        condition: service_healthy
+      renderer:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     user: "0"
     volumes:
@@ -142,6 +167,12 @@ services:
       - TZ=${TZ}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q '\"database\": \"ok\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     networks:
       - app-nw
       - backend-nw

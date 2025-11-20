@@ -456,43 +456,6 @@ slots:
               type: math_number
     - component: BlockType
       config:
-        args0:
-          - name: METHOD
-            options:
-              - - disable
-                - "false"
-              - - enable
-                - "true"
-            type: field_dropdown
-          - name: THING_UID
-            type: input_value
-        colour: 0
-        helpUrl: ""
-        inputsInline: false
-        message0: set %1 for Thing %2
-        nextStatement: ""
-        previousStatement: ""
-        tooltip: Enable or disable a Thing by UID
-        type: Thing controller
-      slots:
-        code:
-          - component: BlockCodeTemplate
-            config:
-              template: >
-                var thingMgr =
-                osgi.getService('org.openhab.core.thing.ThingManager');
-                var ThingUID = 
-                Java.type('org.openhab.core.thing.ThingUID');
-                thingMgr.setEnabled(new ThingUID({{input:THING_UID}}),
-                {{field:METHOD}});
-        toolbox:
-          - component: PresetInput
-            config:
-              name: THING_UID
-              shadow: true
-              type: oh_thing
-    - component: BlockType
-      config:
         type: Shelly Walldisplay Thermostat Control
         inputsInline: false
         message0: >
@@ -641,7 +604,7 @@ slots:
                     try {
                       return time.toZDT(s).toLocalTime();
                     } catch (parseErr) {
-                      logger.warn('Walldisplay: Konnte Zeit nicht parsen: "' + s + '"');
+                      logger.warn('Thermostat-WD: Konnte Zeit nicht parsen: "' + s + '"');
                       return null;
                     }
                   }
@@ -689,10 +652,6 @@ slots:
                   var nightDecrease         = parseFloat(cfg.nightDecrease)    || 0;
                   var windowDecrease        = parseFloat(cfg.windowDecrease)   || 0;
 
-                  var loglevel              = cfg.loglevel || 'info';
-                  var log = logger[loglevel] || logger.info;
-                  log('Shelly Walldisplay - Loglevel set to: ' + loglevel);
-
                   // Zone-Name und Thermostat-Status aus Item holen
                   var zoneName = 'Shelly Walldisplay';
                   var thermostatState = null;
@@ -712,15 +671,19 @@ slots:
                     zoneName = String(zoneItemName || 'Shelly Walldisplay');
                   }
 
+                  var loglevel              = cfg.loglevel || 'info';
+                  var log = logger[loglevel] || logger.info;
+                  log('Thermostat-WD: '+ zoneName +' - Loglevel set to: ' + loglevel);
+
                   // Thermostat OFF -> alles überspringen
                   if (thermostatState && thermostatState !== 'ON') {
-                    log('Shelly Walldisplay ' + zoneName +
+                    log('Thermostat-WD: ' + zoneName +
                         ': Thermostat ist ' + thermostatState + ' – Regel wird übersprungen.');
                     return;
                   }
 
                   try {
-                    log('Starting ' + zoneName + ' Heizung (Shelly Walldisplay)');
+                    log('Thermostat-WD: Starting ' + zoneName + ' Heizung (Shelly Walldisplay)');
 
                     thread.sleep(500);
 
@@ -743,7 +706,7 @@ slots:
                       mqttActions.publishMQTT(String(mqttRpcTopic), payload);
                       thread.sleep(1000);
                     } else {
-                      log('Shelly Walldisplay: MQTT Actions für Broker ' + mqttBrokerUID + ' nicht verfügbar.');
+                      log('Thermostat-WD: MQTT Actions für Broker ' + mqttBrokerUID + ' nicht verfügbar.');
                     }
 
                     // ===== Flexible Eingaben normalisieren =====
@@ -756,9 +719,9 @@ slots:
                     var scheduleSwitch = items.getItem(String(scheduleSwitchItem));
                     var profile        = items.getItem(String(profileItem));
 
-                    log('Inputs normalized — presence=' + presenceState +
+                    log('Thermostat-WD: Inputs normalized — presence=' + presenceState +
                         ', booster=' + boosterState + ', sgMode=' + sgState);
-                    log('Shelly Walldisplay: Base setpoint=' + baseSetpoint
+                    log('Thermostat-WD: Base setpoint=' + baseSetpoint
                               + ' Absence Δ=' + absenceDecrease
                               + ' SG-Green Δ=' + sgGreenIncrease
                               + ' Night Δ=' + nightDecrease
@@ -771,9 +734,9 @@ slots:
                       try {
                         scheduleSwitch.sendCommand('ON');  // Zeitplan im Walldisplay aktiv
                         profile.sendCommand('2');         // Profil-ID 0 als Booster-Profil
-                        log('Shelly Walldisplay ' + zoneName + ': Booster ist ON – Profil 2 (Booster) wurde gesetzt.');
+                        log('Thermostat-WD: ' + zoneName + ': Booster ist ON – Profil 2 (Booster) wurde gesetzt.');
                       } catch (e) {
-                        log('Shelly Walldisplay ' + zoneName + ': Fehler beim Setzen des Booster-Profils 2: ' + e);
+                        log('Thermostat-WD: ' + zoneName + ': Fehler beim Setzen des Booster-Profils 2: ' + e);
                       }
                       return; // Rest (Fenster/Absence/Nacht/Normal) nicht mehr ausführen
                     }
@@ -800,11 +763,11 @@ slots:
                         scheduleSwitch.sendCommand('ON');
                         profile.sendCommand('0'); // Profil 0 bei Fenster offen
                       } catch (e) {
-                        log('Shelly Walldisplay ' + zoneName +
+                        log('Thermostat-WD: ' + zoneName +
                             ': Fehler beim Setzen von Profil 0 / Fenster-Temperatur: ' + e);
                       }
 
-                      log('Shelly Walldisplay ' + zoneName +
+                      log('Thermostat-WD: ' + zoneName +
                           ': Fenster ist OFFEN – Profil 0 & Fenster-Temperatur gesetzt, restliche Logik übersprungen.');
                       return;
                     }
@@ -817,14 +780,14 @@ slots:
                       absence_temperature = baseSetpoint - absenceDecrease;
                       setTemp(setpointEffectiveItem, absence_temperature);
                       setTemp(setpointAbsenceItem,   absence_temperature);
-                      log('Shelly Walldisplay: Abwesenheitsabsenkung aktiv, Profil 1');
+                      log('Thermostat-WD: Abwesenheitsabsenkung aktiv, Profil 1');
                     } else if (presenceState === 'OFF' && sgState === 'green') {
                       scheduleSwitch.sendCommand('ON');
                       profile.sendCommand('3');
                       sggreen_temperature = baseSetpoint + sgGreenIncrease;
                       setTemp(setpointEffectiveItem, sggreen_temperature);
                       setTemp(setpointSGGreenItem,   sggreen_temperature);
-                      log('Shelly Walldisplay: SG-Green bei Abwesenheit aktiv, Profil 3');
+                      log('Thermostat-WD: SG-Green bei Abwesenheit aktiv, Profil 3');
                     } else {
                       if (sgState === 'green') {
                         scheduleSwitch.sendCommand('ON');
@@ -832,7 +795,7 @@ slots:
                         sggreen_temperature = baseSetpoint + sgGreenIncrease;
                         setTemp(setpointEffectiveItem, sggreen_temperature);
                         setTemp(setpointSGGreenItem,   sggreen_temperature);
-                        log('Shelly Walldisplay: SG-Green aktiv, Profil 3');
+                        log('Thermostat-WD: SG-Green aktiv, Profil 3');
                       } else {
                         var nowLT        = time.ZonedDateTime.now().toLocalTime();
                         var nightStartLT = toLocalTimeFlexible(nightStartInput);
@@ -846,7 +809,7 @@ slots:
                             inNight = nowLT.isAfter(nightStartLT) || nowLT.isBefore(nightStopLT);
                           }
                         } else {
-                          log('Shelly Walldisplay: Nachtzeiten fehlen/ungültig – Nachtabsenkung deaktiviert.');
+                          log('Thermostat-WD: Nachtzeiten fehlen/ungültig – Nachtabsenkung deaktiviert.');
                         }
 
                         if (inNight) {
@@ -855,18 +818,18 @@ slots:
                           night_temperature = baseSetpoint - nightDecrease;
                           setTemp(setpointEffectiveItem, night_temperature);
                           setTemp(setpointNightItem,     night_temperature);
-                          log('Shelly Walldisplay: Nachtabsenkung aktiv, Profil 4');
+                          log('Thermostat-WD: Nachtabsenkung aktiv, Profil 4');
                         } else {
                           scheduleSwitch.sendCommand('OFF');
                           var normalSetpoint = items.getItem(String(setpointNormalItem)).state;
                           setTemp(setpointEffectiveItem, normalSetpoint);
-                          log('Shelly Walldisplay: Normalbetrieb aktiv, Zeitplan aus');
+                          log('Thermostat-WD: Normalbetrieb aktiv, Zeitplan aus');
                         }
                       }
                     }
 
                   } catch (err) {
-                    log('Shelly Walldisplay-Regel: Fehler: ' + err);
+                    log('Thermostat-WD-Regel: Fehler: ' + err);
                   }
                 }
 
@@ -1026,6 +989,43 @@ slots:
               name: WINDOWCONTACT
               shadow: true
               type: oh_item              
+    - component: BlockType
+      config:
+        args0:
+          - name: METHOD
+            options:
+              - - disable
+                - "false"
+              - - enable
+                - "true"
+            type: field_dropdown
+          - name: THING_UID
+            type: input_value
+        colour: 0
+        helpUrl: ""
+        inputsInline: false
+        message0: set %1 for Thing %2
+        nextStatement: ""
+        previousStatement: ""
+        tooltip: Enable or disable a Thing by UID
+        type: Thing controller
+      slots:
+        code:
+          - component: BlockCodeTemplate
+            config:
+              template: >
+                var thingMgr =
+                osgi.getService('org.openhab.core.thing.ThingManager');
+                var ThingUID = 
+                Java.type('org.openhab.core.thing.ThingUID');
+                thingMgr.setEnabled(new ThingUID({{input:THING_UID}}),
+                {{field:METHOD}});
+        toolbox:
+          - component: PresetInput
+            config:
+              name: THING_UID
+              shadow: true
+              type: oh_thing
   utilities:
     - component: UtilityJavaType
       config:

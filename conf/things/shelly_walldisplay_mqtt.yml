@@ -1,5 +1,5 @@
 UID: mqtt:topic:09000f9f:1479c8706b
-label: Walldisplay Flur Keller MQTT
+label: Walldisplay Badezimmer MQTT
 thingTypeUID: mqtt:topic
 configuration:
   payloadNotAvailable: "false"

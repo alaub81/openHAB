@@ -1,0 +1,204 @@
+uid: thermostat_wd_list_widget
+tags:
+  - heating
+  - temperature
+  - thermostat
+props:
+  parameters:
+    - description: The label for the widget (text)
+      label: Title
+      name: title
+      required: false
+      type: TEXT
+    - context: item
+      description: Setpoint Temperature item (Number:Temperature)
+      label: Setpoint Temperature (Number:Temperature)
+      name: item
+      required: true
+      type: TEXT
+    - context: item
+      description: Current Temperature item (Number:Temperature)
+      label: Current temperature (Number:Temperature)
+      name: isttemp
+      required: false
+      type: TEXT
+    - context: item
+      description: Current Humidity item (Number:Humidity)
+      label: Current humidity (Number:Humidity)
+      name: isthumidity
+      required: false
+      type: TEXT
+    - context: item
+      description: Thermostat item (Switch)
+      label: Thermostat (Switch)
+      name: istthermostat
+      required: false
+      type: TEXT
+    - context: item
+      description: Heatingvalve item (Switch)
+      label: Heatingvalve (Switch)
+      name: istvalve
+      required: false
+      type: TEXT
+    - context: item
+      description: Setback start (DateTime)
+      label: Absenk-Beginn (DateTime)
+      name: setbackStart
+      required: false
+      type: TEXT
+    - context: item
+      description: Setback end (DateTime)
+      label: Absenk-Ende (DateTime)
+      name: setbackEnd
+      required: false
+      type: TEXT
+    - context: item
+      description: Booster Item (Switch)
+      label: Booster (Switch)
+      name: booster
+      required: false
+      type: TEXT
+    - context: item
+      description: Setpoint Effectiv Item (Number:Temperature)
+      label: Setpoint Effective (Number:Temperature)
+      name: setpointEffective
+      required: false
+      type: TEXT
+    - default: iconify:mdi:heated-floor
+      description: Icon
+      label: List Icon
+      name: seticon
+      required: false
+      type: TEXT
+    - default: "18"
+      description: Min Value
+      label: Min
+      name: min
+      required: false
+      type: DECIMAL
+    - default: "30"
+      description: Min Value
+      label: Max
+      name: max
+      required: false
+      type: DECIMAL
+    - default: "0.1"
+      description: Min Value
+      label: Step
+      name: step
+      required: false
+      type: DECIMAL
+  parameterGroups: []
+timestamp: Nov 13, 2025, 7:29:40 PM
+component: oh-stepper-item
+config:
+  color: "=(props.booster && items[props.booster] && items[props.booster].state
+    === 'ON') ? 'deeporange' : (items[props.istvalve].state == 'ON') ? 'yellow'
+    : items[props.istthermostat].state === 'ON' ? 'green' :
+    items[props.istthermostat].state === 'OFF' ? 'lightblue' : 'gray'"
+  fill: true
+  icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
+  iconColor: "=(props.booster && items[props.booster] &&
+    items[props.booster].state === 'ON') ? 'yellow' : ((items[props.istvalve] &&
+    items[props.istvalve].state === 'ON') ? 'green' : (items[props.istvalve] &&
+    items[props.istvalve].state === 'OFF') ? 'red' : 'gray')"
+  item: =props.item
+  max: =Number(props.max || 30)
+  min: =Number(props.min || 18)
+  round: true
+  small: false
+  step: =Number(props.step || 0.1)
+  style:
+    --f7-list-item-subtitle-font-size: 14px
+    --f7-list-item-title-font-size: 15px
+    --f7-list-item-title-line-height: 1.2
+    --f7-list-item-title-white-space: normal
+  subtitle: >-
+    = (
+      (
+        items[props.setbackStart] && items[props.setbackEnd] &&
+        dayjs(items[props.setbackStart].state).isValid() &&
+        dayjs(items[props.setbackEnd].state).isValid()
+      )
+      ?
+        (
+          (
+            (
+              (dayjs().hour()*60 + dayjs().minute())
+              - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
+              + 1440
+            ) % 1440
+          )
+          <
+          (
+            (
+              (dayjs(items[props.setbackEnd].state).hour()*60 + dayjs(items[props.setbackEnd].state).minute())
+              - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
+              + 1440
+            ) % 1440
+          )
+          ? '☾︎' : '☀︎'
+        )
+      : ''
+    ) + ' '
+
+    + ((props.booster && items[props.booster] && items[props.booster].state ===
+    'ON')
+      ? '▲' :
+      (Number.parseFloat(items[props.item].state))>
+      (Number.parseFloat(items[props.setpointEffective].state)) ? '△' : 
+      (Number.parseFloat(items[props.item].state))<
+      (Number.parseFloat(items[props.setpointEffective].state)) ? '▽' :
+      (items[props.istthermostat].state) === 'ON' ? '◉' :
+      (items[props.istthermostat].state) === 'OFF' ? '○' : 
+      '')
+    + ' '
+
+    + (props.setpointEffective && items[props.setpointEffective] 
+      && items[props.item]
+      && (Number.parseFloat(items[props.item].state))-
+      (Number.parseFloat(items[props.setpointEffective].state)) > 0 ? '+' :
+      '')
+
+    + (props.setpointEffective && items[props.item] && items[props.setpoint]
+      && (Number.parseFloat(items[props.item].state))-
+      (Number.parseFloat(items[props.setpointEffective].state)) != 0 
+      ? ((Number.parseFloat(items[props.item].state))-
+      (Number.parseFloat(items[props.setpointEffective].state))).toFixed(1) :
+      '')
+
+    + (props.setpointEffective &&
+      (Number.parseFloat(items[props.setpointEffective].state))!=
+      (Number.parseFloat(items[props.item].state)) ?
+      (' (' + (items[props.setpointEffective] ?
+      items[props.setpointEffective].state : '-') + ')') :
+      '')
+
+    + (props.isttemp || props.isthumidity ? ' • aktuell: ' : '')
+
+    + (props.isttemp ? (items[props.isttemp] ?
+      items[props.isttemp].state : '-') :
+      '')
+
+    + (props.isthumidity ? (' (' + (items[props.isthumidity] ?
+      items[props.isthumidity].state : '-') + ')') :
+      '')
+  title: "=props.title ? props.title : props.item"
+slots:
+  after:
+    - component: oh-icon
+      config:
+        action: analyzer
+        actionAnalyzerCoordSystem: time
+        actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
+          (props.isttemp           ? (',' + props.isttemp)           : '') +
+          (props.setpointEffective ? (',' + props.setpointEffective) : '') +
+          (props.istvalve          ? (',' + props.istvalve)          : '')"
+        icon: f7:chart_bar_alt_fill
+        style:
+          color: var(--f7-text-color)
+          cursor: pointer
+          font-size: 18px
+          margin-right: 6px
+        title: Verlauf anzeigen
+        visible: =!!props.item

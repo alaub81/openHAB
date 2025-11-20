@@ -132,10 +132,10 @@ channels:
         "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config":
         {"rule_id": 1759776096557,"target_C": %f}}}'
       max: 30
-  - id: thermostat#normal_temperature
+  - id: thermostat#windowopen_temperature
     channelTypeUID: mqtt:number
-    label: Normal Temperatur
-    description: Normal Temperatur in °C
+    label: Fenster offen Temperatur
+    description: Fenster offen Temperatur in °C
     configuration:
       commandTopic: shelly/shelly-wd-bz/rpc
       unit: °C

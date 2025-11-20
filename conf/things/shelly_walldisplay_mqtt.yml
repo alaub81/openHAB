@@ -1,0 +1,191 @@
+UID: mqtt:topic:09000f9f:1479c8706b
+label: Walldisplay Flur Keller MQTT
+thingTypeUID: mqtt:topic
+configuration:
+  payloadNotAvailable: "false"
+  availabilityTopic: shelly/shelly-wd-bz/online
+  payloadAvailable: "true"
+bridgeUID: mqtt:broker:09000f9f
+location: Shelly MQTT
+channels:
+  - id: relay#output
+    channelTypeUID: mqtt:switch
+    label: Betrieb
+    description: Betrieb (on/off)
+    configuration:
+      stateTopic: shelly/shelly-wd-bz/status/switch:0
+      transformationPattern:
+        - JSONPATH:$.output
+      off: "false"
+      on: "true"
+  - id: thermostat#switch
+    channelTypeUID: mqtt:switch
+    label: Thermostat Betrieb
+    description: Thermostat Betrieb (on/off)
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      formatBeforePublish: '{"id":1,"src":"shelly/shelly-wd-bz/oh","method":"Thermostat.SetConfig","params":{"id":0,"config":{"enable":%s}}}'
+      stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+      transformationPattern:
+        - JSONPATH:$.enable
+      off: "false"
+      on: "true"
+  - id: thermostat#setpoint
+    channelTypeUID: mqtt:number
+    label: Solltemperatur
+    description: Solltemperatur in °C
+    configuration:
+      unit: °C
+      min: 18
+      formatBeforePublish: '{"id": 1,"src": "shelly/shelly-wd-bz/oh","method":
+        "Thermostat.SetConfig","params": {"id": 0,"config": {"target_C": %f}}}'
+      max: 30
+      commandTopic: shelly/shelly-wd-bz/rpc
+      step: 0.1
+      stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+      transformationPattern:
+        - JSONPATH:$.target_C
+  - id: thermostat#hysterese
+    channelTypeUID: mqtt:number
+    label: Hysterese
+    description: Solltemperatur in °C
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      unit: °C
+      step: 0.1
+      min: 0
+      formatBeforePublish: '{"id": 1,"src": "shelly/shelly-wd-bz/oh","method":
+        "Thermostat.SetConfig","params": {"id": 0,"config": {"hysteresis":
+        %f}}}'
+      max: 2
+  - id: thermostat#schedule
+    channelTypeUID: mqtt:switch
+    label: Zeitplan
+    description: Zeitplan (on/off)
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      formatBeforePublish: '{"id":1,"src":"shelly/shelly-wd-bz/oh","method":"Thermostat.Schedule.SetConfig","params":{"id":0,"config":{"enable":%s}}}'
+      stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+      transformationPattern:
+        - JSONPATH:$.schedules.enable
+      off: "false"
+      on: "true"
+  - id: thermostat#scheduleprofile
+    channelTypeUID: mqtt:number
+    label: Zeitplan Profil
+    description: Zeitplan Profil
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      formatBeforePublish: '{"id":1,"src":"shelly/shelly-wd-bz/oh","method":"Thermostat.Schedule.SetConfig","params":{"id":0,"config":{"profile_id":%.0f}}}'
+      stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+      transformationPattern:
+        - JSONPATH:$.schedules.profile_id
+  - id: thermostat#night_temperature
+    channelTypeUID: mqtt:number
+    label: Nacht Temperatur
+    description: Nachttemperatur in °C
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      unit: °C
+      step: 0.5
+      min: 18
+      formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+        "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config":
+        {"rule_id": 1759776161044,"target_C": %f}}}'
+      max: 30
+  - id: thermostat#booster_temperature
+    channelTypeUID: mqtt:number
+    label: Booster Temperatur
+    description: Booster Temperatur in °C
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      unit: °C
+      step: 0.5
+      min: 18
+      formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+        "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config":
+        {"rule_id": 1759776123067,"target_C": %f}}}'
+      max: 30
+  - id: thermostat#sggreen_temperature
+    channelTypeUID: mqtt:number
+    label: SG Green Temperatur
+    description: SG-Green Temperatur in °C
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      unit: °C
+      step: 0.5
+      min: 18
+      formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+        "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config":
+        {"rule_id": 1763576825406,"target_C": %f}}}'
+      max: 30
+  - id: thermostat#absence_temperature
+    channelTypeUID: mqtt:number
+    label: Abwesenheit Temperatur
+    description: Abwesenheit Temperatur in °C
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      unit: °C
+      step: 0.5
+      min: 18
+      formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+        "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config":
+        {"rule_id": 1759776096557,"target_C": %f}}}'
+      max: 30
+  - id: thermostat#normal_temperature
+    channelTypeUID: mqtt:number
+    label: Normal Temperatur
+    description: Normal Temperatur in °C
+    configuration:
+      commandTopic: shelly/shelly-wd-bz/rpc
+      unit: °C
+      step: 0.5
+      min: 18
+      formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+        "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config":
+        {"rule_id": 1763576806251,"target_C": %f}}}'
+      max: 30
+  - id: thermostat#basistemp
+    channelTypeUID: mqtt:number
+    label: Basis-Solltemperatur
+    description: Manuelle Temperatur ohne Profil
+    configuration:
+      stateTopic: shelly/shelly-wd-bz/oh/rpc
+      transformationPattern:
+        - JSONPATH:$.result.target_C
+  - id: sensor#temperature
+    channelTypeUID: mqtt:number
+    label: Temperatur
+    description: Temperatur in °C
+    configuration:
+      stateTopic: shelly/shelly-wd-bz/status/temperature:0
+      transformationPattern:
+        - JSONPATH:$.tC
+      unit: °C
+  - id: sensor#humidity
+    channelTypeUID: mqtt:number
+    label: Luftfeuchtigkeit
+    description: Luftfeuchtigkeit in %
+    configuration:
+      stateTopic: shelly/shelly-wd-bz/status/humidity:0
+      transformationPattern:
+        - JSONPATH:$.rh
+      unit: "%"
+  - id: sensor#illuminance
+    channelTypeUID: mqtt:number
+    label: Beleuchtungsstärke
+    description: Beleuchtungsstärke in Lux
+    configuration:
+      stateTopic: shelly/shelly-wd-bz/status/illuminance:0
+      transformationPattern:
+        - JSONPATH:$.lux
+      unit: lx
+  - id: sensor#battery
+    channelTypeUID: mqtt:number
+    label: Batterieladung
+    description: Batterieladung in %
+    configuration:
+      stateTopic: shelly/shelly-wd-bz/status/devicepower:1
+      transformationPattern:
+        - JSONPATH:$.battery.percent
+      unit: "%"

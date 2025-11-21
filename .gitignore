@@ -1,3 +1,7 @@
 block_libraries/walldisplay_ohne_timer.yml
 conf/things/test
 conf/items/thermostat_flur_kg.items
+conf/items/thermostat_badezimmer.items
+conf/items/thermostat_esszimmer.items
+.gitignore
+conf/items/thermostat_gastezimmer.items

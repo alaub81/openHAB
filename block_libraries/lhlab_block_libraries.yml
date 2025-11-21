@@ -140,13 +140,43 @@ slots:
                   return defaultValue ?? 'orange';
                 }
 
-                function isWindowOpen(name) {
-                  if (!name) return false;
+                function isWindowOpen(value) {
+                  if (value == null) return false;
+                  var txt = String(value).trim();
+                  if (!txt) return false;
+
+                  // 1. Versuch: txt ist ein Item (z.B. Group oder einzelner Kontakt)
                   try {
-                    const st = String(items.getItem(String(name).trim()).state);
-                    return st === 'OPEN';
+                    var item = items.getItem(txt);
+
+                    // Wenn es eine Group mit Membern ist → alle Member prüfen
+                    if (item.members && item.members.length !== undefined) {
+                      for (var i = 0; i < item.members.length; i++) {
+                        var m = item.members[i];
+                        if (String(m.state) === 'OPEN') {
+                          return true;
+                        }
+                      }
+                      return false;
+                    }
+
+                    // Kein GroupItem oder keine Member → direkten State prüfen
+                    return String(item.state) === 'OPEN';
                   } catch (e) {
-                    return false; // Name leer/kein Item -> ignorieren
+                    // 2. Versuch: txt ist eine Liste von Itemnamen, z.B. "Fenster1,Fenster2;Fenster3"
+                    var names = txt.split(/[;,]/);
+                    for (var j = 0; j < names.length; j++) {
+                      var n = names[j].trim();
+                      if (!n) continue;
+                      try {
+                        if (String(items.getItem(n).state) === 'OPEN') {
+                          return true;
+                        }
+                      } catch (e2) {
+                        // unbekanntes Item -> ignorieren
+                      }
+                    }
+                    return false;
                   }
                 }
 
@@ -620,6 +650,47 @@ slots:
                   }
                 }
 
+                function isAnyWindowOpen(value) {
+                  if (value == null) return false;
+                  var txt = String(value).trim();
+                  if (!txt) return false;
+
+                  // 1. Versuch: txt ist ein Item (z.B. Group)
+                  try {
+                    var item = items.getItem(txt);
+
+                    // Wenn es eine Group mit Mitgliedern ist: checke alle Member
+                    if (item.members && item.members.length > 0) {
+                      for (var i = 0; i < item.members.length; i++) {
+                        var m = item.members[i];
+                        if (String(m.state) === 'OPEN') {
+                          return true;
+                        }
+                      }
+                      // Wenn kein Member OPEN ist, gilt: zu
+                      return false;
+                    }
+
+                    // Kein GroupItem oder keine Members: nimm den State direkt
+                    return String(item.state) === 'OPEN';
+                  } catch (e) {
+                    // 2. Versuch: txt ist eine Liste von Item-Namen, z.B. "Fenster1,Fenster2;Fenster3"
+                    var names = txt.split(/[;,]/);
+                    for (var j = 0; j < names.length; j++) {
+                      var n = names[j].trim();
+                      if (!n) continue;
+                      try {
+                        if (String(items.getItem(n).state) === 'OPEN') {
+                          return true;
+                        }
+                      } catch (e2) {
+                        // unbekanntes Item -> ignorieren
+                      }
+                    }
+                    return false;
+                  }
+                }
+
                 /* ===== Hauptlogik ===== */
 
                 function controlShellyWalldisplay(cfg) {
@@ -743,15 +814,7 @@ slots:
 
                     // ===== Fensterlogik ohne Timer: offen -> Profil 0, zu -> normal weiter =====
 
-                    var openNow = false;
-                    try {
-                      if (windowContactItem) {
-                        var stWin = String(items.getItem(String(windowContactItem).trim()).state);
-                        openNow = (stWin === 'OPEN');
-                      }
-                    } catch (e) {
-                      openNow = false;
-                    }
+                    var openNow = isAnyWindowOpen(windowContactItem);
 
                     if (openNow) {
                       try {
@@ -763,12 +826,12 @@ slots:
                         scheduleSwitch.sendCommand('ON');
                         profile.sendCommand('0'); // Profil 0 bei Fenster offen
                       } catch (e) {
-                        log('Thermostat-WD: ' + zoneName +
+                        log('Shelly Walldisplay ' + zoneName +
                             ': Fehler beim Setzen von Profil 0 / Fenster-Temperatur: ' + e);
                       }
 
-                      log('Thermostat-WD: ' + zoneName +
-                          ': Fenster ist OFFEN – Profil 0 & Fenster-Temperatur gesetzt, restliche Logik übersprungen.');
+                      log('Shelly Walldisplay ' + zoneName +
+                          ': Mindestens EIN Fenster ist OFFEN – Profil 0 & Fenster-Temperatur gesetzt, restliche Logik übersprungen.');
                       return;
                     }
 

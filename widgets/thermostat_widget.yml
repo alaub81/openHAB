@@ -148,7 +148,7 @@ config:
       (Number.parseFloat(items[props.setpointEffective].state))<
       (Number.parseFloat(items[props.item].state)) ? '▽' :
       (items[props.istthermostat].state) === 'ON' ? '◉' :
-      (items[props.istthermostat].state) === 'OFF' ? '○' : 
+      (items[props.istthermostat].state) === 'OFF' ? '○' :
       '')
     + ' '
 

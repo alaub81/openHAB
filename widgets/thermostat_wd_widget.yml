@@ -186,19 +186,40 @@ config:
   title: "=props.title ? props.title : props.item"
 slots:
   after:
-    - component: oh-icon
+    - component: f7-row
       config:
-        action: analyzer
-        actionAnalyzerCoordSystem: time
-        actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
-          (props.isttemp           ? (',' + props.isttemp)           : '') +
-          (props.setpointEffective ? (',' + props.setpointEffective) : '') +
-          (props.istvalve          ? (',' + props.istvalve)          : '')"
-        icon: f7:chart_bar_alt_fill
+        class:
+          - display-flex
+          - align-items-center
+          - justify-content-flex-end
         style:
-          color: var(--f7-text-color)
-          cursor: pointer
-          font-size: 18px
-          margin-right: 6px
-        title: Verlauf anzeigen
-        visible: =!!props.item
+          height: 100%
+          margin: 0
+          padding: 0
+          gap: 6px
+      slots:
+        default:
+          - component: oh-icon
+            config:
+              action: analyzer
+              actionAnalyzerCoordSystem: time
+              actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
+                (props.isttemp           ? (',' + props.isttemp)           : '') +
+                (props.setpointEffective ? (',' + props.setpointEffective) : '') +
+                (props.istvalve          ? (',' + props.istvalve)          : '')"
+              icon: f7:chart_bar_alt_fill
+              style:
+                color: var(--f7-text-color)
+                align-self: center
+                line-height: 1
+                font-size: 18px
+                margin-right: 6px
+          - component: oh-stepper
+            config:
+              item: =props.item
+              min: =Number(props.min || 18)
+              max: =Number(props.max || 30)
+              step: =Number(props.step || 0.1)
+              round: true
+              fill: true
+              small: false

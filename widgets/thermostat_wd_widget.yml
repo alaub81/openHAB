@@ -90,7 +90,7 @@ props:
       type: DECIMAL
   parameterGroups: []
 timestamp: Nov 13, 2025, 7:29:40 PM
-component: oh-stepper-item
+component: oh-list-item
 config:
   color: "=(props.booster && items[props.booster] && items[props.booster].state
     === 'ON') ? 'deeporange' : (items[props.istvalve].state == 'ON') ? 'yellow'

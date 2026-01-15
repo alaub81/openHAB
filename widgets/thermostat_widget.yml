@@ -90,7 +90,7 @@ props:
       default: "0.1"
   parameterGroups: []
 timestamp: Nov 1, 2025, 08:31:23 PM
-component: oh-stepper-item
+component: oh-list-item
 config:
   item: =props.item
   fill: true

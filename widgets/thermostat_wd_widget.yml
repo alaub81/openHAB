@@ -64,55 +64,52 @@ props:
       name: setpointEffective
       required: false
       type: TEXT
-    - default: iconify:mdi:heated-floor
-      description: Icon
+    - description: Icon
       label: List Icon
       name: seticon
       required: false
       type: TEXT
-    - default: "18"
-      description: Min Value
+      default: iconify:mdi:heated-floor
+    - description: Min Value
       label: Min
       name: min
       required: false
       type: DECIMAL
-    - default: "30"
-      description: Min Value
+      default: "18"
+    - description: Min Value
       label: Max
       name: max
       required: false
       type: DECIMAL
-    - default: "0.1"
-      description: Min Value
+      default: "30"
+    - description: Min Value
       label: Step
       name: step
       required: false
       type: DECIMAL
+      default: "0.1"
   parameterGroups: []
-timestamp: Nov 13, 2025, 7:29:40 PM
-component: oh-list-item
+timestamp: Feb 17, 2026, 2:35:00 PM
+component: oh-stepper-item
 config:
-  color: "=(props.booster && items[props.booster] && items[props.booster].state
-    === 'ON') ? 'deeporange' : (items[props.istvalve].state == 'ON') ? 'yellow'
-    : items[props.istthermostat].state === 'ON' ? 'green' :
-    items[props.istthermostat].state === 'OFF' ? 'lightblue' : 'gray'"
+  item: =props.item
   fill: true
+  round: true
+  small: false
+  style:
+    --f7-list-item-title-white-space: normal
+    --f7-list-item-title-font-size: 15px
+    --f7-list-item-title-line-height: 1.2
+    --f7-list-item-subtitle-font-size: 14px
   icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
   iconColor: "=(props.booster && items[props.booster] &&
     items[props.booster].state === 'ON') ? 'yellow' : ((items[props.istvalve] &&
     items[props.istvalve].state === 'ON') ? 'green' : (items[props.istvalve] &&
     items[props.istvalve].state === 'OFF') ? 'red' : 'gray')"
-  item: =props.item
-  max: =Number(props.max || 30)
-  min: =Number(props.min || 18)
-  round: true
-  small: false
-  step: =Number(props.step || 0.1)
-  style:
-    --f7-list-item-subtitle-font-size: 14px
-    --f7-list-item-title-font-size: 15px
-    --f7-list-item-title-line-height: 1.2
-    --f7-list-item-title-white-space: normal
+  min: "=Number(props.min || 18)"
+  max: "=Number(props.max || 30)"
+  step: "=Number(props.step || 0.1)"
+  title: "=props.title ? props.title : props.item"
   subtitle: >-
     = (
       (
@@ -183,43 +180,32 @@ config:
     + (props.isthumidity ? (' (' + (items[props.isthumidity] ?
       items[props.isthumidity].state : '-') + ')') :
       '')
-  title: "=props.title ? props.title : props.item"
+  color: "=(props.booster && items[props.booster] &&
+    items[props.booster].state === 'ON') ?
+    'deeporange' : 
+    (items[props.istvalve].state == 'ON') ?
+    'yellow'
+    : items[props.istthermostat].state === 'ON' ?
+    'green' :
+    items[props.istthermostat].state === 'OFF' ?
+    'lightblue' :
+    'gray'"
+
 slots:
   after:
-    - component: f7-row
+    - component: oh-icon
       config:
-        class:
-          - display-flex
-          - align-items-center
-          - justify-content-flex-end
+        icon: f7:chart_bar_alt_fill
+        title: Verlauf anzeigen
+        action: analyzer
+        actionAnalyzerCoordSystem: time
+        actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
+          (props.isttemp           ? (',' + props.isttemp)           : '') +
+          (props.setpointEffective ? (',' + props.setpointEffective) : '') +
+          (props.istvalve          ? (',' + props.istvalve)          : '')"
         style:
-          height: 100%
-          margin: 0
-          padding: 0
-          gap: 0px
-      slots:
-        default:
-          - component: oh-icon
-            config:
-              action: analyzer
-              actionAnalyzerCoordSystem: time
-              actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
-                (props.isttemp           ? (',' + props.isttemp)           : '') +
-                (props.setpointEffective ? (',' + props.setpointEffective) : '') +
-                (props.istvalve          ? (',' + props.istvalve)          : '')"
-              icon: f7:chart_bar_alt_fill
-              style:
-                color: var(--f7-text-color)
-                align-self: center
-                line-height: 1
-                font-size: 18px
-                margin-right: 6px
-          - component: oh-stepper
-            config:
-              item: =props.item
-              min: =Number(props.min || 18)
-              max: =Number(props.max || 30)
-              step: =Number(props.step || 0.1)
-              round: true
-              fill: true
-              small: false
+          color: var(--f7-text-color)
+          font-size: 18px
+          cursor: pointer
+          margin-right: 6px
+        visible: =!!props.item

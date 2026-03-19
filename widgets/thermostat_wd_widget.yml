@@ -193,19 +193,38 @@ config:
 
 slots:
   after:
-    - component: oh-icon
+    - component: f7-block
       config:
-        icon: f7:chart_bar_alt_fill
-        title: Verlauf anzeigen
-        action: analyzer
-        actionAnalyzerCoordSystem: time
-        actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
-          (props.isttemp           ? (',' + props.isttemp)           : '') +
-          (props.setpointEffective ? (',' + props.setpointEffective) : '') +
-          (props.istvalve          ? (',' + props.istvalve)          : '')"
         style:
-          color: var(--f7-text-color)
-          font-size: 18px
-          cursor: pointer
-          margin-right: 6px
-        visible: =!!props.item
+          display: inline-flex
+          flex-direction: row
+          align-items: center
+          gap: 0px
+          padding: 0
+          margin: 0
+          margin-right: 0px
+      slots:
+        default:
+          - component: oh-icon
+            config:
+              icon: f7:chart_bar_alt_fill
+              title: Verlauf anzeigen
+              action: analyzer
+              actionAnalyzerCoordSystem: time
+              actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
+                (props.isttemp           ? (',' + props.isttemp)           : '') +
+                (props.setpointEffective ? (',' + props.setpointEffective) : '') +
+                (props.istvalve          ? (',' + props.istvalve)          : '')"
+              style:
+                color: var(--f7-text-color)
+                font-size: 18px
+                cursor: pointer
+              visible: =!!props.item
+          - component: oh-toggle
+            config:
+              item: =props.istthermostat
+              color: green
+              visible: =!!props.istthermostat
+              style:
+                transform: scale(0.6)
+                transform-origin: center

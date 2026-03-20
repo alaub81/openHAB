@@ -103,6 +103,7 @@ config:
     --f7-list-item-subtitle-font-size: 14px
   icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
   iconColor: "=(props.booster && items[props.booster] &&
+    items[props.istvalve].state === 'ON' &&
     items[props.booster].state === 'ON') ? 'yellow' : ((items[props.istvalve] &&
     items[props.istvalve].state === 'ON') ? 'green' : (items[props.istvalve] &&
     items[props.istvalve].state === 'OFF') ? 'red' : 'gray')"
@@ -111,7 +112,8 @@ config:
   step: "=Number(props.step || 0.1)"
   title: "=props.title ? props.title : props.item"
   subtitle: >-
-    = (
+    =
+    (
       (
         items[props.setbackStart] && items[props.setbackEnd] &&
         dayjs(items[props.setbackStart].state).isValid() &&
@@ -181,7 +183,9 @@ config:
       items[props.isthumidity].state : '-') + ')') :
       '')
   color: "=(props.booster && items[props.booster] &&
-    items[props.booster].state === 'ON') ?
+    items[props.booster].state === 'ON' &&
+    items[props.istthermostat].state === 'ON' &&
+    items[props.istvalve].state == 'ON') ?
     'deeporange' : 
     (items[props.istvalve].state == 'ON') ?
     'yellow'

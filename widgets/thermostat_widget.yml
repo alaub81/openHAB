@@ -103,6 +103,7 @@ config:
     --f7-list-item-subtitle-font-size: 14px
   icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
   iconColor: "=(props.booster && items[props.booster] &&
+    items[props.istvalve].state === 'ON' &&
     items[props.booster].state === 'ON') ? 'yellow' : ((items[props.istvalve] &&
     items[props.istvalve].state === 'ON') ? 'green' : (items[props.istvalve] &&
     items[props.istvalve].state === 'OFF') ? 'red' : 'gray')"
@@ -141,8 +142,9 @@ config:
     )
     + ' '
 
-    + ((props.booster && items[props.booster] && items[props.booster].state === 'ON')
-      ? '▲' :
+    + ((props.booster && items[props.booster] && items[props.booster].state === 'ON' &&
+      items[props.istthermostat].state === 'ON' &&
+      items[props.istvalve].state === 'ON') ? '▲' :
       (Number.parseFloat(items[props.setpointEffective].state))>
       (Number.parseFloat(items[props.item].state)) ? '△' : 
       (Number.parseFloat(items[props.setpointEffective].state))<
@@ -182,7 +184,9 @@ config:
       items[props.isthumidity].state : '-') + ')') :
       '')
   color: "=(props.booster && items[props.booster] &&
-    items[props.booster].state === 'ON') ?
+    items[props.booster].state === 'ON' &&
+    items[props.istthermostat].state === 'ON' &&
+    items[props.istvalve].state == 'ON') ?
     'deeporange' : 
     (items[props.istvalve].state == 'ON') ?
     'yellow'

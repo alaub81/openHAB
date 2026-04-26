@@ -187,7 +187,8 @@ config:
     items[props.istthermostat].state === 'ON' &&
     items[props.istvalve].state == 'ON') ?
     'deeporange' : 
-    (items[props.istvalve].state == 'ON') ?
+    (items[props.istvalve].state == 'ON' &&
+    items[props.istthermostat].state === 'ON') ?
     'yellow'
     : items[props.istthermostat].state === 'ON' ?
     'green' :

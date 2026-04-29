@@ -1,0 +1,298 @@
+uid: thermostat_heat_cool_list_widget
+tags:
+  - heating
+  - cooling
+  - temperature
+  - thermostat
+props:
+  parameters:
+    - description: The label for the widget (text)
+      label: Title
+      name: title
+      required: false
+      type: TEXT
+    - context: item
+      description: Setpoint Temperature item (Number:Temperature)
+      label: Setpoint Temperature (Number:Temperature)
+      name: item
+      required: true
+      type: TEXT
+    - context: item
+      description: Current Temperature item (Number:Temperature)
+      label: Current temperature (Number:Temperature)
+      name: isttemp
+      required: false
+      type: TEXT
+    - context: item
+      description: Current Humidity item (Number:Humidity)
+      label: Current humidity (Number:Humidity)
+      name: isthumidity
+      required: false
+      type: TEXT
+    - context: item
+      description: Thermostat Mode item (String)
+      label: Thermostat Mode (String)
+      name: istthermostat
+      required: false
+      type: TEXT
+    - context: item
+      description: Heatingvalve item (Switch)
+      label: Heatingvalve (Switch)
+      name: istvalve
+      required: false
+      type: TEXT
+    - context: item
+      description: Setback start (DateTime)
+      label: Absenk-Beginn (DateTime)
+      name: setbackStart
+      required: false
+      type: TEXT
+    - context: item
+      description: Setback end (DateTime)
+      label: Absenk-Ende (DateTime)
+      name: setbackEnd
+      required: false
+      type: TEXT
+    - context: item
+      description: Booster Item (Switch)
+      label: Booster (Switch)
+      name: booster
+      required: false
+      type: TEXT
+    - context: item
+      description: Setpoint Effectiv Item (Number:Temperature)
+      label: Setpoint Effective (Number:Temperature)
+      name: setpointEffective
+      required: false
+      type: TEXT
+    - description: Icon
+      label: List Icon
+      name: seticon
+      required: false
+      type: TEXT
+      default: iconify:mdi:heated-floor
+    - description: Min Value
+      label: Min
+      name: min
+      required: false
+      type: DECIMAL
+      default: "18"
+    - description: Min Value
+      label: Max
+      name: max
+      required: false
+      type: DECIMAL
+      default: "30"
+    - description: Min Value
+      label: Step
+      name: step
+      required: false
+      type: DECIMAL
+      default: "0.1"
+  parameterGroups: []
+timestamp: Feb 17, 2026, 2:35:00 PM
+component: oh-stepper-item
+config:
+  item: =props.item
+  fill: true
+  round: true
+  small: false
+  style:
+    --f7-list-item-title-white-space: normal
+    --f7-list-item-title-font-size: 15px
+    --f7-list-item-title-line-height: 1.2
+    --f7-list-item-subtitle-font-size: 14px
+  icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
+  iconColor: "=(props.booster && items[props.booster] &&
+    items[props.istvalve].state === 'ON' &&
+    items[props.booster].state === 'ON') ? 'yellow' : ((items[props.istvalve] &&
+    items[props.istvalve].state === 'ON') ? 'green' : (items[props.istvalve] &&
+    items[props.istvalve].state === 'OFF') ? 'red' : 'gray')"
+  min: "=Number(props.min || 18)"
+  max: "=Number(props.max || 30)"
+  step: "=Number(props.step || 0.1)"
+  title: "=props.title ? props.title : props.item"
+  subtitle: >-
+    =
+    (
+      (
+        items[props.setbackStart] && items[props.setbackEnd] &&
+        dayjs(items[props.setbackStart].state).isValid() &&
+        dayjs(items[props.setbackEnd].state).isValid()
+      )
+      ?
+        (
+          (
+            (
+              (dayjs().hour()*60 + dayjs().minute())
+              - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
+              + 1440
+            ) % 1440
+          )
+          <
+          (
+            (
+              (dayjs(items[props.setbackEnd].state).hour()*60 + dayjs(items[props.setbackEnd].state).minute())
+              - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
+              + 1440
+            ) % 1440
+          )
+          ? '☾︎' : '☀︎'
+        )
+      : ''
+    )
+    + ' '
+
+    + ((props.booster && items[props.booster] && items[props.booster].state === 'ON' &&
+      items[props.istthermostat].state === 'HEAT' &&
+      items[props.istvalve].state === 'ON') ? '▲' :
+      (Number.parseFloat(items[props.setpointEffective].state))>
+      (Number.parseFloat(items[props.item].state)) ? '△' : 
+      (Number.parseFloat(items[props.setpointEffective].state))<
+      (Number.parseFloat(items[props.item].state)) ? '▽' :
+      (items[props.istthermostat].state) === 'HEAT' ? '◉' :
+      (items[props.istthermostat].state) === 'COOL' ? '◉' :
+      (items[props.istthermostat].state) === 'OFF' ? '○' :
+      '')
+    + ' '
+
+    + (props.setpointEffective && items[props.setpointEffective] 
+      && items[props.item]
+      && (Number.parseFloat(items[props.setpointEffective].state))-
+      (Number.parseFloat(items[props.item].state)) > 0 ? '+' :
+      '')
+
+    + (props.setpointEffective && items[props.setpointEffective] && items[props.item]
+      && (Number.parseFloat(items[props.setpointEffective].state))-
+      (Number.parseFloat(items[props.item].state)) != 0 
+      ? ((Number.parseFloat(items[props.setpointEffective].state))-
+      (Number.parseFloat(items[props.item].state))).toFixed(1) :
+      '')
+
+    + (props.setpointEffective &&
+      (Number.parseFloat(items[props.setpointEffective].state))!=
+      (Number.parseFloat(items[props.item].state)) ?
+      (' (' + (items[props.setpointEffective] ?
+      items[props.setpointEffective].state : '-') + ')') :
+      '')
+
+    + (props.isttemp || props.isthumidity ? ' • aktuell: ' : '')
+
+    + (props.isttemp ? (items[props.isttemp] ?
+      items[props.isttemp].state : '-') :
+      '')
+
+    + (props.isthumidity ? (' (' + (items[props.isthumidity] ?
+      items[props.isthumidity].state : '-') + ')') :
+      '')
+  color: "=(props.booster && items[props.booster] &&
+    items[props.booster].state === 'ON' &&
+    items[props.istthermostat].state === 'HEAT' &&
+    items[props.istvalve].state == 'ON') ?
+    'deeporange' :
+    (props.booster && items[props.booster] &&
+    items[props.booster].state === 'ON' &&
+    items[props.istthermostat].state === 'COOL' &&
+    items[props.istvalve].state == 'ON') ?
+    'blue' :
+    (items[props.istvalve].state == 'ON' &&
+    items[props.istthermostat].state === 'HEAT') ?
+    'yellow' :
+    (items[props.istvalve].state == 'ON' &&
+    items[props.istthermostat].state === 'COOL') ?
+    'lightblue' :
+    items[props.istthermostat].state === 'HEAT' ?
+    'green' :
+    items[props.istthermostat].state === 'COOL' ?
+    'green' :
+    items[props.istthermostat].state === 'OFF' ?
+    'red' :
+    'gray'"
+
+slots:
+  after:
+    - component: f7-segmented
+      config:
+        strong: true
+        style:
+          display: inline-flex
+          flex-direction: row
+          align-items: center
+          gap: 0px
+          padding: 0
+          margin: 0
+          min-width: 72px
+          width: 72px
+          height: 22px
+      slots:
+        default:
+          - component: oh-button
+            config:
+              small: true
+              action: command
+              actionItem: =props.istthermostat
+              actionCommand: "=items[props.istthermostat].state === 'HEAT' ? 'OFF' : 'HEAT'"
+              active: =items[props.istthermostat].state === 'HEAT'
+              color: orange
+              style:
+                width: 24px
+                min-width: 24px
+                height: 22px
+                padding: 0
+                margin: 0
+            slots:
+              default:
+                - component: oh-icon
+                  config:
+                    icon: iconify:mdi:fire
+                    width: 14
+                    height: 14
+                    color: "=items[props.istthermostat].state === 'HEAT' ? 'orange' : 'white'"
+
+          - component: oh-button
+            config:
+              small: true
+              action: command
+              actionItem: =props.istthermostat
+              actionCommand: "=items[props.istthermostat].state === 'COOL' ? 'OFF' : 'COOL'"
+              active: =items[props.istthermostat].state === 'COOL'
+              color: blue
+              style:
+                width: 24px
+                min-width: 24px
+                height: 22px
+                padding: 0
+                margin: 0
+            slots:
+              default:
+                - component: oh-icon
+                  config:
+                    icon: iconify:mdi:snowflake
+                    width: 14
+                    height: 14
+                    color: "=items[props.istthermostat].state === 'COOL' ? 'blue' : 'white'"
+
+          - component: oh-button
+            config:
+              small: true
+              action: analyzer
+              actionAnalyzerCoordSystem: time
+              actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
+                (props.isttemp           ? (',' + props.isttemp)           : '') +
+                (props.setpointEffective ? (',' + props.setpointEffective) : '') +
+                (props.istvalve          ? (',' + props.istvalve)          : '')"
+              color: gray
+              style:
+                width: 24px
+                min-width: 24px
+                height: 22px
+                padding: 0
+                margin: 0
+            slots:
+              default:
+                - component: oh-icon
+                  config:
+                    icon: f7:chart_bar_alt_fill
+                    width: 14
+                    height: 14
+                    color: white

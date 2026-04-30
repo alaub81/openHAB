@@ -272,57 +272,13 @@ slots:
                   const thermostatItem = items.getItem(thermostat);
                   const thermostatMode = String(thermostatItem.state).trim().toUpperCase();
                   const thermostatLabel = thermostatItem.label ? String(thermostatItem.label) : String(thermostat);
+                  const manualMode = String(readFlexibleState(manualActorMode, 'AUTO')).trim().toUpperCase();
 
                   function logMsg(message) {
                     log(`ThermoCtrl ${thermostatLabel} [${thermostatMode}] - ${message}`);
                   }
 
                   logMsg(`Loglevel set to: ${loglevel}`);
-
-                  // OFF sofort behandeln
-                  if (thermostatMode === 'OFF') {
-                    logMsg('mode is OFF');
-
-                    safePostUpdate(setpointEffective, items.getItem(setpointTemperature).state);
-
-                    if (String(items.getItem(climateActor).state) !== 'OFF') {
-                      items.getItem(climateActor).sendCommand('OFF');
-                      logMsg('thermostat OFF, actor deactivated');
-                    }
-
-                    return;
-                  }
-                  
-                  // ungültige Modi absichern
-                  if (thermostatMode !== 'HEAT' && thermostatMode !== 'COOL') {
-                    logMsg(`unsupported mode "${thermostatMode}", actor forced OFF`);
-
-                    if (String(items.getItem(climateActor).state) !== 'OFF') {
-                      items.getItem(climateActor).sendCommand('OFF');
-                    }
-                    return;
-                  }
-
-
-                  const currentTemperature = Quantity(items.getItem(temperaturesensor).state);
-                  const thermostatTemperature = Quantity(items.getItem(setpointTemperature).state);
-                  // Flexible Eingaben verarbeiten (Itemname, Literal oder leer -> Default)
-                  const absenceState  = normalizeSwitch(  readFlexibleState(absence,  'ON'),  'ON');
-                  const boosterState  = normalizeSwitch(  readFlexibleState(booster,  'OFF'), 'OFF');
-                  const sgState       = normalizeTraffic( readFlexibleState(smartgrid,'orange'),'orange');
-                  const manualMode = String(readFlexibleState(manualActorMode, 'AUTO')).trim().toUpperCase();
-
-                  logMsg(
-                    'inputs normalized: absence=' + absenceState +
-                    ', booster=' + boosterState +
-                    ', manual=' + manualMode +
-                    ', smartgrid=' + sgState
-                  );
-                  logMsg(`actor state: ${items.getItem(climateActor).state}`);
-                  logMsg(`current temperature: ${currentTemperature}, base setpoint: ${thermostatTemperature}`);
-                  logMsg(`base HEAT thresholds: ON <= ${thermostatTemperature.subtract(Quantity(hysteresis + '°C'))}, OFF >= ${thermostatTemperature}`);
-                  logMsg(`base COOL thresholds: ON >= ${thermostatTemperature.add(Quantity(hysteresis + '°C'))}, OFF <= ${thermostatTemperature}`);
-                  let setpoint = thermostatTemperature;
 
                   // Manuelle Override-Modi prüfen
                   if (manualMode === 'FORCE_ON') {
@@ -348,6 +304,50 @@ slots:
                   if (manualMode !== 'AUTO') {
                     logMsg(`unsupported manual actor mode "${manualMode}", using AUTO`);
                   }
+
+                  // OFF direkt nach Manual Override behandeln
+                  if (thermostatMode === 'OFF') {
+                    logMsg('mode is OFF');
+
+                    safePostUpdate(setpointEffective, items.getItem(setpointTemperature).state);
+
+                    if (String(items.getItem(climateActor).state) !== 'OFF') {
+                      items.getItem(climateActor).sendCommand('OFF');
+                      logMsg('thermostat OFF, actor deactivated');
+                    }
+
+                    return;
+                  }
+                  
+                  // ungültige Modi absichern
+                  if (thermostatMode !== 'HEAT' && thermostatMode !== 'COOL') {
+                    logMsg(`unsupported mode "${thermostatMode}", actor forced OFF`);
+
+                    if (String(items.getItem(climateActor).state) !== 'OFF') {
+                      items.getItem(climateActor).sendCommand('OFF');
+                    }
+                    return;
+                  }
+
+                  const currentTemperature = Quantity(items.getItem(temperaturesensor).state);
+                  const thermostatTemperature = Quantity(items.getItem(setpointTemperature).state);
+                  // Flexible Eingaben verarbeiten (Itemname, Literal oder leer -> Default)
+                  const absenceState  = normalizeSwitch(  readFlexibleState(absence,  'ON'),  'ON');
+                  const boosterState  = normalizeSwitch(  readFlexibleState(booster,  'OFF'), 'OFF');
+                  const sgState       = normalizeTraffic( readFlexibleState(smartgrid,'orange'),'orange');
+
+                  logMsg(
+                    'inputs normalized: absence=' + absenceState +
+                    ', booster=' + boosterState +
+                    ', manual=' + manualMode +
+                    ', smartgrid=' + sgState
+                  );
+                  logMsg(`actor state: ${items.getItem(climateActor).state}`);
+                  logMsg(`current temperature: ${currentTemperature}, base setpoint: ${thermostatTemperature}`);
+                  logMsg(`base HEAT thresholds: ON <= ${thermostatTemperature.subtract(Quantity(hysteresis + '°C'))}, OFF >= ${thermostatTemperature}`);
+                  logMsg(`base COOL thresholds: ON >= ${thermostatTemperature.add(Quantity(hysteresis + '°C'))}, OFF <= ${thermostatTemperature}`);
+                  let setpoint = thermostatTemperature;
+
                   
                   function applySetpointOffset(baseSetpoint, offsetValue, heatDirection) {
                     const offset = Quantity(offsetValue + '°C');

@@ -6,6 +6,7 @@ tags:
   - temperature
   - humidity
   - thermostat
+
 props:
   parameters:
     - description: The label for the widget (text)
@@ -13,120 +14,204 @@ props:
       name: title
       required: false
       type: TEXT
+
     - context: item
       description: Setpoint Temperature item (Number:Temperature)
       label: Setpoint Temperature (Number:Temperature)
       name: item
       required: true
       type: TEXT
+
     - context: item
       description: Current Temperature item (Number:Temperature)
       label: Current temperature (Number:Temperature)
       name: isttemp
       required: false
       type: TEXT
+
     - context: item
       description: Current Humidity item (Number:Humidity)
       label: Current humidity (Number:Humidity)
       name: isthumidity
       required: false
       type: TEXT
+
     - context: item
       description: Thermostat Mode item (String "OFF / HEAT / COOL")
       label: Thermostat Mode (String)
       name: istthermostat
       required: false
       type: TEXT
+
     - context: item
       description: Heating/Cooling valve item (Switch)
       label: Valve / Actor (Switch)
       name: istvalve
       required: false
       type: TEXT
+
     - context: item
       description: Setback start (DateTime)
       label: Absenk-Beginn (DateTime)
       name: setbackStart
       required: false
       type: TEXT
+
     - context: item
       description: Setback end (DateTime)
       label: Absenk-Ende (DateTime)
       name: setbackEnd
       required: false
       type: TEXT
+
     - context: item
       description: Manual Actor Mode item (String AUTO / FORCE_ON / FORCE_OFF)
       label: Manual Actor Mode (String)
       name: manualActorMode
       required: false
-      type: TEXT      
+      type: TEXT
+
     - context: item
       description: Booster Item (Switch)
       label: Booster (Switch)
       name: booster
       required: false
       type: TEXT
+
     - context: item
       description: Setpoint Effective Item (Number:Temperature)
       label: Setpoint Effective (Number:Temperature)
       name: setpointEffective
       required: false
       type: TEXT
+
     - default: iconify:mdi:heated-floor
       description: Icon
       label: List Icon
       name: seticon
       required: false
       type: TEXT
+
     - default: "18"
       description: Min Value
       label: Min
       name: min
       required: false
       type: DECIMAL
+
     - default: "30"
       description: Max Value
       label: Max
       name: max
       required: false
       type: DECIMAL
+
     - default: "0.1"
       description: Step Value
       label: Step
       name: step
       required: false
       type: DECIMAL
+
   parameterGroups: []
-timestamp: Apr 27, 2026, 10:32:26 PM
-component: f7-card
+
+timestamp: May 3, 2026, 6:15:10 PM
+
+component: f7-list-item
 config:
   style:
+    --f7-list-item-padding-horizontal: 16px
+    --f7-list-item-padding-vertical: 0px
+    --f7-list-item-min-height: auto
+    --f7-list-item-after-padding: 0px
+    --f7-list-item-media-margin: 16px
     margin: 0
-    border-radius: 0px
-    background: var(--f7-card-bg-color)
-    box-shadow: none
+    padding: 0
+    background: var(--f7-list-bg-color)
+
 slots:
-  default:
-    - component: f7-card-content
+  media:
+    - component: f7-block
       config:
         style:
-          padding: 8px 10px
+          width: 32px
+          min-width: 32px
+          max-width: 32px
+          height: 100%
+          min-height: 72px
+          display: flex
+          align-items: center
+          justify-content: center
+          margin: 0
+          padding: 0
+      slots:
+        default:
+          - component: oh-icon
+            config:
+              icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
+              width: 32
+              height: 32
+              action: "=props.manualActorMode ? 'command' : ''"
+              actionItem: =props.manualActorMode
+              actionCommand: "=
+                props.manualActorMode && items[props.manualActorMode] &&
+                items[props.manualActorMode].state === 'FORCE_ON'
+                ? 'FORCE_OFF'
+                :
+                (
+                  props.manualActorMode && items[props.manualActorMode] &&
+                  items[props.manualActorMode].state === 'FORCE_OFF'
+                )
+                ? 'AUTO'
+                :
+                'FORCE_ON'"
+              color: "=
+                props.manualActorMode && items[props.manualActorMode] &&
+                items[props.manualActorMode].state === 'FORCE_ON'
+                ? 'yellow'
+                :
+                (
+                  props.manualActorMode && items[props.manualActorMode] &&
+                  items[props.manualActorMode].state === 'FORCE_OFF'
+                )
+                ? 'black'
+                :
+                (
+                  props.booster && items[props.booster] &&
+                  props.istvalve && items[props.istvalve] &&
+                  items[props.istvalve].state === 'ON' &&
+                  items[props.booster].state === 'ON'
+                )
+                ? 'yellow'
+                :
+                (
+                  props.istvalve && items[props.istvalve] &&
+                  items[props.istvalve].state === 'ON'
+                )
+                ? 'green'
+                :
+                (
+                  props.istvalve && items[props.istvalve] &&
+                  items[props.istvalve].state === 'OFF'
+                )
+                ? 'red'
+                :
+                'gray'"
+              style:
+                cursor: pointer
+
+  default:
+    - component: f7-block
+      config:
+        style:
           position: relative
+          width: 100%
+          margin: 0
+          padding: 8px 0px
+          box-sizing: border-box
           border-bottom: none
       slots:
         default:
-          - component: f7-block
-            config:
-              style:
-                position: absolute
-                left: 64px
-                right: 0
-                bottom: 0
-                height: 1px
-                margin: 0
-                padding: 0
-                background: rgba(128,128,128,0.25)
           - component: f7-row
             config:
               style:
@@ -135,82 +220,14 @@ slots:
                 width: 100%
             slots:
               default:
-                - component: f7-col
-                  config:
-                    style:
-                      width: 46px
-                      min-width: 46px
-                      max-width: 46px
-                      display: flex
-                      align-items: center
-                      justify-content: center
-                      align-self: stretch
-                      padding: 0
-                      margin: 0
-                  slots:
-                    default:
-                      - component: oh-icon
-                        config:
-                          icon: "=props.seticon ? props.seticon : 'iconify:mdi:heated-floor'"
-                          width: 32
-                          height: 32
 
-                          action: "=props.manualActorMode ? 'command' : ''"
-                          actionItem: =props.manualActorMode
-                          actionCommand: "=
-                            props.manualActorMode && items[props.manualActorMode] &&
-                            items[props.manualActorMode].state === 'FORCE_ON'
-                            ? 'FORCE_OFF'
-                            :
-                            (
-                              props.manualActorMode && items[props.manualActorMode] &&
-                              items[props.manualActorMode].state === 'FORCE_OFF'
-                            )
-                            ? 'AUTO'
-                            :
-                            'FORCE_ON'"
-
-                          color: "=
-                            props.manualActorMode && items[props.manualActorMode] &&
-                            items[props.manualActorMode].state === 'FORCE_ON'
-                            ? 'yellow'
-                            :
-                            (
-                              props.manualActorMode && items[props.manualActorMode] &&
-                              items[props.manualActorMode].state === 'FORCE_OFF'
-                            )
-                            ? 'black'
-                            :
-                            (
-                              props.booster && items[props.booster] &&
-                              props.istvalve && items[props.istvalve] &&
-                              items[props.istvalve].state === 'ON' &&
-                              items[props.booster].state === 'ON'
-                            )
-                            ? 'yellow'
-                            :
-                            (
-                              props.istvalve && items[props.istvalve] &&
-                              items[props.istvalve].state === 'ON'
-                            )
-                            ? 'green'
-                            :
-                            (
-                              props.istvalve && items[props.istvalve] &&
-                              items[props.istvalve].state === 'OFF'
-                            )
-                            ? 'red'
-                            :
-                            'gray'"
-
-                          style:
-                            cursor: pointer
+                # Mitte: Titel + Statuszeile
                 - component: f7-col
                   config:
                     style:
                       min-width: 0
                       flex: 1
-                      padding-left: 8px
+                      padding-left: 0
                       padding-right: 8px
                       display: flex
                       flex-direction: column
@@ -234,6 +251,7 @@ slots:
                             -webkit-line-clamp: 2
                             -webkit-box-orient: vertical
                             display: -webkit-box
+
                       - component: Label
                         config:
                           text: >-
@@ -404,6 +422,8 @@ slots:
                             max-width: calc(100% + 58px)
                             position: relative
                             z-index: 2
+
+                # Rechte Seite: Istwerte + Stepper + Buttonleiste
                 - component: f7-col
                   config:
                     style:
@@ -419,9 +439,11 @@ slots:
                       gap: 6px
                       padding: 0
                       margin: 0
-                      margin-right: 18px
+                      margin-right: 14px
                   slots:
                     default:
+
+                      # Obere Zeile: Istwerte + Stepper
                       - component: f7-row
                         config:
                           style:
@@ -454,19 +476,17 @@ slots:
                                 default:
                                   - component: Label
                                     config:
-                                      text: "= props.isttemp && items[props.isttemp] ? items[props.isttemp].state :
-                                        '-'"
+                                      text: "=props.isttemp && items[props.isttemp] ? items[props.isttemp].state : '-'"
                                       style:
                                         display: block
                                         font-size: 12px
                                         line-height: 1.1
                                         white-space: nowrap
                                         color: var(--f7-text-color)
+
                                   - component: Label
                                     config:
-                                      text: "= props.isthumidity && items[props.isthumidity] ? '(' +
-                                        items[props.isthumidity].state + ')' :
-                                        ''"
+                                      text: "=props.isthumidity && items[props.isthumidity] ? '(' + items[props.isthumidity].state + ')' : ''"
                                       style:
                                         display: block
                                         font-size: 11px
@@ -474,6 +494,7 @@ slots:
                                         white-space: nowrap
                                         color: var(--f7-text-color)
                                         opacity: 0.75
+
                             - component: oh-stepper
                               config:
                                 item: =props.item
@@ -483,41 +504,66 @@ slots:
                                 small: true
                                 fill: true
                                 round: true
-                                color: "= ( props.booster && items[props.booster] && props.istthermostat &&
-                                  items[props.istthermostat] && props.istvalve
-                                  && items[props.istvalve] &&
-                                  items[props.booster].state === 'ON' &&
-                                  items[props.istthermostat].state === 'HEAT' &&
-                                  items[props.istvalve].state === 'ON' ) ?
-                                  'deeporange' : ( props.booster &&
-                                  items[props.booster] && props.istthermostat &&
-                                  items[props.istthermostat] && props.istvalve
-                                  && items[props.istvalve] &&
-                                  items[props.booster].state === 'ON' &&
-                                  items[props.istthermostat].state === 'COOL' &&
-                                  items[props.istvalve].state === 'ON' ) ?
-                                  'blue' : ( props.istvalve &&
-                                  items[props.istvalve] && props.istthermostat
-                                  && items[props.istthermostat] &&
-                                  items[props.istvalve].state === 'ON' &&
-                                  items[props.istthermostat].state === 'HEAT' )
-                                  ? 'yellow' : ( props.istvalve &&
-                                  items[props.istvalve] && props.istthermostat
-                                  && items[props.istthermostat] &&
-                                  items[props.istvalve].state === 'ON' &&
-                                  items[props.istthermostat].state === 'COOL' )
-                                  ? 'lightblue' : ( props.istthermostat &&
-                                  items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'HEAT' )
-                                  ? 'green' : ( props.istthermostat &&
-                                  items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'COOL' )
-                                  ? 'green' : ( props.istthermostat &&
-                                  items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'OFF' ) ?
-                                  'red' : 'gray'"
+                                color: "=
+                                  (
+                                    props.booster && items[props.booster] &&
+                                    props.istthermostat && items[props.istthermostat] &&
+                                    props.istvalve && items[props.istvalve] &&
+                                    items[props.booster].state === 'ON' &&
+                                    items[props.istthermostat].state === 'HEAT' &&
+                                    items[props.istvalve].state === 'ON'
+                                  )
+                                  ? 'deeporange'
+                                  :
+                                  (
+                                    props.booster && items[props.booster] &&
+                                    props.istthermostat && items[props.istthermostat] &&
+                                    props.istvalve && items[props.istvalve] &&
+                                    items[props.booster].state === 'ON' &&
+                                    items[props.istthermostat].state === 'COOL' &&
+                                    items[props.istvalve].state === 'ON'
+                                  )
+                                  ? 'blue'
+                                  :
+                                  (
+                                    props.istvalve && items[props.istvalve] &&
+                                    props.istthermostat && items[props.istthermostat] &&
+                                    items[props.istvalve].state === 'ON' &&
+                                    items[props.istthermostat].state === 'HEAT'
+                                  )
+                                  ? 'yellow'
+                                  :
+                                  (
+                                    props.istvalve && items[props.istvalve] &&
+                                    props.istthermostat && items[props.istthermostat] &&
+                                    items[props.istvalve].state === 'ON' &&
+                                    items[props.istthermostat].state === 'COOL'
+                                  )
+                                  ? 'lightblue'
+                                  :
+                                  (
+                                    props.istthermostat && items[props.istthermostat] &&
+                                    items[props.istthermostat].state === 'HEAT'
+                                  )
+                                  ? 'green'
+                                  :
+                                  (
+                                    props.istthermostat && items[props.istthermostat] &&
+                                    items[props.istthermostat].state === 'COOL'
+                                  )
+                                  ? 'green'
+                                  :
+                                  (
+                                    props.istthermostat && items[props.istthermostat] &&
+                                    items[props.istthermostat].state === 'OFF'
+                                  )
+                                  ? 'red'
+                                  :
+                                  'gray'"
                                 style:
                                   margin: 0
+
+                      # Untere Zeile: Buttons
                       - component: f7-segmented
                         config:
                           strong: false
@@ -541,17 +587,17 @@ slots:
                             box-sizing: border-box
                         slots:
                           default:
+
+                            # Statistik Button
                             - component: oh-button
                               config:
                                 small: true
                                 action: analyzer
                                 actionAnalyzerCoordSystem: time
-                                actionAnalyzerItems: "= '#/analyzer?items=' + props.item + (props.isttemp ? (','
-                                  + props.isttemp) : '') +
-                                  (props.setpointEffective ? (',' +
-                                  props.setpointEffective) : '') +
-                                  (props.istvalve ? (',' + props.istvalve) :
-                                  '')"
+                                actionAnalyzerItems: "= '#/analyzer?items=' + props.item +
+                                  (props.isttemp ? (',' + props.isttemp) : '') +
+                                  (props.setpointEffective ? (',' + props.setpointEffective) : '') +
+                                  (props.istvalve ? (',' + props.istvalve) : '')"
                                 active: false
                                 color: lime
                                 style:
@@ -580,14 +626,15 @@ slots:
                                       width: 15
                                       height: 15
                                       color: white
+
+                            # Power OFF Button
                             - component: oh-button
                               config:
                                 small: true
                                 action: command
                                 actionItem: =props.istthermostat
                                 actionCommand: OFF
-                                active: = props.istthermostat && items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'OFF'
+                                active: "=props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'OFF'"
                                 color: red
                                 style:
                                   width: 30px
@@ -615,16 +662,15 @@ slots:
                                       width: 15
                                       height: 15
                                       color: white
+
+                            # HEAT Button
                             - component: oh-button
                               config:
                                 small: true
                                 action: command
                                 actionItem: =props.istthermostat
-                                actionCommand: "= props.istthermostat && items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'HEAT' ?
-                                  'OFF' : 'HEAT'"
-                                active: = props.istthermostat && items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'HEAT'
+                                actionCommand: "=props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'HEAT' ? 'OFF' : 'HEAT'"
+                                active: "=props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'HEAT'"
                                 color: yellow
                                 style:
                                   width: 30px
@@ -651,19 +697,16 @@ slots:
                                       icon: iconify:mdi:fire
                                       width: 15
                                       height: 15
-                                      color: "= props.istthermostat && items[props.istthermostat] &&
-                                        items[props.istthermostat].state ===
-                                        'HEAT' ? 'white' : 'white'"
+                                      color: white
+
+                            # COOL Button
                             - component: oh-button
                               config:
                                 small: true
                                 action: command
                                 actionItem: =props.istthermostat
-                                actionCommand: "= props.istthermostat && items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'COOL' ?
-                                  'OFF' : 'COOL'"
-                                active: = props.istthermostat && items[props.istthermostat] &&
-                                  items[props.istthermostat].state === 'COOL'
+                                actionCommand: "=props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'COOL' ? 'OFF' : 'COOL'"
+                                active: "=props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'COOL'"
                                 color: lightblue
                                 style:
                                   width: 30px
@@ -690,6 +733,4 @@ slots:
                                       icon: iconify:mdi:snowflake
                                       width: 15
                                       height: 15
-                                      color: "= props.istthermostat && items[props.istthermostat] &&
-                                        items[props.istthermostat].state ===
-                                        'COOL' ? 'white' : 'white'"
+                                      color: white

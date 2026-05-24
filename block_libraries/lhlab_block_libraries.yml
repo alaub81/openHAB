@@ -8,7 +8,7 @@ tags:
 props:
   parameters: []
   parameterGroups: []
-timestamp: Apr 28, 2026, 10:32:26 PM
+timestamp: May 24, 2026, 17:32:26 PM
 component: BlockLibrary
 config:
   name: Blocklibraries lhlab.wiki
@@ -34,8 +34,9 @@ slots:
           (optional) Smart-Grid Mode (red-orange-green item - default "orange") %14,
           (optional) Setpoint Effective Temperature (temperature item) %15,
           (optional) Window contact (Contact item - default "CLOSED") %16,
-          (optional) Window delay (in minutes) %17,
-          and set loglevel %18
+          (optional) Window open delay (in minutes) %17,
+          (optional) Window close timeout (in minutes) %18,
+          and set loglevel %19
         nextStatement: ""
         previousStatement: ""  
         args0:
@@ -71,7 +72,9 @@ slots:
             type: input_value
           - name: WINDOWCONTACT
             type: input_value
-          - name: WINDOW_DELAY_MIN
+          - name: WINDOW_OPEN_DELAY_MIN
+            type: input_value
+          - name: WINDOW_CLOSE_TIMEOUT_MIN
             type: input_value
           - name: LOGLEVEL
             options:
@@ -83,7 +86,7 @@ slots:
                 - error
               - - debug
                 - debug
-            type: field_dropdown
+            type: field_dropdown  
         colour: 90
         tooltip: Control a thermostat in OFF/HEAT/COOL mode with hysteresis, setback, booster, smart-grid and window handling.
         helpUrl: ""
@@ -93,12 +96,9 @@ slots:
             config:
               template: >
 
-                var { time, items } = require('openhab');
+                var { time, items, actions, cache } = require('openhab');
                 var ruleUID = this.ruleUID;
                 var logger = Java.type('org.slf4j.LoggerFactory').getLogger(`org.openhab.rule.ThermoCtrl.${ruleUID}`);
-                /* Window-Blocker Map im globalen Kontext (pro Heizzone über Ventil-Key) */
-                var __THERMO_WINDOW_BLOCKS = globalThis.__THERMO_WINDOW_BLOCKS || (globalThis.__THERMO_WINDOW_BLOCKS = new Map());
-                var __THERMO_WINDOW_WASOPEN = globalThis.__THERMO_WINDOW_WASOPEN || (globalThis.__THERMO_WINDOW_WASOPEN = new Map());
 
                 /* Optionales Post-Update auf ein Item (ignoriert leere/ungültige Namen) */
                 function safePostUpdate(itemName, value) {
@@ -184,43 +184,293 @@ slots:
                   }
                 }
 
-                /* Logik für „Fenster offen“ + Cooldown nach Schließen
-                  - key: eindeutiger Schlüssel der Zone (wir nehmen das Heinzungsventil-Item)
-                  - isOpen: aktueller Fensterzustand
-                  - delayMin: gewünschte Blockdauer in Minuten
-                  Rückgabe: { blocked: true/false, reason: 'open'|'cooldown', until: ZDT|null }
-                */
-                function enforceWindowDelay(key, isOpen, delayMin, time, logger) {
-                  const now = time.ZonedDateTime.now();
-                  const wasOpen = __THERMO_WINDOW_WASOPEN.get(key) === true;
-                  __THERMO_WINDOW_WASOPEN.set(key, isOpen);
+                function minutesOrDefault(value, defaultValue) {
+                  const n = Number(value);
+                  if (!Number.isFinite(n) || n < 0) return defaultValue;
+                  return n;
+                }
 
-                  const existingUntil = __THERMO_WINDOW_BLOCKS.get(key); // hier speichern wir NUR den Cooldown-bis-Zeitpunkt
+                function timerKey(prefix, zoneKey) {
+                  return 'ThermoCtrl_' + prefix + '_' + String(zoneKey);
+                }
 
-                  if (isOpen) {
-                    // Solange offen: blockieren, Ventil OFF, aber KEIN Cooldown-Zeitpunkt setzen
-                    return { blocked: true, reason: 'open', until: null };
+                function timerExists(key) {
+                  return cache.private.exists(key);
+                }
+
+                function timerIsActive(key) {
+                  try {
+                    return cache.private.exists(key) && cache.private.get(key).isActive();
+                  } catch (e) {
+                    return false;
+                  }
+                }
+
+                function timerHasTerminated(key) {
+                  try {
+                    return cache.private.exists(key) && cache.private.get(key).hasTerminated();
+                  } catch (e) {
+                    return true;
+                  }
+                }
+
+                function cancelTimer(key) {
+                  if (cache.private.exists(key)) {
+                    try {
+                      cache.private.remove(key).cancel();
+                    } catch (e) {
+                      // Timer war evtl. schon beendet oder nicht mehr gültig
+                    }
+                  }
+                }
+
+                function putTimer(key, timer) {
+                  cache.private.put(key, timer);
+                }
+
+                function removeTimer(key) {
+                  if (cache.private.exists(key)) {
+                    cache.private.remove(key);
+                  }
+                }
+
+                function closeBlockKey(zoneKey) {
+                  return timerKey('closeBlock', zoneKey);
+                }
+
+                function isCloseBlockActive(zoneKey) {
+                  return cache.private.exists(closeBlockKey(zoneKey));
+                }
+
+                function setCloseBlockActive(zoneKey) {
+                  cache.private.put(closeBlockKey(zoneKey), true);
+                }
+
+                function clearCloseBlockActive(zoneKey) {
+                  removeTimer(closeBlockKey(zoneKey));
+                }
+
+                function openBlockKey(zoneKey) {
+                  return timerKey('openBlock', zoneKey);
+                }
+
+                function isOpenBlockActive(zoneKey) {
+                  return cache.private.exists(openBlockKey(zoneKey));
+                }
+
+                function setOpenBlockActive(zoneKey) {
+                  cache.private.put(openBlockKey(zoneKey), true);
+                }
+
+                function clearOpenBlockActive(zoneKey) {
+                  removeTimer(openBlockKey(zoneKey));
+                }
+
+                function enforceWindowTimers(config, rerunCallback) {
+                  const {
+                    climateActor,
+                    windowcontact,
+                    windowOpenDelayMin,
+                    windowCloseTimeoutMin,
+                    logMsg
+                  } = config;
+
+                  const zoneKey = String(climateActor);
+                  const openNow = isWindowOpen(windowcontact);
+
+                  const openDelayMin = minutesOrDefault(windowOpenDelayMin, 5);
+                  const closeTimeoutMin = minutesOrDefault(windowCloseTimeoutMin, 5);
+
+                  const openTimerKey = timerKey('openTimer', zoneKey);
+                  const closeTimerKey = timerKey('closeTimer', zoneKey);
+
+                  /*
+                    Fenster OPEN:
+                    - Close-Timer und Close-Block löschen
+                    - wenn Open-Block bereits aktiv ist: Actor OFF und blockieren
+                    - sonst Open-Timer starten, falls keiner aktiv ist
+                    - während Open-Timer läuft: normale Regelung erlauben
+                  */
+                  if (openNow) {
+                    cancelTimer(closeTimerKey);
+                    clearCloseBlockActive(zoneKey);
+
+                    if (isOpenBlockActive(zoneKey)) {
+                      if (String(items.getItem(climateActor).state) !== 'OFF') {
+                        items.getItem(climateActor).sendCommand('OFF');
+                      }
+
+                      logMsg('window OPEN block active — actor forced OFF.');
+
+                      return {
+                        blocked: true,
+                        reason: 'open_block_active'
+                      };
+                    }
+
+                    if (
+                      cache.private.exists(openTimerKey) === false ||
+                      cache.private.get(openTimerKey).hasTerminated()
+                    ) {
+                      const timer = actions.ScriptExecution.createTimer(
+                        openTimerKey,
+                        time.ZonedDateTime.now().plusMinutes(openDelayMin),
+                        function(timer_context) {
+                          try {
+                            if (isWindowOpen(windowcontact)) {
+                              setOpenBlockActive(zoneKey);
+
+                              if (String(items.getItem(climateActor).state) !== 'OFF') {
+                                items.getItem(climateActor).sendCommand('OFF');
+                              }
+
+                              logMsg(
+                                'window still OPEN after ' +
+                                openDelayMin +
+                                ' min — open block activated and actor forced OFF by timer.'
+                              );
+                            } else {
+                              logMsg('open timer expired, but window is already CLOSED — no action.');
+                            }
+                          } finally {
+                            removeTimer(openTimerKey);
+                          }
+                        },
+                        undefined
+                      );
+
+                      putTimer(openTimerKey, timer);
+
+                      logMsg(
+                        'window OPEN — open timer started for ' +
+                        openDelayMin +
+                        ' min.'
+                      );
+
+                      return {
+                        blocked: false,
+                        reason: 'open_timer_started'
+                      };
+                    }
+
+                    if (timerIsActive(openTimerKey)) {
+                      logMsg('window OPEN — open timer already active; normal control still allowed.');
+
+                      return {
+                        blocked: false,
+                        reason: 'open_timer_active'
+                      };
+                    }
+
+                    if (timerHasTerminated(openTimerKey)) {
+                      removeTimer(openTimerKey);
+                    }
+
+                    return {
+                      blocked: false,
+                      reason: 'open_no_active_timer'
+                    };
                   }
 
-                  // Jetzt geschlossen:
-                  if (wasOpen && !isOpen) {
-                    // Übergang OPEN -> CLOSED: Cooldown ab JETZT starten
-                    const newUntil = now.plusMinutes(Number(delayMin) || 5);
-                    __THERMO_WINDOW_BLOCKS.set(key, newUntil);
-                    return { blocked: true, reason: 'cooldown', until: newUntil };
+                  /*
+                    Fenster CLOSED:
+                    - Open-Timer abbrechen, falls er noch läuft
+                    - Open-Block löschen, falls Fenster lange offen war
+                    - Close-Timeout starten, wenn vorher Open-Timer oder Open-Block aktiv war
+                  */
+                  const hadOpenTimer = timerIsActive(openTimerKey);
+                  const hadOpenBlock = isOpenBlockActive(zoneKey);
+
+                  if (hadOpenTimer) {
+                    cancelTimer(openTimerKey);
+                  } else if (timerExists(openTimerKey) && timerHasTerminated(openTimerKey)) {
+                    removeTimer(openTimerKey);
                   }
 
-                  // Bereits laufender Cooldown nach früherem Schließen?
-                  if (existingUntil && now.isBefore(existingUntil)) {
-                    return { blocked: true, reason: 'cooldown', until: existingUntil };
+                  if (hadOpenBlock) {
+                    clearOpenBlockActive(zoneKey);
                   }
 
-                  // Cooldown abgelaufen -> aufräumen
-                  if (existingUntil && !now.isBefore(existingUntil)) {
-                    __THERMO_WINDOW_BLOCKS.delete(key);
+                  if (hadOpenTimer || hadOpenBlock) {
+                    setCloseBlockActive(zoneKey);
+
+                    if (String(items.getItem(climateActor).state) !== 'OFF') {
+                      items.getItem(climateActor).sendCommand('OFF');
+                    }
+
+                    if (
+                      cache.private.exists(closeTimerKey) === false ||
+                      cache.private.get(closeTimerKey).hasTerminated()
+                    ) {
+                      const timer = actions.ScriptExecution.createTimer(
+                        closeTimerKey,
+                        time.ZonedDateTime.now().plusMinutes(closeTimeoutMin),
+                        function(timer_context) {
+                          try {
+                            clearCloseBlockActive(zoneKey);
+
+                            logMsg(
+                              'window close timeout expired after ' +
+                              closeTimeoutMin +
+                              ' min — thermostat control released.'
+                            );
+
+                            try {
+                              rerunCallback();
+                            } catch (e) {
+                              logMsg('rerun after close timeout failed: ' + e);
+                            }
+                          } finally {
+                            removeTimer(closeTimerKey);
+                          }
+                        },
+                        undefined
+                      );
+
+                      putTimer(closeTimerKey, timer);
+                    }
+
+                    logMsg(
+                      'window CLOSED — window state cleared, close timeout started for ' +
+                      closeTimeoutMin +
+                      ' min; actor forced OFF.'
+                    );
+
+                    return {
+                      blocked: true,
+                      reason: 'close_timeout_started'
+                    };
                   }
 
-                  return { blocked: false, reason: null, until: null };
+                  /*
+                    Close-Timeout läuft bereits.
+                  */
+                  if (isCloseBlockActive(zoneKey) && timerIsActive(closeTimerKey)) {
+                    if (String(items.getItem(climateActor).state) !== 'OFF') {
+                      items.getItem(climateActor).sendCommand('OFF');
+                    }
+
+                    logMsg('window CLOSED — close timeout still active; actor forced OFF.');
+
+                    return {
+                      blocked: true,
+                      reason: 'close_timeout_active'
+                    };
+                  }
+
+                  /*
+                    Falls Close-Block noch existiert, aber der Timer nicht mehr aktiv ist,
+                    aufräumen.
+                  */
+                  if (isCloseBlockActive(zoneKey) && !timerIsActive(closeTimerKey)) {
+                    clearCloseBlockActive(zoneKey);
+                    removeTimer(closeTimerKey);
+                  }
+
+                  return {
+                    blocked: false,
+                    reason: null
+                  };
                 }
 
                 function toLocalTimeFlexible(v) {
@@ -261,7 +511,8 @@ slots:
                     manualActorMode,
                     smartgrid,                    
                     windowcontact,
-                    windowDelayMin,
+                    windowOpenDelayMin,
+                    windowCloseTimeoutMin,
                     setpointEffective
                   } = config;
 
@@ -415,21 +666,23 @@ slots:
                     // Effektiven Sollwert ins (optionale) Item schreiben
                     safePostUpdate(setpointEffective, setpoint);
 
-                    /* Fensterzustand + Delay/Cooldown prüfen (Actor-Item dient als Zonenschlüssel) */
-                    const zoneKey = String(climateActor);
-                    const openNow = isWindowOpen(windowcontact);
-                    const delayMin = Number(windowDelayMin) || 5;
-                    const block = enforceWindowDelay(zoneKey, openNow, delayMin, time, logger);
+                    /* Fensterzustand + echte openHAB Timer prüfen */
+                    const block = enforceWindowTimers(
+                      {
+                        climateActor: climateActor,
+                        windowcontact: windowcontact,
+                        windowOpenDelayMin: windowOpenDelayMin,
+                        windowCloseTimeoutMin: windowCloseTimeoutMin,
+                        logMsg: logMsg
+                      },
+                      function() {
+                        controlThermostat(config);
+                      }
+                    );
 
                     if (block.blocked) {
-                      if (String(items.getItem(climateActor).state) !== 'OFF') {
-                        items.getItem(climateActor).sendCommand('OFF');
-                      }
-                      const why = (block.reason === 'open') ? 'window OPEN' : ('cooldown ' + delayMin + ' min after close');
-                      const untilStr = block.until ? String(block.until) : '';
-                      logMsg('window block active (' + why + ') until ' + untilStr + ' — actor forced OFF.');
-                      return; // Rest der Regel überspringen
-                    }
+                      return;
+                    } 
 
                     // Climate control HEAT or COOL
                     if (thermostatMode === 'HEAT') {
@@ -489,7 +742,8 @@ slots:
                   nightstop: {{input:NIGHTSTOP}}, 
                   nightreduction: {{input:NIGHTREDUCTION}},
                   windowcontact: {{input:WINDOWCONTACT}},
-                  windowDelayMin: {{input:WINDOW_DELAY_MIN}},
+                  windowOpenDelayMin: {{input:WINDOW_OPEN_DELAY_MIN}},
+                  windowCloseTimeoutMin: {{input:WINDOW_CLOSE_TIMEOUT_MIN}},
                   setpointEffective: {{input:SETPOINTEFFECTIVE}},
                   loglevel: "{{field:LOGLEVEL}}",
                   absence: {{input:ABSENCE}},
@@ -592,7 +846,14 @@ slots:
               type: oh_item
           - component: PresetInput
             config:
-              name: WINDOW_DELAY_MIN
+              name: WINDOW_OPEN_DELAY_MIN
+              fields:
+                NUM: "5"
+              shadow: true
+              type: math_number
+          - component: PresetInput
+            config:
+              name: WINDOW_CLOSE_TIMEOUT_MIN
               fields:
                 NUM: "5"
               shadow: true

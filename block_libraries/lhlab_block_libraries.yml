@@ -391,7 +391,7 @@ slots:
                     clearOpenBlockActive(zoneKey);
                   }
 
-                  if (hadOpenTimer || hadOpenBlock) {
+                  if (hadOpenBlock) {
                     setCloseBlockActive(zoneKey);
 
                     if (String(items.getItem(climateActor).state) !== 'OFF') {

@@ -8,7 +8,7 @@ tags:
 props:
   parameters: []
   parameterGroups: []
-timestamp: May 24, 2026, 17:32:26 PM
+timestamp: Jun 16, 2026, 15:10:26 PM
 component: BlockLibrary
 config:
   name: Blocklibraries lhlab.wiki
@@ -24,19 +24,20 @@ slots:
           temperature sensor (temperature item) %4,
           hysteresis (in °C) (Number) %5,
           absence reduction (in °C) (Number) %6,
-          green increase (in °C) (Number) %7,
-          night start (time) %8,
-          night stop (time) %9,
-          night reduction (in °C) (Number) %10,
-          (optional) Absence (switch item - default "ON") %11,
-          (optional) Booster (switch item - default "OFF") %12,
-          (optional) Manual Actor Mode (String AUTO / FORCE_ON / FORCE_OFF - default "AUTO") %13,
-          (optional) Smart-Grid Mode (red-orange-green item - default "orange") %14,
-          (optional) Setpoint Effective Temperature (temperature item) %15,
-          (optional) Window contact (Contact item - default "CLOSED") %16,
-          (optional) Window open delay (in minutes) %17,
-          (optional) Window close timeout (in minutes) %18,
-          and set loglevel %19
+          green increase for HEAT (in °C) (Number) %7,
+          green reduction for COOL (in °C) (Number) %8,
+          night start (time) %9,
+          night stop (time) %10,
+          night reduction (in °C) (Number) %11,
+          (optional) Absence (switch item - default "ON") %12,
+          (optional) Booster (switch item - default "OFF") %13,
+          (optional) Manual Actor Mode (String AUTO / FORCE_ON / FORCE_OFF - default "AUTO") %14,
+          (optional) Smart-Grid Mode (red-orange-green item - default "orange") %15,
+          (optional) Setpoint Effective Temperature (temperature item) %16,
+          (optional) Window contact (Contact item - default "CLOSED") %17,
+          (optional) Window open delay (in minutes) %18,
+          (optional) Window close timeout (in minutes) %19,
+          and set loglevel %20
         nextStatement: ""
         previousStatement: ""  
         args0:
@@ -53,6 +54,8 @@ slots:
           - name: ABSENCEREDUCTION
             type: input_value
           - name: GREENINCREASE
+            type: input_value
+          - name: COOLGREENREDUCTION
             type: input_value
           - name: NIGHTSTART
             type: input_value
@@ -502,6 +505,7 @@ slots:
                     thermostat,
                     absencereduction,
                     greenincrease,
+                    coolgreenreduction,
                     nightstart,
                     nightstop,
                     nightreduction,
@@ -586,12 +590,23 @@ slots:
                   const absenceState  = normalizeSwitch(  readFlexibleState(absence,  'ON'),  'ON');
                   const boosterState  = normalizeSwitch(  readFlexibleState(booster,  'OFF'), 'OFF');
                   const sgState       = normalizeTraffic( readFlexibleState(smartgrid,'orange'),'orange');
+                  let smartgridAvailable = false;
+                  try {
+                    const sgName = String(smartgrid ?? '').trim();
+                    if (sgName) {
+                      items.getItem(sgName);
+                      smartgridAvailable = true;
+                    }
+                  } catch (e) {
+                    smartgridAvailable = false;
+                  }
 
                   logMsg(
                     'inputs normalized: absence=' + absenceState +
                     ', booster=' + boosterState +
                     ', manual=' + manualMode +
-                    ', smartgrid=' + sgState
+                    ', smartgrid=' + sgState +
+                    ', smartgridAvailable=' + smartgridAvailable
                   );
                   logMsg(`actor state: ${items.getItem(climateActor).state}`);
                   logMsg(`current temperature: ${currentTemperature}, base setpoint: ${thermostatTemperature}`);
@@ -624,44 +639,97 @@ slots:
                     logMsg('booster is OFF');
 
                     // Absence and SG-red check
-                    if (absenceState === 'OFF' && sgState === 'red') {
-                      setpoint = applySetpointOffset(thermostatTemperature, absencereduction, 'down');
-                      logMsg(`absence and SG-red active, effective setpoint: ${setpoint}`);
-                    } else {
-                      // SG-Modus green
-                      if (sgState === 'green') {
-                        setpoint = applySetpointOffset(thermostatTemperature, greenincrease, 'up');
-                        logMsg(`SG-green active, effective setpoint: ${setpoint}`);
-                      }
-
-                      // Night setback (nur Uhrzeit/LocalTime; Datum wird ignoriert)
-                      const nowLT = time.ZonedDateTime.now().toLocalTime();
-
-                      const nightStartLT = toLocalTimeFlexible(nightstart);
-                      const nightStopLT  = toLocalTimeFlexible(nightstop);
-
-                      logMsg(`current Time (LocalTime): ${nowLT}`);
-                      logMsg(`night start (LocalTime):  ${nightStartLT}`);
-                      logMsg(`night stop  (LocalTime):  ${nightStopLT}`);
-
-                      let nightActive = false;
-                      if (nightStartLT && nightStopLT) {
-                        if (nightStopLT.isAfter(nightStartLT)) {
-                          nightActive = nowLT.isAfter(nightStartLT) && nowLT.isBefore(nightStopLT);
-                        } else {
-                          nightActive = nowLT.isAfter(nightStartLT) || nowLT.isBefore(nightStopLT);
+                    if (thermostatMode === 'HEAT') {
+                      // Absence and SG-red check
+                      if (absenceState === 'OFF' && sgState === 'red') {
+                        setpoint = applySetpointOffset(thermostatTemperature, absencereduction, 'down');
+                        logMsg(`absence and SG-red active in HEAT mode, effective setpoint: ${setpoint}`);
+                      } else {
+                        // SG-green HEAT: Sollwert erhöhen
+                        if (sgState === 'green') {
+                          setpoint = thermostatTemperature.add(Quantity(greenincrease + '°C'));
+                          logMsg(`SG-green active in HEAT mode, effective setpoint increased by ${greenincrease}°C: ${setpoint}`);
                         }
-                      } else {
-                        logMsg('night setback times missing (NULL/UNDEF/parse error) – night setback disabled.');
+
+                        // Night setback nach Uhrzeit
+                        const nowLT = time.ZonedDateTime.now().toLocalTime();
+
+                        const nightStartLT = toLocalTimeFlexible(nightstart);
+                        const nightStopLT  = toLocalTimeFlexible(nightstop);
+
+                        logMsg(`current Time (LocalTime): ${nowLT}`);
+                        logMsg(`night start (LocalTime):  ${nightStartLT}`);
+                        logMsg(`night stop  (LocalTime):  ${nightStopLT}`);
+
+                        let nightActive = false;
+                        if (nightStartLT && nightStopLT) {
+                          if (nightStopLT.isAfter(nightStartLT)) {
+                            nightActive = nowLT.isAfter(nightStartLT) && nowLT.isBefore(nightStopLT);
+                          } else {
+                            nightActive = nowLT.isAfter(nightStartLT) || nowLT.isBefore(nightStopLT);
+                          }
+                        } else {
+                          logMsg('night setback times missing (NULL/UNDEF/parse error) – night setback disabled.');
+                        }
+
+                        if (nightActive) {
+                          setpoint = applySetpointOffset(thermostatTemperature, nightreduction, 'down');
+                          logMsg(`night setback active in HEAT mode, effective setpoint: ${setpoint}`);
+                        } else {
+                          logMsg(`night setback inactive in HEAT mode, effective setpoint: ${setpoint}`);
+                        }
+                      }
+                    }
+
+                    // COOL mit Sonderlogik
+                    else if (thermostatMode === 'COOL') {
+                      // SG-green COOL: eigener Reduktionswert, damit früher/stärker gekühlt wird
+                      if (smartgridAvailable && sgState === 'green') {
+                        setpoint = thermostatTemperature.subtract(Quantity(coolgreenreduction + '°C'));
+                        logMsg(`SG-green active in COOL mode, effective setpoint reduced by ${coolgreenreduction}°C: ${setpoint}`);
                       }
 
-                      if (nightActive) {
+                      // SG-red COOL: nur wenn Smart-Grid vorhanden ist, Nacht-Erhöhung anwenden
+                      else if (smartgridAvailable && sgState === 'red') {
                         setpoint = applySetpointOffset(thermostatTemperature, nightreduction, 'down');
-                        logMsg(`night setback active, effective setpoint: ${setpoint}`);
-                      } else {
-                        logMsg(`night setback inactive, effective setpoint: ${setpoint}`);
+                        logMsg(`SG-red active in COOL mode, night increase applied, effective setpoint: ${setpoint}`);
                       }
-                    }  
+
+                      // Kein Smart-Grid vorhanden: normale Zeitlogik wie bisher verwenden
+                      else if (!smartgridAvailable) {
+                        const nowLT = time.ZonedDateTime.now().toLocalTime();
+
+                        const nightStartLT = toLocalTimeFlexible(nightstart);
+                        const nightStopLT  = toLocalTimeFlexible(nightstop);
+
+                        logMsg(`current Time (LocalTime): ${nowLT}`);
+                        logMsg(`night start (LocalTime):  ${nightStartLT}`);
+                        logMsg(`night stop  (LocalTime):  ${nightStopLT}`);
+
+                        let nightActive = false;
+                        if (nightStartLT && nightStopLT) {
+                          if (nightStopLT.isAfter(nightStartLT)) {
+                            nightActive = nowLT.isAfter(nightStartLT) && nowLT.isBefore(nightStopLT);
+                          } else {
+                            nightActive = nowLT.isAfter(nightStartLT) || nowLT.isBefore(nightStopLT);
+                          }
+                        } else {
+                          logMsg('night setback times missing (NULL/UNDEF/parse error) – night setback disabled.');
+                        }
+
+                        if (nightActive) {
+                          setpoint = applySetpointOffset(thermostatTemperature, nightreduction, 'down');
+                          logMsg(`night setback active in COOL mode without SG item, effective setpoint: ${setpoint}`);
+                        } else {
+                          logMsg(`night setback inactive in COOL mode without SG item, effective setpoint: ${setpoint}`);
+                        }
+                      }
+
+                      // Smart-Grid vorhanden, aber orange/neutral
+                      else {
+                        logMsg(`COOL mode with SG state ${sgState}, no night time logic applied, effective setpoint: ${setpoint}`);
+                      }
+                    }
 
                     // Effektiven Sollwert ins (optionale) Item schreiben
                     safePostUpdate(setpointEffective, setpoint);
@@ -737,7 +805,8 @@ slots:
                   thermostat: {{input:THERMOSTAT}},
                   hysteresis: {{input:HYSTERESIS}},              
                   absencereduction: {{input:ABSENCEREDUCTION}}, 
-                  greenincrease: {{input:GREENINCREASE}}, 
+                  greenincrease: {{input:GREENINCREASE}},
+                  coolgreenreduction: {{input:COOLGREENREDUCTION}},
                   nightstart: {{input:NIGHTSTART}}, 
                   nightstop: {{input:NIGHTSTOP}}, 
                   nightreduction: {{input:NIGHTREDUCTION}},
@@ -809,9 +878,16 @@ slots:
               type: math_number
           - component: PresetInput
             config:
-              name: NIGHTREDUCTION
+              name: COOLGREENREDUCTION
               fields:
                 NUM: "0.5"
+              shadow: true
+              type: math_number
+          - component: PresetInput
+            config:
+              name: NIGHTREDUCTION
+              fields:
+                NUM: "0.2"
               shadow: true
               type: math_number
           - component: PresetInput

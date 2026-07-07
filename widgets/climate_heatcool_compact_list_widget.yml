@@ -65,6 +65,13 @@ props:
       type: TEXT
 
     - context: item
+      description: Smart-Grid Mode item (red / orange / green)
+      label: Smart-Grid Mode (String)
+      name: smartgrid
+      required: false
+      type: TEXT      
+
+    - context: item
       description: Manual Actor Mode item (String AUTO / FORCE_ON / FORCE_OFF)
       label: Manual Actor Mode (String)
       name: manualActorMode
@@ -277,33 +284,50 @@ slots:
                             (
                               (
                                 (
-                                  props.setbackStart && props.setbackEnd &&
-                                  items[props.setbackStart] && items[props.setbackEnd] &&
-                                  dayjs(items[props.setbackStart].state).isValid() &&
-                                  dayjs(items[props.setbackEnd].state).isValid()
+                                  props.istthermostat && items[props.istthermostat] &&
+                                  items[props.istthermostat].state === 'COOL' &&
+                                  props.smartgrid && items[props.smartgrid]
                                 )
                                 ?
+                                (
+                                  items[props.smartgrid].state === 'red'
+                                  ? '☾︎'
+                                  :
+                                  items[props.smartgrid].state === 'green'
+                                  ? '☀︎'
+                                  :
+                                  '☀︎'
+                                )
+                                :
+                                (
                                   (
-                                    (
-                                      (
-                                        (dayjs().hour()*60 + dayjs().minute())
-                                        - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
-                                        + 1440
-                                      ) % 1440
-                                    )
-                                    <
-                                    (
-                                      (
-                                        (dayjs(items[props.setbackEnd].state).hour()*60 + dayjs(items[props.setbackEnd].state).minute())
-                                        - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
-                                        + 1440
-                                      ) % 1440
-                                    )
-                                    ? '☾︎' : '☀︎'
+                                    props.setbackStart && props.setbackEnd &&
+                                    items[props.setbackStart] && items[props.setbackEnd] &&
+                                    dayjs(items[props.setbackStart].state).isValid() &&
+                                    dayjs(items[props.setbackEnd].state).isValid()
                                   )
-                                : ''
+                                  ?
+                                    (
+                                      (
+                                        (
+                                          (dayjs().hour()*60 + dayjs().minute())
+                                          - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
+                                          + 1440
+                                        ) % 1440
+                                      )
+                                      <
+                                      (
+                                        (
+                                          (dayjs(items[props.setbackEnd].state).hour()*60 + dayjs(items[props.setbackEnd].state).minute())
+                                          - (dayjs(items[props.setbackStart].state).hour()*60 + dayjs(items[props.setbackStart].state).minute())
+                                          + 1440
+                                        ) % 1440
+                                      )
+                                      ? '☾︎' : '☀︎'
+                                    )
+                                  : ''
+                                )
                               )
-
                               + ' '
 
                               + (

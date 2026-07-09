@@ -207,7 +207,7 @@ slots:
               style:
                 cursor: pointer
 
-  default:
+  inner:
     - component: f7-block
       config:
         style:

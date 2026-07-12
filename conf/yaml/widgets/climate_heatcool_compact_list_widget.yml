@@ -337,7 +337,7 @@ widgets:
                                         Number.parseFloat(items[props.setpointEffective].state) !=
                                         Number.parseFloat(items[props.item].state)
                                         ?
-                                        ' (' + items[props.setpointEffective].state + ')'
+                                        ' (' + (items[props.setpointEffective].displayState || items[props.setpointEffective].state) + ')'
                                         :
                                         ''
                                       )
@@ -400,7 +400,7 @@ widgets:
                                             font-size: 12px
                                             line-height: 1.1
                                             white-space: nowrap
-                                          text: "=props.isttemp && items[props.isttemp] ? items[props.isttemp].state : '-'"
+                                          text: "=props.isttemp && items[props.isttemp] ? (items[props.isttemp].displayState || items[props.isttemp].state) : '-'"
                                       - component: Label
                                         config:
                                           style:
@@ -410,7 +410,7 @@ widgets:
                                             line-height: 1.1
                                             opacity: 0.75
                                             white-space: nowrap
-                                          text: "=props.isthumidity && items[props.isthumidity] ? '(' + items[props.isthumidity].state + ')' : ''"
+                                          text: "=props.isthumidity && items[props.isthumidity] ? '(' + (items[props.isthumidity].displayState || items[props.isthumidity].state) + ')' : ''"
                                 - component: oh-stepper
                                   config:
                                     color: "= ( props.booster && items[props.booster] && props.istthermostat && items[props.istthermostat] && props.istvalve && items[props.istvalve] && items[props.booster].state === 'ON' && items[props.istthermostat].state === 'HEAT' && items[props.istvalve].state === 'ON' ) ? 'deeporange' : ( props.booster && items[props.booster] && props.istthermostat && items[props.istthermostat] && props.istvalve && items[props.istvalve] && items[props.booster].state === 'ON' && items[props.istthermostat].state === 'COOL' && items[props.istvalve].state === 'ON' ) ? 'blue' : ( props.istvalve && items[props.istvalve] && props.istthermostat && items[props.istthermostat] && items[props.istvalve].state === 'ON' && items[props.istthermostat].state === 'HEAT' ) ? 'yellow' : ( props.istvalve && items[props.istvalve] && props.istthermostat && items[props.istthermostat] && items[props.istvalve].state === 'ON' && items[props.istthermostat].state === 'COOL' ) ? 'lightblue' : ( props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'HEAT' ) ? 'green' : ( props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'COOL' ) ? 'green' : ( props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'OFF' ) ? 'red' : 'gray'"

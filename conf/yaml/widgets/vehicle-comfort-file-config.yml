@@ -1,0 +1,1504 @@
+---
+version: 1
+widgets:
+  bmw_vehicle_comfort_list:
+    tags: []
+    props:
+      parameterGroups:
+        - name: vehicle
+          label: Fahrzeug
+        - name: energy
+          label: Energie und Kilometer
+        - name: status
+          label: Status und Empfangszeit
+        - name: openings
+          label: Fenster, Türen und Kofferraum
+        - name: tires
+          label: Reifen
+      parameters:
+        - name: vehicleName
+          label: Fahrzeugname
+          type: TEXT
+          default: Mein BMW
+          groupName: vehicle
+        - name: vehicleGroup
+          label: Vehicle-Equipment-Gruppe
+          type: TEXT
+          context: item
+          groupName: vehicle
+          description: Zur Zuordnung dokumentiert; Messwerte werden ausdrücklich über die folgenden
+            Item-Parameter gewählt.
+        - name: driveType
+          label: Antrieb
+          type: TEXT
+          default: EV
+          groupName: vehicle
+          options:
+            - label: Elektro
+              value: EV
+            - label: Diesel
+              value: DIESEL
+            - label: Benzin
+              value: ICE
+            - label: Plug-in-Hybrid
+              value: PHEV
+        - name: batteryItem
+          label: Akku (%)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Dimensionless, Wert von 0 bis 100 in Prozent.
+        - name: fuelItem
+          label: Tank (%)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Dimensionless, Wert von 0 bis 100 in Prozent.
+        - name: batteryEnergyItem
+          label: Aktueller Akkuinhalt als Item (optional, kWh / Wh)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Nur ein Item für tatsächlich aktuell gespeicherte Energie, nicht die
+            Gesamtkapazität. Optionaler direkter Messwert; sonst wird der Inhalt aus nutzbarer
+            Kapazität und Ladeprozent berechnet.
+        - name: batteryMissingEnergyItem
+          label: Fehlende Akkuenergie bis 100 % (kWh)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: 'Optional: BMW smeEnergyDeltaFullyCharged; kWh oder Wh, einheitenlos
+            als kWh. Vorrang vor Berechnung aus Akkukapazität.'
+        - name: batteryCapacityItem
+          label: Nutzbare Akkukapazität als Item (kWh / Wh)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Gesamtkapazität des nutzbaren Akkus. Berechnet aktuellen Akkuinhalt und
+            fehlende Energie aus Ladeprozent. Vorrang vor fester Kapazität. Das Delta-Item ersetzt
+            nur die Berechnung der fehlenden Energie.
+        - name: batteryCapacityKwh
+          label: Nutzbare Akkukapazität (kWh)
+          type: DECIMAL
+          min: 0
+          groupName: energy
+          description: Feste nutzbare Gesamtkapazität für die Berechnung des aktuellen Akkuinhalts
+            und der fehlenden Energie aus Ladeprozent; alternativ Kapazitäts-Item verwenden.
+            Ohne Ladeverluste.
+        - name: fuelRemainingItem
+          label: Restkraftstoff (Liter)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: 'Optional: BMW remainingFuel; Zustand in l/L, einheitenlos als Liter.
+            Zusammen mit Tankkapazität zur Berechnung der fehlenden Liter.'
+        - name: tankCapacityLiters
+          label: Tankkapazität (Liter)
+          type: DECIMAL
+          min: 0
+          groupName: energy
+          description: 'Für fehlende Liter: Tankkapazität minus Restkraftstoff, andernfalls
+            Schätzung aus Tank-Prozentstand.'
+        - name: rangeItem
+          label: Gesamtreichweite (km)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Length, Zustand in km.
+        - name: electricRangeItem
+          label: Elektrische Reichweite (km)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Optional für Plug-in-Hybrid; Zustand in km.
+        - name: mileageItem
+          label: Kilometerstand (km)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Length, Zustand in km.
+        - name: chargingItem
+          label: Ladestatus
+          type: TEXT
+          context: item
+          groupName: status
+          description: Switch oder String. Aktive und inaktive Zustände unten konfigurieren.
+        - name: chargingCableItem
+          label: Ladekabel angeschlossen
+          type: TEXT
+          context: item
+          groupName: status
+          description: 'Optional: Anschlussstatus des Ladekabels, unabhängig vom eigentlichen
+            Ladestatus.'
+        - name: chargingCableConnectedStates
+          label: 'Ladekabel: angeschlossen'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Rohzustände als einzelne Einträge. Standard: ON, TRUE, CONNECTED, PLUGGED_IN.'
+        - name: chargingCableDisconnectedStates
+          label: 'Ladekabel: getrennt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Rohzustände als einzelne Einträge. Standard: OFF, FALSE, DISCONNECTED,
+            UNPLUGGED.'
+        - name: chargingPowerItem
+          label: Ladeleistung Wallbox (W / kW)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Leistungs-Item des Wallbox-Strommessers. W oder kW werden als Watt angezeigt;
+            ohne Einheit wird W angenommen. Keine automatische Ableitung des Fahrzeug-Ladestatus.
+        - name: chargingPowerStandbyWatts
+          label: Standby-Grenze Wallbox (W)
+          type: INTEGER
+          default: 10
+          min: 0
+          groupName: energy
+          description: 'Messwerte bis einschließlich dieser Grenze werden als 0 W angezeigt.
+            Größere Messwerte bleiben unverändert. Standard: 10 W.'
+        - name: chargeTargetItem
+          label: Ladeziel (%)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Optional; Zustand in Prozent.
+        - name: chargeRemainingItem
+          label: Restladezeit (Minuten)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Optional; Number oder Number:Time, Zustand in min.
+        - name: lockItem
+          label: Verriegelungsstatus
+          type: TEXT
+          context: item
+          groupName: status
+          description: Switch oder String. Verriegelt/entriegelt unten konfigurieren.
+        - name: windowItems
+          label: Fenster (mehrere Items)
+          type: TEXT
+          context: item
+          multiple: true
+          groupName: openings
+          description: Einzelne Fenster-Items auswählen. Keine Item-Gruppe erforderlich; unbekannte
+            Werte bleiben sichtbar.
+        - name: doorItems
+          label: Türen und Kofferraum (mehrere Items)
+          type: TEXT
+          context: item
+          multiple: true
+          groupName: openings
+          description: Einzelne Tür- und Kofferraum-Items auswählen. Öffnungszustände verwenden,
+            keinen Verriegelungsstatus.
+        - name: windowOpenStates
+          label: 'Fenster: offen / teilweise offen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für offene Fenster. Ohne eigene Liste: OPEN, OPENED, INTERMEDIATE,
+            TILTED, PARTIALLY_OPEN. Mehrere Zustände als einzelne Einträge hinzufügen.'
+        - name: windowClosedStates
+          label: 'Fenster: geschlossen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für geschlossene Fenster. Ohne eigene Liste: CLOSE, CLOSED.'
+        - name: doorOpenStates
+          label: 'Türen und Kofferraum: offen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für offene Türen und Kofferraum. Ohne eigene Liste: TRUE,
+            ON.'
+        - name: doorClosedStates
+          label: 'Türen und Kofferraum: geschlossen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für geschlossene Türen und Kofferraum. Ohne eigene Liste:
+            FALSE, OFF.'
+        - name: openingsItem
+          label: Öffnungsstatus (bisheriges Sammel-Item, optional)
+          type: TEXT
+          context: item
+          groupName: openings
+          description: 'Fallback, wenn keine Fenster-/Tür-Items ausgewählt sind. ON: offen,
+            OFF: zu. Neue Einzel-Items haben Vorrang.'
+        - name: tireWarningItem
+          label: Reifenwarnung (aggregiert)
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: ON bedeutet Warnung, OFF bedeutet keine gemeldete Warnung.
+            Ohne dieses Item wird kein Reifen-OK abgeleitet.'
+        - name: tirePressureUnit
+          label: Reifendruck-Einheit bei Werten ohne Einheit
+          type: TEXT
+          default: bar
+          groupName: tires
+          options:
+            - label: bar
+              value: bar
+            - label: kPa
+              value: kPa
+            - label: Pa
+              value: Pa
+            - label: hPa
+              value: hPa
+            - label: MPa
+              value: MPa
+            - label: psi
+              value: psi
+          description: Nur wenn der Item-Rohzustand und items.unit keine Einheit liefern. Bei
+            einheitenlosen BMW-Werten in kPa hier kPa auswählen. Number:Pressure bevorzugen.
+        - name: tireFLItem
+          label: Reifendruck vorne links
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: tireFRItem
+          label: Reifendruck vorne rechts
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: tireRLItem
+          label: Reifendruck hinten links
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: tireRRItem
+          label: Reifendruck hinten rechts
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: lastUpdateItem
+          label: Letzter Empfang (DateTime)
+          type: TEXT
+          context: item
+          groupName: status
+          description: 'Homie telemetry#last-update: Empfangszeit der Bridge, kein Messzeitpunkt
+            jedes einzelnen Werts.'
+        - name: lockedState
+          label: 'Zustände: verriegelt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung
+            beachten. Ohne eigene Zuordnung: ON.'
+        - name: unlockedState
+          label: 'Zustände: entriegelt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung
+            beachten. Ohne eigene Zuordnung: OFF.'
+        - name: chargingState
+          label: 'Zustände: lädt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung beachten.
+        - name: notChargingState
+          label: 'Zustände: lädt nicht'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung beachten.
+    component: f7-list-item
+    config:
+      accordionItem: =!!(((props.windowItems || []).length > 0 || (props.doorItems || []).length
+        > 0) || !!(props.tireFLItem || props.tireFRItem || props.tireRLItem || props.tireRRItem))
+      noChevron: true
+      class: bmw-vehicle-comfort
+      style:
+        --f7-list-item-padding-horizontal: 16px
+        --f7-list-item-min-height: 44px
+    slots:
+      inner:
+        - component: oh-context
+          config:
+            functions:
+              state: '=(name) => name && items[name] ? items[name].state : ''UNDEF'''
+              number: '=(name) => name && items[name] && items[name].state !== ''NULL'' && items[name].state
+                !== ''UNDEF'' && items[name].state !== '''' ? (items[name].numericState !==
+                undefined ? items[name].numericState : Number.parseFloat(items[name].state))
+                : -1'
+              value: '=(name, suffix, digits) => name && items[name] && items[name].state !==
+                ''NULL'' && items[name].state !== ''UNDEF'' && Number.isFinite(Number.parseFloat(items[name].state))
+                && Number.parseFloat(items[name].state) >= 0 ? Number.parseFloat(items[name].state).toLocaleString(''de-DE'',
+                {minimumFractionDigits:digits, maximumFractionDigits:digits}) + suffix : ''—'''
+              power: '=(name) => name && items[name] && Number.isFinite(Number.parseFloat(items[name].state))
+                && Number.parseFloat(items[name].state) >= 0 && (!items[name].unit || items[name].unit
+                === ''W'' || items[name].unit === ''kW'') && (items[name].state.split('' '').length
+                === 1 || items[name].state.split('' '')[1] === ''W'' || items[name].state.split(''
+                '')[1] === ''kW'') ? Number.parseFloat(items[name].state) * (items[name].unit
+                === ''kW'' || items[name].state.split('' '')[1] === ''kW'' ? 1000 : 1) : -1'
+              pressure: '=(name) => name && items[name] && Number.isFinite(Number.parseFloat(items[name].state))
+                && Number.parseFloat(items[name].state) >= 0 && ({bar:1,kPa:0.01,Pa:0.00001,hPa:0.001,MPa:10,psi:0.0689475729317831})[(items[name].state.trim().split(/\s+/)[1]
+                || items[name].unit || props.tirePressureUnit || ''bar'')] !== undefined ? (Number.parseFloat(items[name].state)
+                * ({bar:1,kPa:0.01,Pa:0.00001,hPa:0.001,MPa:10,psi:0.0689475729317831})[(items[name].state.trim().split(/\s+/)[1]
+                || items[name].unit || props.tirePressureUnit || ''bar'')]).toLocaleString(''de-DE'',
+                {minimumFractionDigits:2,maximumFractionDigits:2}) + '' bar'' : ''—'''
+              openingNames: '=(selection) => (selection && selection.split ? [selection] : selection
+                || []).filter((name) => !!name).filter((name, index, names) => names.indexOf(name)
+                === index)'
+              openingState: '=(name) => [''NULL'', ''UNDEF'', ''''].indexOf((name && items[name]
+                && items[name].state ? items[name].state.trim().toUpperCase() : ''UNDEF''))
+                >= 0 ? ''unknown'' : ((props.windowItems && props.windowItems.split ? [props.windowItems]
+                : props.windowItems || []).indexOf(name) >= 0 ? (props.windowOpenStates || [''OPEN'',
+                ''OPENED'', ''INTERMEDIATE'', ''TILTED'', ''PARTIALLY_OPEN'']) : (props.doorOpenStates
+                || [''TRUE'', ''ON''])).map((state) => state.trim().toUpperCase()).indexOf((name
+                && items[name] && items[name].state ? items[name].state.trim().toUpperCase()
+                : ''UNDEF'')) >= 0 ? ''open'' : ((props.windowItems && props.windowItems.split
+                ? [props.windowItems] : props.windowItems || []).indexOf(name) >= 0 ? (props.windowClosedStates
+                || [''CLOSE'', ''CLOSED'']) : (props.doorClosedStates || [''FALSE'', ''OFF''])).map((state)
+                => state.trim().toUpperCase()).indexOf((name && items[name] && items[name].state
+                ? items[name].state.trim().toUpperCase() : ''UNDEF'')) >= 0 ? ''closed'' : ''unknown'''
+              openingCount: =(states, state) => states.filter((value) => value === state).length
+              openingSummary: '=(states) => states.filter((state) => state === ''open'').length
+                > 0 ? states.filter((state) => state === ''open'').length + '' offen'' + (states.filter((state)
+                => state === ''unknown'').length > 0 ? '' · '' + states.filter((state) => state
+                === ''unknown'').length + '' unbekannt'' : '''') : states.filter((state) =>
+                state === ''unknown'').length > 0 ? states.filter((state) => state === ''unknown'').length
+                + '' unbekannt'' : states.length > 0 ? ''alle überwachten zu'' : ''nicht konfiguriert'''
+              openingText: '=(state) => state === ''open'' ? ''Offen'' : state === ''closed''
+                ? ''Geschlossen'' : ''Unbekannt'''
+              energy: '=(name) => name && items[name] && Number.isFinite(Number.parseFloat(items[name].state))
+                && Number.parseFloat(items[name].state) >= 0 && [''kWh'', ''Wh''].indexOf(items[name].state.trim().split(/\s+/)[1]
+                || items[name].unit || ''kWh'') >= 0 ? Number.parseFloat(items[name].state)
+                * ((items[name].state.trim().split(/\s+/)[1] || items[name].unit || ''kWh'')
+                === ''Wh'' ? 0.001 : 1) : -1'
+              liters: '=(name) => name && items[name] && Number.isFinite(Number.parseFloat(items[name].state))
+                && Number.parseFloat(items[name].state) >= 0 && [''l'', ''L''].indexOf(items[name].state.trim().split(/\s+/)[1]
+                || items[name].unit || ''l'') >= 0 ? Number.parseFloat(items[name].state) :
+                -1'
+              deficit: '=(percent, capacity, remaining, useRemaining) => Number.isFinite(Number(capacity))
+                && Number(capacity) > 0 ? (useRemaining ? (remaining >= 0 && remaining <= Number(capacity)
+                ? Number(capacity) - remaining : -1) : (percent >= 0 && percent <= 100 ? Number(capacity)
+                * (100 - percent) / 100 : -1)) : -1'
+              amount: '=(value, unit) => Number.isFinite(value) && value >= 0 ? value.toLocaleString(''de-DE'',
+                {minimumFractionDigits:1, maximumFractionDigits:1}) + unit : ''—'''
+              cableState: '=(name) => [''NULL'',''UNDEF'',''''].indexOf((name && items[name]
+                && items[name].state ? items[name].state.trim().toUpperCase() : ''UNDEF''))
+                >= 0 ? ''unknown'' : (props.chargingCableConnectedStates || [''ON'',''TRUE'',''CONNECTED'',''PLUGGED_IN'']).map((value)
+                => value.trim().toUpperCase()).indexOf((name && items[name] && items[name].state
+                ? items[name].state.trim().toUpperCase() : ''UNDEF'')) >= 0 ? ''connected''
+                : (props.chargingCableDisconnectedStates || [''OFF'',''FALSE'',''DISCONNECTED'',''UNPLUGGED'']).map((value)
+                => value.trim().toUpperCase()).indexOf((name && items[name] && items[name].state
+                ? items[name].state.trim().toUpperCase() : ''UNDEF'')) >= 0 ? ''disconnected''
+                : ''unknown'''
+              storedEnergy: '=(percent, capacity) => Number.isFinite(Number(capacity)) && Number(capacity)
+                > 0 && Number.isFinite(percent) && percent >= 0 && percent <= 100 ? Number(capacity)
+                * percent / 100 : -1'
+          slots:
+            default:
+              - component: div
+                config:
+                  style:
+                    width: 100%
+                    min-width: '0'
+                    white-space: normal
+                    padding: 12px 0
+                slots:
+                  default:
+                    - component: div
+                      config:
+                        style:
+                          display: flex
+                          align-items: flex-start
+                          justify-content: space-between
+                          flex-wrap: wrap
+                          gap: 8px
+                          margin-bottom: 14px
+                      slots:
+                        default:
+                          - component: div
+                            config: {}
+                            slots:
+                              default:
+                                - component: Label
+                                  config:
+                                    text: =props.vehicleName || 'Mein BMW'
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 17px
+                                      font-weight: '600'
+                                - component: Label
+                                  config:
+                                    text: '=(props.driveType === ''DIESEL'' ? ''Diesel'' : props.driveType
+                                      === ''ICE'' ? ''Benzin'' : props.driveType === ''PHEV''
+                                      ? ''Plug-in-Hybrid'' : ''Elektro'') + (props.mileageItem
+                                      ? '' · '' + fn.value(props.mileageItem, '' km'', 0) :
+                                      '''')'
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 13px
+                                      color: var(--f7-list-item-footer-text-color, var(--f7-text-color))
+                          - component: div
+                            config:
+                              style:
+                                text-align: right
+                                max-width: 100%
+                                min-width: '0'
+                            slots:
+                              default:
+                                - component: Label
+                                  config:
+                                    text: '=[].concat(props.lockedState || ''ON'').indexOf(fn.state(props.lockItem)) >= 0 ? ''Zuletzt: verriegelt'' : [].concat(props.unlockedState || ''OFF'').indexOf(fn.state(props.lockItem)) >= 0 ? ''Zuletzt: offen''
+                                      : ''Verriegelung unbekannt'''
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 13px
+                                      color: '=[].concat(props.lockedState || ''ON'').indexOf(fn.state(props.lockItem)) >= 0 ? ''var(--f7-color-green)'' : [].concat(props.unlockedState || ''OFF'').indexOf(fn.state(props.lockItem)) >= 0 ? ''var(--f7-color-orange)''
+                                        : ''var(--f7-list-item-footer-text-color)'''
+                                      max-width: 100%
+                                    visible: =!!props.lockItem
+                                - component: Label
+                                  config:
+                                    text: '=fn.state(props.lastUpdateItem) !== ''UNDEF'' &&
+                                      fn.state(props.lastUpdateItem) !== ''NULL'' && dayjs(fn.state(props.lastUpdateItem)).isValid()
+                                      ? ''*'' + dayjs(fn.state(props.lastUpdateItem)).format(''DD.MM.YYYY
+                                      HH:mm'') : ''Letzter Empfang unbekannt'''
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 13px
+                                      color: var(--f7-list-item-footer-text-color, var(--f7-text-color))
+                                    visible: =!!props.lastUpdateItem
+                    - component: div
+                      config:
+                        style:
+                          display: flex
+                          align-items: center
+                          justify-content: space-between
+                          flex-wrap: wrap
+                          gap: 8px
+                          margin-bottom: 10px
+                        visible: =!!props.rangeItem
+                      slots:
+                        default:
+                          - component: Label
+                            config:
+                              text: =fn.value(props.rangeItem, ' km', 0)
+                              style:
+                                white-space: normal
+                                overflow-wrap: anywhere
+                                font-size: 23px
+                                font-weight: '600'
+                          - component: Label
+                            config:
+                              text: '=props.driveType === ''PHEV'' ? ''Gesamtreichweite'' :
+                                ''Reichweite'''
+                              style:
+                                white-space: normal
+                                overflow-wrap: anywhere
+                                font-size: 13px
+                                color: var(--f7-list-item-footer-text-color, var(--f7-text-color))
+                    - component: div
+                      config:
+                        visible: =!!props.batteryItem && (props.driveType !== 'ICE' && props.driveType
+                          !== 'DIESEL')
+                        style:
+                          margin-bottom: 12px
+                      slots:
+                        default:
+                          - component: div
+                            config:
+                              style:
+                                display: flex
+                                align-items: center
+                                justify-content: space-between
+                                flex-wrap: wrap
+                                gap: 8px
+                            slots:
+                              default:
+                                - component: div
+                                  config:
+                                    style:
+                                      display: inline-flex
+                                      align-items: center
+                                      flex-wrap: wrap
+                                      gap: 6px
+                                      min-width: '0'
+                                  slots:
+                                    default:
+                                      - component: span
+                                        config:
+                                          role: img
+                                          aria-label: Akku
+                                          title: Akku
+                                          style:
+                                            display: inline-flex
+                                            align-items: center
+                                            flex-shrink: '0'
+                                        slots:
+                                          default:
+                                            - component: oh-icon
+                                              config:
+                                                icon: material:battery_full
+                                                width: '22'
+                                                height: '22'
+                                                style:
+                                                  color: var(--f7-text-color)
+                                      - component: Label
+                                        config:
+                                          text: '=(props.batteryMissingEnergyItem || props.batteryCapacityItem
+                                            || Number(props.batteryCapacityKwh) > 0 ? fn.amount(props.batteryMissingEnergyItem
+                                            ? fn.energy(props.batteryMissingEnergyItem) : fn.deficit(fn.number(props.batteryItem),
+                                            props.batteryCapacityItem ? fn.energy(props.batteryCapacityItem)
+                                            : props.batteryCapacityKwh, -1, false), '' kWh'')
+                                            + '' nachladen'' : '''')'
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                          visible: =!!(props.batteryMissingEnergyItem || props.batteryCapacityItem
+                                            || Number(props.batteryCapacityKwh) > 0)
+                                - component: Label
+                                  config:
+                                    text: '=((props.batteryEnergyItem || props.batteryCapacityItem
+                                      || Number(props.batteryCapacityKwh) > 0) ? fn.amount(props.batteryEnergyItem
+                                      ? fn.energy(props.batteryEnergyItem) : fn.storedEnergy(fn.number(props.batteryItem),
+                                      props.batteryCapacityItem ? fn.energy(props.batteryCapacityItem)
+                                      : props.batteryCapacityKwh), '' kWh'') + '' · '' : '''')
+                                      + fn.value(props.batteryItem, '' %'', 0)'
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 16px
+                                      font-weight: '500'
+                          - component: div
+                            config:
+                              visible: =fn.number(props.batteryItem) >= 0 && fn.number(props.batteryItem)
+                                <= 100
+                              style:
+                                height: 5px
+                                background: var(--f7-input-outline-border-color, var(--f7-list-item-border-color))
+                                border-radius: 4px
+                                overflow: hidden
+                                margin-top: 6px
+                            slots:
+                              default:
+                                - component: div
+                                  config:
+                                    style:
+                                      height: 100%
+                                      background: '=fn.number(props.batteryItem) < 10 ? ''var(--f7-color-red)''
+                                        : fn.number(props.batteryItem) < 30 ? ''var(--f7-color-yellow)''
+                                        : fn.number(props.batteryItem) <= 70 ? ''var(--f7-color-orange)''
+                                        : ''var(--f7-color-green)'''
+                                      width: =Math.max(0, Math.min(100, fn.number(props.batteryItem)))
+                                        + '%'
+                    - component: div
+                      config:
+                        visible: =!!props.fuelItem && (props.driveType === 'ICE' || props.driveType
+                          === 'DIESEL' || props.driveType === 'PHEV')
+                        style:
+                          margin-bottom: 12px
+                      slots:
+                        default:
+                          - component: div
+                            config:
+                              style:
+                                display: flex
+                                align-items: center
+                                justify-content: space-between
+                                flex-wrap: wrap
+                                gap: 8px
+                            slots:
+                              default:
+                                - component: div
+                                  config:
+                                    style:
+                                      display: inline-flex
+                                      align-items: center
+                                      flex-wrap: wrap
+                                      gap: 6px
+                                      min-width: '0'
+                                  slots:
+                                    default:
+                                      - component: span
+                                        config:
+                                          role: img
+                                          aria-label: Tank
+                                          title: Tank
+                                          style:
+                                            display: inline-flex
+                                            align-items: center
+                                            flex-shrink: '0'
+                                        slots:
+                                          default:
+                                            - component: oh-icon
+                                              config:
+                                                icon: material:local_gas_station
+                                                width: '22'
+                                                height: '22'
+                                                style:
+                                                  color: var(--f7-text-color)
+                                      - component: Label
+                                        config:
+                                          text: '=(Number(props.tankCapacityLiters) > 0 ? fn.amount(fn.deficit(fn.number(props.fuelItem),
+                                            props.tankCapacityLiters, fn.liters(props.fuelRemainingItem),
+                                            !!props.fuelRemainingItem), '' l'') + '' nachtanken''
+                                            : '''')'
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                          visible: =Number(props.tankCapacityLiters) > 0
+                                - component: Label
+                                  config:
+                                    text: '=(props.fuelRemainingItem ? fn.amount(fn.liters(props.fuelRemainingItem),
+                                      '' l'') + '' · '' : '''') + fn.value(props.fuelItem, ''
+                                      %'', 0)'
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 16px
+                                      font-weight: '500'
+                          - component: div
+                            config:
+                              visible: =fn.number(props.fuelItem) >= 0 && fn.number(props.fuelItem)
+                                <= 100
+                              style:
+                                height: 5px
+                                background: var(--f7-input-outline-border-color, var(--f7-list-item-border-color))
+                                border-radius: 4px
+                                overflow: hidden
+                                margin-top: 6px
+                            slots:
+                              default:
+                                - component: div
+                                  config:
+                                    style:
+                                      height: 100%
+                                      background: '=fn.number(props.fuelItem) < 10 ? ''var(--f7-color-red)''
+                                        : fn.number(props.fuelItem) < 30 ? ''var(--f7-color-yellow)''
+                                        : fn.number(props.fuelItem) <= 70 ? ''var(--f7-color-orange)''
+                                        : ''var(--f7-color-green)'''
+                                      width: =Math.max(0, Math.min(100, fn.number(props.fuelItem)))
+                                        + '%'
+                    - component: Label
+                      config:
+                        visible: =!!props.electricRangeItem && props.driveType === 'PHEV'
+                        text: '=''Elektrisch: '' + fn.value(props.electricRangeItem, '' km'',
+                          0)'
+                        style:
+                          font-size: 14px
+                          margin-bottom: 10px
+                          white-space: normal
+                    - component: div
+                      config:
+                        visible: =(props.driveType !== 'ICE' && props.driveType !== 'DIESEL')
+                          && !!(props.chargingItem || props.chargeTargetItem || props.chargeRemainingItem
+                          || props.chargingPowerItem || props.chargingCableItem)
+                        style:
+                          display: flex
+                          align-items: center
+                          flex-wrap: wrap
+                          gap: 8px
+                          margin-bottom: 10px
+                      slots:
+                        default:
+                          - component: span
+                            config:
+                              visible: =!!props.chargingCableItem
+                              title: '=fn.cableState(props.chargingCableItem) === ''connected''
+                                ? ''Ladekabel angeschlossen'' : fn.cableState(props.chargingCableItem)
+                                === ''disconnected'' ? ''Ladekabel nicht angeschlossen'' : ''Ladekabelstatus
+                                unbekannt'''
+                              style:
+                                display: inline-flex
+                                align-items: center
+                                gap: 4px
+                                color: '=fn.cableState(props.chargingCableItem) === ''connected''
+                                  ? ''var(--f7-color-green)'' : fn.cableState(props.chargingCableItem)
+                                  === ''disconnected'' ? ''var(--f7-list-item-footer-text-color,
+                                  var(--f7-text-color))'' : ''var(--f7-color-orange)'''
+                              aria-label: '=fn.cableState(props.chargingCableItem) === ''connected''
+                                ? ''Ladekabel angeschlossen'' : fn.cableState(props.chargingCableItem)
+                                === ''disconnected'' ? ''Ladekabel nicht angeschlossen'' : ''Ladekabelstatus
+                                unbekannt'''
+                              role: img
+                            slots:
+                              default:
+                                - component: oh-icon
+                                  config:
+                                    icon: '=fn.cableState(props.chargingCableItem) === ''connected''
+                                      ? ''material:power'' : fn.cableState(props.chargingCableItem)
+                                      === ''disconnected'' ? ''material:power_off'' : ''material:help_outline'''
+                                    width: '20'
+                                    height: '20'
+                                    style:
+                                      color: '=fn.cableState(props.chargingCableItem) === ''connected''
+                                        ? ''var(--f7-color-green)'' : fn.cableState(props.chargingCableItem)
+                                        === ''disconnected'' ? ''var(--f7-list-item-footer-text-color,
+                                        var(--f7-text-color))'' : ''var(--f7-color-orange)'''
+                                      flex-shrink: '0'
+                          - component: Label
+                            config:
+                              text: '=(props.chargingItem ? ([].concat(props.chargingState || ''ON'').indexOf(fn.state(props.chargingItem))
+                                >= 0 ? ''Lädt'' : [].concat(props.notChargingState || ''OFF'').indexOf(fn.state(props.chargingItem))
+                                >= 0 ? ''Lädt nicht'' : ''Ladestatus
+                                unbekannt'') : '''') + (props.chargeTargetItem ? (props.chargingItem
+                                ? '' · '' : '''') + ''Ladeziel: '' + fn.value(props.chargeTargetItem,
+                                '' %'', 0) : '''') + (props.chargeRemainingItem ? (props.chargingItem
+                                || props.chargeTargetItem ? '' · '' : '''') + ''Restladezeit:
+                                '' + fn.value(props.chargeRemainingItem, '' Min.'', 0) : '''')
+                                + (props.chargingPowerItem ? (props.chargingItem || props.chargeTargetItem
+                                || props.chargeRemainingItem ? '' · '' : '''') + (''Ladeleistung:
+                                '' + (fn.power(props.chargingPowerItem) >= 0 ? (fn.power(props.chargingPowerItem)
+                                <= (props.chargingPowerStandbyWatts !== undefined ? Math.max(0,
+                                Number(props.chargingPowerStandbyWatts)) : 10) ? 0 : Math.round(fn.power(props.chargingPowerItem))).toLocaleString(''de-DE'')
+                                + '' W'' : ''—'')) : '''')'
+                              style:
+                                white-space: normal
+                                overflow-wrap: anywhere
+                                font-size: 14px
+                                margin-bottom: '0'
+                                flex: 1 1 160px
+                              visible: =(props.driveType !== 'ICE' && props.driveType !== 'DIESEL')
+                                && !!(props.chargingItem || props.chargeTargetItem || props.chargeRemainingItem
+                                || props.chargingPowerItem)
+                    - component: Label
+                      config:
+                        text: '=fn.state(props.tireWarningItem) === ''ON'' ? ''⚠ Reifenwarnung
+                          gemeldet'' : fn.state(props.tireWarningItem) === ''OFF'' ? ''Keine
+                          Reifenwarnung gemeldet'' : ''Reifenstatus unbekannt'''
+                        style:
+                          white-space: normal
+                          overflow-wrap: anywhere
+                          font-size: 14px
+                          color: '=fn.state(props.tireWarningItem) === ''ON'' ? ''var(--f7-color-orange)''
+                            : ''var(--f7-text-color)'''
+                          margin-bottom: 8px
+                        visible: =!!props.tireWarningItem
+                    - component: Label
+                      config:
+                        text: '=((props.windowItems || []).length > 0 || (props.doorItems ||
+                          []).length > 0) ? (fn.openingCount(fn.openingNames(fn.openingNames(props.windowItems).concat(fn.openingNames(props.doorItems))).map(fn.openingState),
+                          ''open'') > 0 ? ''⚠ '' : '''') + ''Öffnungen: '' + fn.openingSummary(fn.openingNames(fn.openingNames(props.windowItems).concat(fn.openingNames(props.doorItems))).map(fn.openingState))
+                          : fn.state(props.openingsItem) === ''ON'' ? ''⚠ Tür/Fenster offen''
+                          : fn.state(props.openingsItem) === ''OFF'' ? ''Überwachte Türen &
+                          Fenster zu'' : ''Türen/Fenster unbekannt'''
+                        style:
+                          white-space: normal
+                          overflow-wrap: anywhere
+                          font-size: 14px
+                          color: '=((props.windowItems || []).length > 0 || (props.doorItems
+                            || []).length > 0) ? (fn.openingCount(fn.openingNames(fn.openingNames(props.windowItems).concat(fn.openingNames(props.doorItems))).map(fn.openingState),
+                            ''open'') > 0 ? ''var(--f7-color-orange)'' : ''var(--f7-text-color)'')
+                            : fn.state(props.openingsItem) === ''ON'' ? ''var(--f7-color-orange)''
+                            : ''var(--f7-text-color)'''
+                          margin-bottom: 12px
+                        visible: =((props.windowItems || []).length > 0 || (props.doorItems
+                          || []).length > 0) || !!props.openingsItem
+                    - component: Label
+                      config:
+                        text: '=((props.windowItems || []).length > 0 || (props.doorItems ||
+                          []).length > 0) ? (!!(props.tireFLItem || props.tireFRItem || props.tireRLItem
+                          || props.tireRRItem) ? ''Öffnungen & Reifendruck · antippen'' : ''Öffnungen
+                          · antippen'') : ''Reifendruck · antippen'''
+                        style:
+                          white-space: normal
+                          overflow-wrap: anywhere
+                          font-size: 13px
+                          color: var(--f7-theme-color)
+                          margin-top: 14px
+                        visible: =!!(((props.windowItems || []).length > 0 || (props.doorItems
+                          || []).length > 0) || !!(props.tireFLItem || props.tireFRItem || props.tireRLItem
+                          || props.tireRRItem))
+      default:
+        - component: f7-accordion-content
+          config:
+            visible: =!!(((props.windowItems || []).length > 0 || (props.doorItems || []).length
+              > 0) || !!(props.tireFLItem || props.tireFRItem || props.tireRLItem || props.tireRRItem))
+          slots:
+            default:
+              - component: div
+                config:
+                  style:
+                    padding: 0 16px 12px
+                slots:
+                  default:
+                    - component: oh-context
+                      config:
+                        functions:
+                          state: '=(name) => name && items[name] ? items[name].state : ''UNDEF'''
+                          number: '=(name) => name && items[name] && items[name].state !== ''NULL''
+                            && items[name].state !== ''UNDEF'' && items[name].state !== ''''
+                            ? (items[name].numericState !== undefined ? items[name].numericState
+                            : Number.parseFloat(items[name].state)) : -1'
+                          value: '=(name, suffix, digits) => name && items[name] && items[name].state
+                            !== ''NULL'' && items[name].state !== ''UNDEF'' && Number.isFinite(Number.parseFloat(items[name].state))
+                            && Number.parseFloat(items[name].state) >= 0 ? Number.parseFloat(items[name].state).toLocaleString(''de-DE'',
+                            {minimumFractionDigits:digits, maximumFractionDigits:digits}) +
+                            suffix : ''—'''
+                          pressure: '=(name) => name && items[name] && Number.isFinite(Number.parseFloat(items[name].state))
+                            && Number.parseFloat(items[name].state) >= 0 && ({bar:1,kPa:0.01,Pa:0.00001,hPa:0.001,MPa:10,psi:0.0689475729317831})[(items[name].state.trim().split(/\s+/)[1]
+                            || items[name].unit || props.tirePressureUnit || ''bar'')] !== undefined
+                            ? (Number.parseFloat(items[name].state) * ({bar:1,kPa:0.01,Pa:0.00001,hPa:0.001,MPa:10,psi:0.0689475729317831})[(items[name].state.trim().split(/\s+/)[1]
+                            || items[name].unit || props.tirePressureUnit || ''bar'')]).toLocaleString(''de-DE'',
+                            {minimumFractionDigits:2,maximumFractionDigits:2}) + '' bar'' :
+                            ''—'''
+                          openingNames: '=(selection) => (selection && selection.split ? [selection]
+                            : selection || []).filter((name) => !!name).filter((name, index,
+                            names) => names.indexOf(name) === index)'
+                          openingState: '=(name) => [''NULL'', ''UNDEF'', ''''].indexOf((name
+                            && items[name] && items[name].state ? items[name].state.trim().toUpperCase()
+                            : ''UNDEF'')) >= 0 ? ''unknown'' : ((props.windowItems && props.windowItems.split
+                            ? [props.windowItems] : props.windowItems || []).indexOf(name) >=
+                            0 ? (props.windowOpenStates || [''OPEN'', ''OPENED'', ''INTERMEDIATE'',
+                            ''TILTED'', ''PARTIALLY_OPEN'']) : (props.doorOpenStates || [''TRUE'',
+                            ''ON''])).map((state) => state.trim().toUpperCase()).indexOf((name
+                            && items[name] && items[name].state ? items[name].state.trim().toUpperCase()
+                            : ''UNDEF'')) >= 0 ? ''open'' : ((props.windowItems && props.windowItems.split
+                            ? [props.windowItems] : props.windowItems || []).indexOf(name) >=
+                            0 ? (props.windowClosedStates || [''CLOSE'', ''CLOSED'']) : (props.doorClosedStates
+                            || [''FALSE'', ''OFF''])).map((state) => state.trim().toUpperCase()).indexOf((name
+                            && items[name] && items[name].state ? items[name].state.trim().toUpperCase()
+                            : ''UNDEF'')) >= 0 ? ''closed'' : ''unknown'''
+                          openingCount: =(states, state) => states.filter((value) => value ===
+                            state).length
+                          openingSummary: '=(states) => states.filter((state) => state === ''open'').length
+                            > 0 ? states.filter((state) => state === ''open'').length + '' offen''
+                            + (states.filter((state) => state === ''unknown'').length > 0 ?
+                            '' · '' + states.filter((state) => state === ''unknown'').length
+                            + '' unbekannt'' : '''') : states.filter((state) => state === ''unknown'').length
+                            > 0 ? states.filter((state) => state === ''unknown'').length + ''
+                            unbekannt'' : states.length > 0 ? ''alle überwachten zu'' : ''nicht
+                            konfiguriert'''
+                          openingText: '=(state) => state === ''open'' ? ''Offen'' : state ===
+                            ''closed'' ? ''Geschlossen'' : ''Unbekannt'''
+                          cableState: '=(name) => [''NULL'',''UNDEF'',''''].indexOf((name &&
+                            items[name] && items[name].state ? items[name].state.trim().toUpperCase()
+                            : ''UNDEF'')) >= 0 ? ''unknown'' : (props.chargingCableConnectedStates
+                            || [''ON'',''TRUE'',''CONNECTED'',''PLUGGED_IN'']).map((value) =>
+                            value.trim().toUpperCase()).indexOf((name && items[name] && items[name].state
+                            ? items[name].state.trim().toUpperCase() : ''UNDEF'')) >= 0 ? ''connected''
+                            : (props.chargingCableDisconnectedStates || [''OFF'',''FALSE'',''DISCONNECTED'',''UNPLUGGED'']).map((value)
+                            => value.trim().toUpperCase()).indexOf((name && items[name] && items[name].state
+                            ? items[name].state.trim().toUpperCase() : ''UNDEF'')) >= 0 ? ''disconnected''
+                            : ''unknown'''
+                          storedEnergy: '=(percent, capacity) => Number.isFinite(Number(capacity))
+                            && Number(capacity) > 0 && Number.isFinite(percent) && percent >=
+                            0 && percent <= 100 ? Number(capacity) * percent / 100 : -1'
+                      slots:
+                        default:
+                          - component: div
+                            config:
+                              style:
+                                width: 100%
+                                min-width: '0'
+                                white-space: normal
+                                padding: 12px 0
+                              visible: =!!(props.tireFLItem || props.tireFRItem || props.tireRLItem
+                                || props.tireRRItem)
+                            slots:
+                              default:
+                                - component: Label
+                                  config:
+                                    text: REIFENDRUCK
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 12px
+                                      color: var(--f7-list-item-footer-text-color, var(--f7-text-color))
+                                      margin-bottom: 10px
+                                - component: div
+                                  config:
+                                    style:
+                                      display: flex
+                                      align-items: center
+                                      justify-content: space-between
+                                      flex-wrap: wrap
+                                      gap: 8px
+                                      margin-bottom: 10px
+                                    visible: =!!props.tireFLItem
+                                  slots:
+                                    default:
+                                      - component: Label
+                                        config:
+                                          text: Vorne links
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                      - component: Label
+                                        config:
+                                          text: =fn.pressure(props.tireFLItem)
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                            font-variant-numeric: tabular-nums
+                                - component: div
+                                  config:
+                                    style:
+                                      display: flex
+                                      align-items: center
+                                      justify-content: space-between
+                                      flex-wrap: wrap
+                                      gap: 8px
+                                      margin-bottom: 10px
+                                    visible: =!!props.tireFRItem
+                                  slots:
+                                    default:
+                                      - component: Label
+                                        config:
+                                          text: Vorne rechts
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                      - component: Label
+                                        config:
+                                          text: =fn.pressure(props.tireFRItem)
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                            font-variant-numeric: tabular-nums
+                                - component: div
+                                  config:
+                                    style:
+                                      display: flex
+                                      align-items: center
+                                      justify-content: space-between
+                                      flex-wrap: wrap
+                                      gap: 8px
+                                      margin-bottom: 10px
+                                    visible: =!!props.tireRLItem
+                                  slots:
+                                    default:
+                                      - component: Label
+                                        config:
+                                          text: Hinten links
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                      - component: Label
+                                        config:
+                                          text: =fn.pressure(props.tireRLItem)
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                            font-variant-numeric: tabular-nums
+                                - component: div
+                                  config:
+                                    style:
+                                      display: flex
+                                      align-items: center
+                                      justify-content: space-between
+                                      flex-wrap: wrap
+                                      gap: 8px
+                                      margin-bottom: 10px
+                                    visible: =!!props.tireRRItem
+                                  slots:
+                                    default:
+                                      - component: Label
+                                        config:
+                                          text: Hinten rechts
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                      - component: Label
+                                        config:
+                                          text: =fn.pressure(props.tireRRItem)
+                                          style:
+                                            white-space: normal
+                                            overflow-wrap: anywhere
+                                            font-size: 14px
+                                            font-variant-numeric: tabular-nums
+                          - component: div
+                            config:
+                              visible: =fn.openingNames(props.windowItems).length > 0
+                              style:
+                                padding: 12px 0
+                            slots:
+                              default:
+                                - component: Label
+                                  config:
+                                    text: ='FENSTER · ' + fn.openingSummary(fn.openingNames(props.windowItems).map(fn.openingState))
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 12px
+                                      color: var(--f7-list-item-footer-text-color, var(--f7-text-color))
+                                      margin-bottom: 10px
+                                - component: oh-list
+                                  config:
+                                    mediaList: true
+                                    noHairlines: true
+                                    noHairlinesBetween: true
+                                    style:
+                                      margin: '0'
+                                  slots:
+                                    default:
+                                      - component: oh-repeater
+                                        config:
+                                          for: window
+                                          sourceType: itemsWithTags
+                                          # Empty tags fetch Item details, including translated labels.
+                                          itemTags: =[]
+                                          filter: fn.openingNames(props.windowItems).indexOf(loop.window.name) >= 0
+                                          fragment: true
+                                        slots:
+                                          default:
+                                            - component: oh-label-item
+                                              config:
+                                                item: =loop.window.name
+                                                after: =fn.openingText(fn.openingState(loop.window.name))
+                                                footer: '=fn.openingState(loop.window.name) === ''unknown''
+                                                  ? ''Rohzustand: '' + fn.state(loop.window.name)
+                                                  : '''''
+                                                noChevron: true
+                                                style:
+                                                  --f7-list-item-padding-horizontal: 0px
+                                                  --f7-list-item-title-white-space: normal
+                                                  --f7-list-item-after-white-space: normal
+                                                  --f7-list-item-title-font-size: 14px
+                                                  --f7-list-item-after-font-size: 14px
+                                                  --f7-list-item-after-text-color: '=fn.openingState(loop.window.name)
+                                                    === ''open'' ? ''var(--f7-color-orange)''
+                                                    : ''var(--f7-list-item-after-text-color-default,
+                                                    var(--f7-text-color))'''
+                                                title: =loop.window.label || loop.window.name.replace(/_/g, ' ')
+                          - component: div
+                            config:
+                              visible: =fn.openingNames(props.doorItems).length > 0
+                              style:
+                                padding: 12px 0
+                            slots:
+                              default:
+                                - component: Label
+                                  config:
+                                    text: ='TÜREN & KOFFERRAUM · ' + fn.openingSummary(fn.openingNames(props.doorItems).map(fn.openingState))
+                                    style:
+                                      white-space: normal
+                                      overflow-wrap: anywhere
+                                      font-size: 12px
+                                      color: var(--f7-list-item-footer-text-color, var(--f7-text-color))
+                                      margin-bottom: 10px
+                                - component: oh-list
+                                  config:
+                                    mediaList: true
+                                    noHairlines: true
+                                    noHairlinesBetween: true
+                                    style:
+                                      margin: '0'
+                                  slots:
+                                    default:
+                                      - component: oh-repeater
+                                        config:
+                                          for: door
+                                          sourceType: itemsWithTags
+                                          # Empty tags fetch Item details, including translated labels.
+                                          itemTags: =[]
+                                          filter: fn.openingNames(props.doorItems).indexOf(loop.door.name) >= 0
+                                          fragment: true
+                                        slots:
+                                          default:
+                                            - component: oh-label-item
+                                              config:
+                                                item: =loop.door.name
+                                                after: =fn.openingText(fn.openingState(loop.door.name))
+                                                footer: '=fn.openingState(loop.door.name) === ''unknown''
+                                                  ? ''Rohzustand: '' + fn.state(loop.door.name) :
+                                                  '''''
+                                                noChevron: true
+                                                style:
+                                                  --f7-list-item-padding-horizontal: 0px
+                                                  --f7-list-item-title-white-space: normal
+                                                  --f7-list-item-after-white-space: normal
+                                                  --f7-list-item-title-font-size: 14px
+                                                  --f7-list-item-after-font-size: 14px
+                                                  --f7-list-item-after-text-color: '=fn.openingState(loop.door.name)
+                                                    === ''open'' ? ''var(--f7-color-orange)''
+                                                    : ''var(--f7-list-item-after-text-color-default,
+                                                    var(--f7-text-color))'''
+                                                title: =loop.door.label || loop.door.name.replace(/_/g, ' ')
+  bmw_vehicle_comfort_card:
+    tags: []
+    props:
+      parameterGroups:
+        - name: vehicle
+          label: Fahrzeug
+        - name: energy
+          label: Energie und Kilometer
+        - name: status
+          label: Status und Empfangszeit
+        - name: openings
+          label: Fenster, Türen und Kofferraum
+        - name: tires
+          label: Reifen
+      parameters:
+        - name: vehicleName
+          label: Fahrzeugname
+          type: TEXT
+          default: Mein BMW
+          groupName: vehicle
+        - name: vehicleGroup
+          label: Vehicle-Equipment-Gruppe
+          type: TEXT
+          context: item
+          groupName: vehicle
+          description: Zur Zuordnung dokumentiert; Messwerte werden ausdrücklich über die folgenden
+            Item-Parameter gewählt.
+        - name: driveType
+          label: Antrieb
+          type: TEXT
+          default: EV
+          groupName: vehicle
+          options:
+            - label: Elektro
+              value: EV
+            - label: Diesel
+              value: DIESEL
+            - label: Benzin
+              value: ICE
+            - label: Plug-in-Hybrid
+              value: PHEV
+        - name: batteryItem
+          label: Akku (%)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Dimensionless, Wert von 0 bis 100 in Prozent.
+        - name: fuelItem
+          label: Tank (%)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Dimensionless, Wert von 0 bis 100 in Prozent.
+        - name: batteryEnergyItem
+          label: Aktueller Akkuinhalt als Item (optional, kWh / Wh)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Nur ein Item für tatsächlich aktuell gespeicherte Energie, nicht die
+            Gesamtkapazität. Optionaler direkter Messwert; sonst wird der Inhalt aus nutzbarer
+            Kapazität und Ladeprozent berechnet.
+        - name: batteryMissingEnergyItem
+          label: Fehlende Akkuenergie bis 100 % (kWh)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: 'Optional: BMW smeEnergyDeltaFullyCharged; kWh oder Wh, einheitenlos
+            als kWh. Vorrang vor Berechnung aus Akkukapazität.'
+        - name: batteryCapacityItem
+          label: Nutzbare Akkukapazität als Item (kWh / Wh)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Gesamtkapazität des nutzbaren Akkus. Berechnet aktuellen Akkuinhalt und
+            fehlende Energie aus Ladeprozent. Vorrang vor fester Kapazität. Das Delta-Item ersetzt
+            nur die Berechnung der fehlenden Energie.
+        - name: batteryCapacityKwh
+          label: Nutzbare Akkukapazität (kWh)
+          type: DECIMAL
+          min: 0
+          groupName: energy
+          description: Feste nutzbare Gesamtkapazität für die Berechnung des aktuellen Akkuinhalts
+            und der fehlenden Energie aus Ladeprozent; alternativ Kapazitäts-Item verwenden.
+            Ohne Ladeverluste.
+        - name: fuelRemainingItem
+          label: Restkraftstoff (Liter)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: 'Optional: BMW remainingFuel; Zustand in l/L, einheitenlos als Liter.
+            Zusammen mit Tankkapazität zur Berechnung der fehlenden Liter.'
+        - name: tankCapacityLiters
+          label: Tankkapazität (Liter)
+          type: DECIMAL
+          min: 0
+          groupName: energy
+          description: 'Für fehlende Liter: Tankkapazität minus Restkraftstoff, andernfalls
+            Schätzung aus Tank-Prozentstand.'
+        - name: rangeItem
+          label: Gesamtreichweite (km)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Length, Zustand in km.
+        - name: electricRangeItem
+          label: Elektrische Reichweite (km)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Optional für Plug-in-Hybrid; Zustand in km.
+        - name: mileageItem
+          label: Kilometerstand (km)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Number oder Number:Length, Zustand in km.
+        - name: chargingItem
+          label: Ladestatus
+          type: TEXT
+          context: item
+          groupName: status
+          description: Switch oder String. Aktive und inaktive Zustände unten konfigurieren.
+        - name: chargingCableItem
+          label: Ladekabel angeschlossen
+          type: TEXT
+          context: item
+          groupName: status
+          description: 'Optional: Anschlussstatus des Ladekabels, unabhängig vom eigentlichen
+            Ladestatus.'
+        - name: chargingCableConnectedStates
+          label: 'Ladekabel: angeschlossen'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Rohzustände als einzelne Einträge. Standard: ON, TRUE, CONNECTED, PLUGGED_IN.'
+        - name: chargingCableDisconnectedStates
+          label: 'Ladekabel: getrennt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Rohzustände als einzelne Einträge. Standard: OFF, FALSE, DISCONNECTED,
+            UNPLUGGED.'
+        - name: chargingPowerItem
+          label: Ladeleistung Wallbox (W / kW)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Leistungs-Item des Wallbox-Strommessers. W oder kW werden als Watt angezeigt;
+            ohne Einheit wird W angenommen. Keine automatische Ableitung des Fahrzeug-Ladestatus.
+        - name: chargingPowerStandbyWatts
+          label: Standby-Grenze Wallbox (W)
+          type: INTEGER
+          default: 10
+          min: 0
+          groupName: energy
+          description: 'Messwerte bis einschließlich dieser Grenze werden als 0 W angezeigt.
+            Größere Messwerte bleiben unverändert. Standard: 10 W.'
+        - name: chargeTargetItem
+          label: Ladeziel (%)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Optional; Zustand in Prozent.
+        - name: chargeRemainingItem
+          label: Restladezeit (Minuten)
+          type: TEXT
+          context: item
+          groupName: energy
+          description: Optional; Number oder Number:Time, Zustand in min.
+        - name: lockItem
+          label: Verriegelungsstatus
+          type: TEXT
+          context: item
+          groupName: status
+          description: Switch oder String. Verriegelt/entriegelt unten konfigurieren.
+        - name: windowItems
+          label: Fenster (mehrere Items)
+          type: TEXT
+          context: item
+          multiple: true
+          groupName: openings
+          description: Einzelne Fenster-Items auswählen. Keine Item-Gruppe erforderlich; unbekannte
+            Werte bleiben sichtbar.
+        - name: doorItems
+          label: Türen und Kofferraum (mehrere Items)
+          type: TEXT
+          context: item
+          multiple: true
+          groupName: openings
+          description: Einzelne Tür- und Kofferraum-Items auswählen. Öffnungszustände verwenden,
+            keinen Verriegelungsstatus.
+        - name: windowOpenStates
+          label: 'Fenster: offen / teilweise offen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für offene Fenster. Ohne eigene Liste: OPEN, OPENED, INTERMEDIATE,
+            TILTED, PARTIALLY_OPEN. Mehrere Zustände als einzelne Einträge hinzufügen.'
+        - name: windowClosedStates
+          label: 'Fenster: geschlossen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für geschlossene Fenster. Ohne eigene Liste: CLOSE, CLOSED.'
+        - name: doorOpenStates
+          label: 'Türen und Kofferraum: offen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für offene Türen und Kofferraum. Ohne eigene Liste: TRUE,
+            ON.'
+        - name: doorClosedStates
+          label: 'Türen und Kofferraum: geschlossen'
+          type: TEXT
+          multiple: true
+          groupName: openings
+          description: 'Rohzustände für geschlossene Türen und Kofferraum. Ohne eigene Liste:
+            FALSE, OFF.'
+        - name: openingsItem
+          label: Öffnungsstatus (bisheriges Sammel-Item, optional)
+          type: TEXT
+          context: item
+          groupName: openings
+          description: 'Fallback, wenn keine Fenster-/Tür-Items ausgewählt sind. ON: offen,
+            OFF: zu. Neue Einzel-Items haben Vorrang.'
+        - name: tireWarningItem
+          label: Reifenwarnung (aggregiert)
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: ON bedeutet Warnung, OFF bedeutet keine gemeldete Warnung.
+            Ohne dieses Item wird kein Reifen-OK abgeleitet.'
+        - name: tirePressureUnit
+          label: Reifendruck-Einheit bei Werten ohne Einheit
+          type: TEXT
+          default: bar
+          groupName: tires
+          options:
+            - label: bar
+              value: bar
+            - label: kPa
+              value: kPa
+            - label: Pa
+              value: Pa
+            - label: hPa
+              value: hPa
+            - label: MPa
+              value: MPa
+            - label: psi
+              value: psi
+          description: Nur wenn der Item-Rohzustand und items.unit keine Einheit liefern. Bei
+            einheitenlosen BMW-Werten in kPa hier kPa auswählen. Number:Pressure bevorzugen.
+        - name: tireFLItem
+          label: Reifendruck vorne links
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: tireFRItem
+          label: Reifendruck vorne rechts
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: tireRLItem
+          label: Reifendruck hinten links
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: tireRRItem
+          label: Reifendruck hinten rechts
+          type: TEXT
+          context: item
+          groupName: tires
+          description: 'Optional: Number:Pressure. Unterstützt bar, kPa, Pa, hPa, MPa und psi;
+            Anzeige in bar mit zwei Dezimalstellen.'
+        - name: lastUpdateItem
+          label: Letzter Empfang (DateTime)
+          type: TEXT
+          context: item
+          groupName: status
+          description: 'Homie telemetry#last-update: Empfangszeit der Bridge, kein Messzeitpunkt
+            jedes einzelnen Werts.'
+        - name: lockedState
+          label: 'Zustände: verriegelt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung
+            beachten. Ohne eigene Zuordnung: ON.'
+        - name: unlockedState
+          label: 'Zustände: entriegelt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: 'Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung
+            beachten. Ohne eigene Zuordnung: OFF.'
+        - name: chargingState
+          label: 'Zustände: lädt'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung beachten.
+        - name: notChargingState
+          label: 'Zustände: lädt nicht'
+          type: TEXT
+          multiple: true
+          groupName: status
+          description: Mehrere exakte Rohzustände einzeln hinterlegen; Groß-/Kleinschreibung beachten.
+    component: oh-list-card
+    config:
+      noShadow: true
+      noBorder: true
+      accordionList: true
+      style:
+        border-radius: 16px
+        overflow: hidden
+        margin: '0'
+        width: 100%
+    slots:
+      default:
+        - component: widget:bmw_vehicle_comfort_list
+          config:
+            vehicleName: =props.vehicleName
+            vehicleGroup: =props.vehicleGroup
+            driveType: =props.driveType
+            batteryItem: =props.batteryItem
+            fuelItem: =props.fuelItem
+            rangeItem: =props.rangeItem
+            electricRangeItem: =props.electricRangeItem
+            mileageItem: =props.mileageItem
+            chargingItem: =props.chargingItem
+            chargeTargetItem: =props.chargeTargetItem
+            chargeRemainingItem: =props.chargeRemainingItem
+            lockItem: =props.lockItem
+            openingsItem: =props.openingsItem
+            tireWarningItem: =props.tireWarningItem
+            tireFLItem: =props.tireFLItem
+            tireFRItem: =props.tireFRItem
+            tireRLItem: =props.tireRLItem
+            tireRRItem: =props.tireRRItem
+            lastUpdateItem: =props.lastUpdateItem
+            lockedState: =props.lockedState
+            unlockedState: =props.unlockedState
+            chargingState: =props.chargingState
+            notChargingState: =props.notChargingState
+            chargingPowerItem: =props.chargingPowerItem
+            chargingPowerStandbyWatts: =props.chargingPowerStandbyWatts
+            tirePressureUnit: =props.tirePressureUnit
+            windowItems: =props.windowItems
+            doorItems: =props.doorItems
+            windowOpenStates: =props.windowOpenStates
+            windowClosedStates: =props.windowClosedStates
+            doorOpenStates: =props.doorOpenStates
+            doorClosedStates: =props.doorClosedStates
+            batteryMissingEnergyItem: =props.batteryMissingEnergyItem
+            batteryCapacityKwh: =props.batteryCapacityKwh
+            fuelRemainingItem: =props.fuelRemainingItem
+            tankCapacityLiters: =props.tankCapacityLiters
+            batteryEnergyItem: =props.batteryEnergyItem
+            chargingCableItem: =props.chargingCableItem
+            chargingCableConnectedStates: =props.chargingCableConnectedStates
+            chargingCableDisconnectedStates: =props.chargingCableDisconnectedStates
+            batteryCapacityItem: =props.batteryCapacityItem

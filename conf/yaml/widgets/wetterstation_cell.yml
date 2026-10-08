@@ -1,0 +1,432 @@
+version: 1
+widgets:
+  wetterstation_cell_v1:
+    tags:
+    - Wetter
+    - Cell
+    props:
+      parameterGroups:
+      - name: temperatur
+        label: Temperatur
+      - name: regen
+        label: Regen
+      - name: wind
+        label: Wind
+      - name: licht
+        label: Licht
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        default: Garten
+      - name: temperatureItem
+        label: Temperatur
+        type: TEXT
+        context: item
+        groupName: temperatur
+        required: true
+      - name: feelsLikeItem
+        label: Gefühlte Temperatur
+        type: TEXT
+        context: item
+        groupName: temperatur
+        description: Optional. Item mit bereits berechneter gefühlter Temperatur.
+      - name: minItem
+        label: Minimum
+        type: TEXT
+        context: item
+        groupName: temperatur
+      - name: maxItem
+        label: Maximum
+        type: TEXT
+        context: item
+        groupName: temperatur
+      - name: showTrend
+        label: Temperaturverlauf anzeigen
+        type: BOOLEAN
+        default: true
+        groupName: temperatur
+        description: Benötigt historische Temperaturwerte in der Standard-Persistence.
+      - name: humidityItem
+        label: Luftfeuchtigkeit
+        type: TEXT
+        context: item
+      - name: rainItem
+        label: Regnet es gerade?
+        type: TEXT
+        context: item
+        groupName: regen
+        description: Optional. Binärer Regenstatus, keine Niederschlagsmenge.
+      - name: rainWetState
+        label: Rohzustand bei Regen
+        type: TEXT
+        default: 'ON'
+        groupName: regen
+        description: Zum Beispiel ON, OPEN oder 1. Groß-/Kleinschreibung beachten.
+      - name: rainDryState
+        label: Rohzustand bei Trockenheit
+        type: TEXT
+        default: 'OFF'
+        groupName: regen
+        description: Zum Beispiel OFF, CLOSED oder 0. Andere Zustände erscheinen als unbekannt.
+      - name: rain24hItem
+        label: Niederschlagsmenge letzte 24 Stunden
+        type: TEXT
+        context: item
+        groupName: regen
+        description: Optional. Rollierende 24-Stunden-Summe, kein Tages- oder Gesamtzähler.
+      - name: windSpeedItem
+        label: Windgeschwindigkeit
+        type: TEXT
+        context: item
+        groupName: wind
+      - name: windDirectionItem
+        label: Windrichtung
+        type: TEXT
+        context: item
+        groupName: wind
+        description: Grad (0=N, 90=O) oder Text (z. B. SW). Gradwerte werden in Himmelsrichtungen übersetzt.
+      - name: luxItem
+        label: Beleuchtungsstärke (Lux)
+        type: TEXT
+        context: item
+        groupName: licht
+        description: Optional. Item für die Beleuchtungsstärke, z. B. Number:Illuminance.
+    component: oh-cell
+    config:
+      title: "=props.title || 'Garten'"
+      expandable: false
+      action: analyzer
+      actionAnalyzerItems: "=props.temperatureItem ? [props.temperatureItem] : []"
+      stylesheet: ".cell-contents { display: none; }"
+    slots:
+      background:
+      - component: oh-context
+        config:
+          functions:
+            value: "=(name) => name && items[name] && items[name].state && items[name].state !== 'NULL' && items[name].state !== 'UNDEF' ? (items[name].displayState || items[name].state) : '—'"
+            direction: "=(name) => !name || !items[name] || !items[name].state || items[name].state === 'NULL' || items[name].state === 'UNDEF' ? '—' : Number.isNaN(Number.parseFloat(items[name].state)) ? (items[name].displayState || items[name].state) : ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(((Number.parseFloat(items[name].state) % 360 + 360) % 360) / 22.5) % 16]"
+            short: "=(text) => /^[-+]?\\d+(?:[.,]\\d+)?/.test(text) ? (Math.round(Number.parseFloat(text.replace(',', '.')) * 10) / 10).toFixed(1).replace('.', text.indexOf(',') >= 0 ? ',' : '.') + text.replace(/^[-+]?\\d+(?:[.,]\\d+)?/, '') : text"
+        slots:
+          default:
+          - component: oh-trend
+            config:
+              visible: "=props.showTrend !== false && !!props.temperatureItem"
+              trendItem: "=props.temperatureItem"
+              trendStrokeWidth: 2
+              trendGradient:
+              - "#52a9cf"
+              style:
+                position: absolute
+                inset: 0
+                width: 100%
+                height: 100%
+                opacity: 0.18
+                pointer-events: none
+          - component: div
+            config:
+              class: weather-content
+              style:
+                position: absolute
+                inset: 0
+                box-sizing: border-box
+                padding: 9px 8px
+                container-type: inline-size
+                display: grid
+                grid-template-rows: 18px 28px 14px 34px
+                row-gap: 2px
+                color: var(--f7-text-color)
+                cursor: pointer
+                font-variant-numeric: tabular-nums
+            slots:
+              default:
+              - component: div
+                config:
+                  style:
+                    display: flex
+                    align-items: center
+                    justify-content: space-between
+                    gap: 4px
+                    min-width: 0
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      style:
+                        display: flex
+                        align-items: center
+                        gap: 5px
+                        min-width: 0
+                        flex-shrink: 0
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: oh:temperature
+                          width: 18
+                          height: 18
+                      - component: Label
+                        config:
+                          text: "=props.title || 'Garten'"
+                          style:
+                            font-size: 16px
+                            font-weight: 500
+                            line-height: 18px
+                            white-space: nowrap
+                            min-width: 0
+                            overflow: hidden
+                            text-overflow: ellipsis
+                  - component: div
+                    config:
+                      title: Beleuchtungsstärke
+                      role: group
+                      aria-label: Beleuchtungsstärke
+                      style:
+                        display: flex
+                        align-items: center
+                        gap: 3px
+                        min-width: 0
+                        flex-shrink: 0
+                      visible: "=!!props.luxItem"
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: f7:sun_max
+                          color: yellow
+                          width: 13
+                          height: 13
+                          style:
+                            display: block
+                            flex-shrink: 0
+                            width: 13px
+                            height: 13px
+                      - component: Label
+                        config:
+                          text: "=fn.value(props.luxItem)"
+                          style:
+                            white-space: nowrap
+                            min-width: 0
+                            font-size: clamp(9px, 6cqw, 10px)
+                            line-height: 14px
+                            font-weight: 500
+              - component: div
+                config:
+                  style:
+                    display: flex
+                    align-items: baseline
+                    justify-content: space-between
+                    gap: 4px
+                    min-width: 0
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: "=fn.value(props.temperatureItem)"
+                      style:
+                        white-space: nowrap
+                        min-width: 0
+                        font-size: clamp(18px, 13cqw, 24px)
+                        line-height: 28px
+                        flex-shrink: 0
+                  - component: div
+                    config:
+                      visible: "=!!props.feelsLikeItem"
+                      title: Gefühlte Temperatur
+                      role: group
+                      aria-label: Gefühlte Temperatur
+                      style:
+                        display: flex
+                        align-items: center
+                        gap: 3px
+                        flex-shrink: 0
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: f7:person_crop_circle
+                          color: orange
+                          width: 12
+                          height: 12
+                          style:
+                            display: block
+                            flex-shrink: 0
+                            width: 12px
+                            height: 12px
+                      - component: Label
+                        config:
+                          text: "=fn.value(props.feelsLikeItem)"
+                          style:
+                            white-space: nowrap
+                            min-width: 0
+                            font-size: 10px
+                            line-height: 14px
+              - component: Label
+                config:
+                  text: "=(props.minItem ? '↓ ' + fn.value(props.minItem) : '') + (props.minItem && props.maxItem ? ' · ' : '') + (props.maxItem ? '↑ ' + fn.value(props.maxItem) : '')"
+                  style:
+                    white-space: nowrap
+                    min-width: 0
+                    font-size: clamp(9.5px, 6cqw, 11px)
+                    line-height: 14px
+                    opacity: 0.85
+              - component: div
+                config:
+                  style:
+                    display: grid
+                    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr)
+                    column-gap: 6px
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      style:
+                        display: grid
+                        grid-template-rows: 16px 16px
+                        row-gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          title: Luftfeuchtigkeit
+                          role: group
+                          aria-label: Luftfeuchtigkeit
+                          style:
+                            display: flex
+                            align-items: center
+                            gap: 3px
+                            min-width: 0
+                            flex-shrink: 0
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:gauge
+                              color: blue
+                              width: 13
+                              height: 13
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 13px
+                                height: 13px
+                          - component: Label
+                            config:
+                              text: "=fn.value(props.humidityItem)"
+                              style:
+                                white-space: nowrap
+                                min-width: 0
+                                font-size: clamp(9.5px, 6.5cqw, 11px)
+                                line-height: 16px
+                                font-weight: 500
+                      - component: div
+                        config:
+                          title: "=props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt'"
+                          role: group
+                          aria-label: "=props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt'"
+                          style:
+                            display: flex
+                            align-items: center
+                            gap: 3px
+                            min-width: 0
+                            flex-shrink: 0
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.rainItem && items[props.rainItem] && (items[props.rainItem].state === (props.rainWetState || 'ON') || items[props.rainItem].state === (props.rainDryState || 'OFF')) ? 'f7:cloud_rain' : 'f7:question_circle'"
+                              color: "=props.rainItem && items[props.rainItem] && items[props.rainItem].state === (props.rainWetState || 'ON') ? 'blue' : 'gray'"
+                              width: 13
+                              height: 13
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 13px
+                                height: 13px
+                          - component: Label
+                            config:
+                              text: "=fn.value(props.rain24hItem)"
+                              style:
+                                white-space: nowrap
+                                min-width: 0
+                                font-size: clamp(9.5px, 6.5cqw, 11px)
+                                line-height: 16px
+                                font-weight: 500
+                  - component: div
+                    config:
+                      style:
+                        display: grid
+                        grid-template-rows: 16px 16px
+                        row-gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          title: Windgeschwindigkeit
+                          role: group
+                          aria-label: Windgeschwindigkeit
+                          style:
+                            display: flex
+                            align-items: center
+                            gap: 3px
+                            min-width: 0
+                            flex-shrink: 0
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:wind
+                              color: teal
+                              width: 13
+                              height: 13
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 13px
+                                height: 13px
+                          - component: Label
+                            config:
+                              text: "=fn.short(fn.value(props.windSpeedItem))"
+                              style:
+                                white-space: nowrap
+                                min-width: 0
+                                font-size: clamp(9.5px, 6.5cqw, 11px)
+                                line-height: 16px
+                                font-weight: 500
+                      - component: div
+                        config:
+                          title: Windrichtung
+                          role: group
+                          aria-label: Windrichtung
+                          style:
+                            display: flex
+                            align-items: center
+                            gap: 3px
+                            min-width: 0
+                            flex-shrink: 0
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:location_north
+                              color: teal
+                              width: 13
+                              height: 13
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 13px
+                                height: 13px
+                                transform: "='rotate(' + Math.max(0, ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf(fn.direction(props.windDirectionItem))) * 22.5 + 'deg)'"
+                          - component: Label
+                            config:
+                              text: "=fn.direction(props.windDirectionItem)"
+                              style:
+                                white-space: nowrap
+                                min-width: 0
+                                font-size: clamp(9.5px, 6.5cqw, 11px)
+                                line-height: 16px
+                                font-weight: 500

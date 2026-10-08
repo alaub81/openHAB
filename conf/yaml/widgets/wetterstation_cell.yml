@@ -27,7 +27,7 @@ widgets:
         label: Titel-Icon
         type: TEXT
         default: oh:temperature
-        description: Zum Beispiel oh:temperature, f7:house, f7:leaf oder material:home.
+        description: Zum Beispiel oh:temperature, f7:house, f7:leaf_arrow_circlepath oder material:home.
       - name: iconColor
         label: 'Titel-Icon: Farbe'
         type: TEXT

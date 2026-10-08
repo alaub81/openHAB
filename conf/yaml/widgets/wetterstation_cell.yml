@@ -12,6 +12,10 @@ widgets:
         label: Regen
       - name: wind
         label: Wind
+      - name: action
+        label: Action
+        context: action
+        description: Aktion beim Antippen der gesamten Zelle. Ohne eigene Auswahl wird wie bisher die Temperatur im Analyzer geöffnet.
       - name: licht
         label: Licht
       parameters:
@@ -19,6 +23,15 @@ widgets:
         label: Titel
         type: TEXT
         default: Garten
+      - name: icon
+        label: Titel-Icon
+        type: TEXT
+        default: oh:temperature
+        description: Zum Beispiel oh:temperature, f7:house, f7:leaf oder material:home.
+      - name: iconColor
+        label: 'Titel-Icon: Farbe'
+        type: TEXT
+        description: Optional. Für F7-/Material-Icons z. B. blue, orange oder teal. Für Iconify ist eine CSS-Farbe möglich. OH-Icons behalten ihre eigene Farbe.
       - name: temperatureItem
         label: Temperatur
         type: TEXT
@@ -99,6 +112,7 @@ widgets:
       action: analyzer
       actionAnalyzerItems: "=props.temperatureItem ? [props.temperatureItem] : []"
       stylesheet: ".cell-contents { display: none; }"
+      actionPropsParameterGroup: "=props.action != null ? 'action' : ''"
     slots:
       background:
       - component: oh-context
@@ -106,6 +120,7 @@ widgets:
           functions:
             value: "=(name) => name && items[name] && items[name].state && items[name].state !== 'NULL' && items[name].state !== 'UNDEF' ? (items[name].displayState || items[name].state) : '—'"
             direction: "=(name) => !name || !items[name] || !items[name].state || items[name].state === 'NULL' || items[name].state === 'UNDEF' ? '—' : Number.isNaN(Number.parseFloat(items[name].state)) ? (items[name].displayState || items[name].state) : ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(((Number.parseFloat(items[name].state) % 360 + 360) % 360) / 22.5) % 16]"
+            has: "=(name) => (name ? name.trim().length > 0 : false)"
             short: "=(text) => /^[-+]?\\d+(?:[.,]\\d+)?/.test(text) ? (Math.round(Number.parseFloat(text.replace(',', '.')) * 10) / 10).toFixed(1).replace('.', text.indexOf(',') >= 0 ? ',' : '.') + text.replace(/^[-+]?\\d+(?:[.,]\\d+)?/, '') : text"
         slots:
           default:
@@ -133,7 +148,7 @@ widgets:
                 padding: 9px 8px
                 container-type: inline-size
                 display: grid
-                grid-template-rows: 18px 28px 14px 34px
+                grid-template-rows: "='18px 28px' + ((fn.has(props.minItem) || fn.has(props.maxItem)) ? ' 14px' : '') + (((fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)) || (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem))) ? ' auto' : '')"
                 row-gap: 2px
                 color: var(--f7-text-color)
                 cursor: pointer
@@ -162,9 +177,10 @@ widgets:
                       default:
                       - component: oh-icon
                         config:
-                          icon: oh:temperature
+                          icon: "=props.icon || 'oh:temperature'"
                           width: 18
                           height: 18
+                          color: "=props.iconColor"
                       - component: Label
                         config:
                           text: "=props.title || 'Garten'"
@@ -187,7 +203,7 @@ widgets:
                         gap: 3px
                         min-width: 0
                         flex-shrink: 0
-                      visible: "=!!props.luxItem"
+                      visible: "=fn.has(props.luxItem)"
                     slots:
                       default:
                       - component: oh-icon
@@ -231,7 +247,7 @@ widgets:
                         flex-shrink: 0
                   - component: div
                     config:
-                      visible: "=!!props.feelsLikeItem"
+                      visible: "=fn.has(props.feelsLikeItem)"
                       title: Gefühlte Temperatur
                       role: group
                       aria-label: Gefühlte Temperatur
@@ -264,28 +280,32 @@ widgets:
                             line-height: 14px
               - component: Label
                 config:
-                  text: "=(props.minItem ? '↓ ' + fn.value(props.minItem) : '') + (props.minItem && props.maxItem ? ' · ' : '') + (props.maxItem ? '↑ ' + fn.value(props.maxItem) : '')"
+                  text: "=(fn.has(props.minItem) ? '↓ ' + fn.value(props.minItem) : '') + (fn.has(props.minItem) && fn.has(props.maxItem) ? ' · ' : '') + (fn.has(props.maxItem) ? '↑ ' + fn.value(props.maxItem) : '')"
                   style:
                     white-space: nowrap
                     min-width: 0
                     font-size: clamp(9.5px, 6cqw, 11px)
                     line-height: 14px
                     opacity: 0.85
+                  visible: "=fn.has(props.minItem) || fn.has(props.maxItem)"
               - component: div
                 config:
                   style:
                     display: grid
-                    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr)
+                    grid-template-columns: "=(fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)) && (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem)) ? 'minmax(0, 1fr) minmax(0, 1.2fr)' : 'minmax(0, 1fr)'"
                     column-gap: 6px
+                    align-items: start
+                  visible: "=(fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)) || (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem))"
                 slots:
                   default:
                   - component: div
                     config:
                       style:
                         display: grid
-                        grid-template-rows: 16px 16px
                         row-gap: 2px
                         min-width: 0
+                        grid-auto-rows: 16px
+                      visible: "=fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)"
                     slots:
                       default:
                       - component: div
@@ -299,6 +319,7 @@ widgets:
                             gap: 3px
                             min-width: 0
                             flex-shrink: 0
+                          visible: "=fn.has(props.humidityItem)"
                         slots:
                           default:
                           - component: oh-icon
@@ -323,21 +344,22 @@ widgets:
                                 font-weight: 500
                       - component: div
                         config:
-                          title: "=props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt'"
+                          title: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt') : 'Niederschlagsmenge letzte 24 Stunden'"
                           role: group
-                          aria-label: "=props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt'"
+                          aria-label: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt') : 'Niederschlagsmenge letzte 24 Stunden'"
                           style:
                             display: flex
                             align-items: center
                             gap: 3px
                             min-width: 0
                             flex-shrink: 0
+                          visible: "=fn.has(props.rainItem) || fn.has(props.rain24hItem)"
                         slots:
                           default:
                           - component: oh-icon
                             config:
-                              icon: "=props.rainItem && items[props.rainItem] && (items[props.rainItem].state === (props.rainWetState || 'ON') || items[props.rainItem].state === (props.rainDryState || 'OFF')) ? 'f7:cloud_rain' : 'f7:question_circle'"
-                              color: "=props.rainItem && items[props.rainItem] && items[props.rainItem].state === (props.rainWetState || 'ON') ? 'blue' : 'gray'"
+                              icon: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] && (items[props.rainItem].state === (props.rainWetState || 'ON') || items[props.rainItem].state === (props.rainDryState || 'OFF')) ? 'f7:cloud_rain' : 'f7:question_circle') : 'f7:drop'"
+                              color: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] && items[props.rainItem].state === (props.rainWetState || 'ON') ? 'blue' : 'gray') : 'blue'"
                               width: 13
                               height: 13
                               style:
@@ -354,13 +376,15 @@ widgets:
                                 font-size: clamp(9.5px, 6.5cqw, 11px)
                                 line-height: 16px
                                 font-weight: 500
+                              visible: "=fn.has(props.rain24hItem)"
                   - component: div
                     config:
                       style:
                         display: grid
-                        grid-template-rows: 16px 16px
                         row-gap: 2px
                         min-width: 0
+                        grid-auto-rows: 16px
+                      visible: "=fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem)"
                     slots:
                       default:
                       - component: div
@@ -374,6 +398,7 @@ widgets:
                             gap: 3px
                             min-width: 0
                             flex-shrink: 0
+                          visible: "=fn.has(props.windSpeedItem)"
                         slots:
                           default:
                           - component: oh-icon
@@ -407,6 +432,7 @@ widgets:
                             gap: 3px
                             min-width: 0
                             flex-shrink: 0
+                          visible: "=fn.has(props.windDirectionItem)"
                         slots:
                           default:
                           - component: oh-icon

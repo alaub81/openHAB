@@ -18,6 +18,8 @@ widgets:
         description: Aktion beim Antippen der gesamten Zelle. Ohne eigene Auswahl wird wie bisher die Temperatur im Analyzer geöffnet.
       - name: licht
         label: Licht
+      - name: trend
+        label: Trendlinie
       parameters:
       - name: title
         label: Titel
@@ -55,10 +57,10 @@ widgets:
         context: item
         groupName: temperatur
       - name: showTrend
-        label: Temperaturverlauf anzeigen
+        label: Trendlinie anzeigen
         type: BOOLEAN
         default: true
-        groupName: temperatur
+        groupName: trend
         description: Benötigt historische Temperaturwerte in der Standard-Persistence.
       - name: humidityItem
         label: Luftfeuchtigkeit
@@ -105,6 +107,40 @@ widgets:
         context: item
         groupName: licht
         description: Optional. Item für die Beleuchtungsstärke, z. B. Number:Illuminance.
+      - name: trendItem
+        label: Trend-Item
+        type: TEXT
+        context: item
+        groupName: trend
+        description: Optional. Leer lassen, um den Temperaturverlauf zu verwenden. Benötigt historische Werte in der Standard-Persistence.
+      - name: trendColor
+        label: Trendfarbe
+        type: TEXT
+        groupName: trend
+        default: "#2196f3"
+        description: 'CSS-Farbe, z. B. #2196f3. Ohne zweite Farbe wird die gesamte Linie in dieser Farbe angezeigt.'
+      - name: trendColorEnd
+        label: 'Trendfarbe: zweite Verlaufsfarbe'
+        type: TEXT
+        groupName: trend
+        default: "#5ac8fa"
+        description: 'Optional. Für den originalen openHAB-Verlauf hier #5ac8fa und als erste Farbe #2196f3 einstellen.'
+      - name: trendOpacity
+        label: 'Trendlinie: Deckkraft (%)'
+        type: INTEGER
+        groupName: trend
+        default: 20
+        min: 0
+        max: 100
+        description: 0 = unsichtbar, 100 = volle Deckkraft. Standard 20 %. Bei Bedarf z. B. auf 40 % erhöhen.
+      - name: trendStrokeWidth
+        label: 'Trendlinie: Linienbreite'
+        type: INTEGER
+        groupName: trend
+        default: 3
+        min: 1
+        max: 10
+        description: 'Original openHAB: 3. Größere Werte ergeben eine dickere Linie.'
     component: oh-cell
     config:
       title: "=props.title || 'Garten'"
@@ -126,18 +162,18 @@ widgets:
           default:
           - component: oh-trend
             config:
-              visible: "=props.showTrend !== false && !!props.temperatureItem"
-              trendItem: "=props.temperatureItem"
-              trendStrokeWidth: 2
-              trendGradient:
-              - "#52a9cf"
+              visible: "=props.showTrend !== false && !!(props.trendItem || props.temperatureItem)"
+              trendItem: "=props.trendItem || props.temperatureItem"
+              trendStrokeWidth: "=props.trendStrokeWidth > 0 && Number.isFinite(Number(props.trendStrokeWidth)) ? Number(props.trendStrokeWidth) : 3"
+              trendGradient: "=[props.trendColor || '#2196f3', props.trendColorEnd || props.trendColor || '#5ac8fa']"
               style:
                 position: absolute
                 inset: 0
                 width: 100%
                 height: 100%
-                opacity: 0.18
+                opacity: "=props.trendOpacity !== undefined && props.trendOpacity !== null && props.trendOpacity !== '' && Number.isFinite(Number(props.trendOpacity)) ? Math.max(0, Math.min(100, Number(props.trendOpacity))) / 100 : 0.20"
                 pointer-events: none
+                display: "=props.showTrend !== false && !!(props.trendItem || props.temperatureItem) ? 'block' : 'none'"
           - component: div
             config:
               class: weather-content

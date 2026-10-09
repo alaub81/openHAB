@@ -1,0 +1,1237 @@
+version: 1
+widgets:
+  live_energy_flow:
+    tags:
+    - PV
+    - Energie
+    - Cell
+    props:
+      parameterGroups:
+      - name: anzeige
+        label: Anzeige
+      - name: icons
+        label: Icons
+      - name: farben
+        label: Farben
+      - name: trend
+        label: Trendlinie
+      - name: leistung
+        label: PV und Verbraucher
+      - name: netz
+        label: Netz
+      - name: batterie
+        label: Batterie
+      - name: action
+        label: Action
+        context: action
+        description: Aktion beim Antippen der gesamten Zelle.
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        groupName: anzeige
+        default: Strom
+      - name: showTitle
+        label: Titelzeile anzeigen
+        type: BOOLEAN
+        groupName: anzeige
+        default: true
+        description: Zeigt eine kompakte Überschrift oben links. Das Diagramm behält seine Positionen. Lange Titel werden gekürzt.
+      - name: icon
+        label: Titel-Icon
+        type: TEXT
+        groupName: anzeige
+        default: f7:bolt_circle
+        description: Framework7-Icon wie beim Wetter-Widget. Zum Beispiel f7:sun_max, f7:sun_max_fill oder f7:leaf_arrow_circlepath.
+      - name: iconColor
+        label: 'Titel-Icon: Farbe'
+        type: TEXT
+        groupName: anzeige
+        default: "#FFD60A"
+        description: 'Optional. CSS-Farbe wie #ffd60a oder orange. OH-Icons behalten ihre eigene Farbe.'
+      - name: pvColor
+        label: PV
+        type: TEXT
+        groupName: farben
+        default: "#ffd60a"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: batteryColor
+        label: 'Ladezustand: Normalfarbe'
+        type: TEXT
+        groupName: farben
+        default: "#30d158"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: houseColor
+        label: Haus
+        type: TEXT
+        groupName: farben
+        default: "#ff9f0a"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: wallboxColor
+        label: Wallbox
+        type: TEXT
+        groupName: farben
+        default: "#40cbbd"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: heatPumpColor
+        label: Wärmepumpe
+        type: TEXT
+        groupName: farben
+        default: "#BF9AF7"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: inactiveColor
+        label: Inaktive Icons und Leitungen
+        type: TEXT
+        groupName: farben
+        default: "#8e8e93"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: socLowColor
+        label: 'Ladezustand: kritische Farbe (Rot)'
+        type: TEXT
+        groupName: farben
+        default: "#ff453a"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: gridImportColor
+        label: Netz → Haus (Bezug)
+        type: TEXT
+        groupName: farben
+        default: "#ff453a"
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: gridExportColor
+        label: Haus → Netz (Einspeisung)
+        type: TEXT
+        groupName: farben
+        default: "#64d2ff"
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: batteryDischargeColor
+        label: Batterie → Haus (Entladen)
+        type: TEXT
+        groupName: farben
+        default: "#ff9f0a"
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: batteryChargeColor
+        label: Haus → Batterie (Laden)
+        type: TEXT
+        groupName: farben
+        default: "#30d158"
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: socWarningColor
+        label: 'Ladezustand: Warnfarbe (Orange)'
+        type: TEXT
+        groupName: farben
+        default: "#ff9f0a"
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: textColor
+        label: Messwerte und Texte
+        type: TEXT
+        groupName: farben
+        default: var(--f7-text-color)
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: backgroundColor
+        label: Zellenhintergrund
+        type: TEXT
+        groupName: farben
+        description: Optionale CSS-Farbe. Leer lassen für die bisherige Standardfarbe.
+      - name: titleColor
+        label: Titeltext
+        type: TEXT
+        groupName: farben
+        description: Optionale CSS-Farbe. Leer lassen für die bisherige Standardfarbe.
+      - name: socTextColor
+        label: 'Ladezustand: Prozentwert'
+        type: TEXT
+        groupName: farben
+        description: Optionale CSS-Farbe. Leer lassen für die bisherige Standardfarbe.
+      - name: demoMode
+        label: Demo mit Beispielwerten
+        type: BOOLEAN
+        groupName: anzeige
+        default: false
+        description: Zeigt gekennzeichnete Beispielwerte ohne Items. Zum Testen aktivieren; danach ausschalten.
+      - name: animate
+        label: Energiefluss animieren
+        type: BOOLEAN
+        groupName: anzeige
+        default: true
+      - name: flowThreshold
+        label: 'Aktiver Stromfluss: Schwelle (W)'
+        type: INTEGER
+        groupName: anzeige
+        default: 0
+        description: Pfeile, aktive Icon-Farbe und Animation nur oberhalb dieser gemessenen Leistung. 0 = jeder positive Fluss. Ein vorhandener Wert aus deiner Instanz bleibt wirksam.
+      - name: pvIcon
+        label: PV-Produktion-Icon
+        type: TEXT
+        groupName: icons
+        default: material:solar_power
+      - name: houseIcon
+        label: Haus-Icon
+        type: TEXT
+        groupName: icons
+        default: f7:house
+      - name: wallboxIcon
+        label: Wallbox-Icon
+        type: TEXT
+        groupName: icons
+        default: f7:car_fill
+      - name: heatPumpIcon
+        label: Wärmepumpe-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:heat-pump-outline
+      - name: gridImportIcon
+        label: Netzbezug-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:power-from-grid
+      - name: gridExportIcon
+        label: Netzeinspeisung-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:power-to-grid
+      - name: gridIdleIcon
+        label: Netz ohne aktiven Fluss-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:transmission-tower
+      - name: batteryChargeIcon
+        label: Batterie laden-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:battery-arrow-down-outline
+      - name: batteryDischargeIcon
+        label: Batterie entladen-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:battery-arrow-up-outline
+      - name: batteryIdleIcon
+        label: Batterie ohne aktiven Fluss-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:battery-outline
+      - name: socIcon
+        label: Ladezustand-Icon
+        type: TEXT
+        groupName: icons
+        description: Optional. Leer lassen für das dynamisch gefüllte Batterie-Symbol. Ein eigener Icon-Name ersetzt dieses Symbol; der Prozentwert bleibt sichtbar.
+      - name: showTrend
+        label: Trendlinie anzeigen
+        type: BOOLEAN
+        groupName: trend
+        default: true
+      - name: trendItem
+        label: Trend-Item
+        type: TEXT
+        groupName: trend
+        context: item
+        description: Optional. Leer lassen, um die PV-Produktion zu verwenden. Benötigt historische Werte in der Standard-Persistence.
+        default: inverterActivePower
+      - name: trendColor
+        label: Trendfarbe
+        type: TEXT
+        groupName: trend
+        default: "#2196f3"
+        description: 'CSS-Farbe, z. B. #2196f3. Ohne zweite Farbe wird die gesamte Linie in dieser Farbe angezeigt.'
+      - name: trendColorEnd
+        label: 'Trendfarbe: zweite Verlaufsfarbe'
+        type: TEXT
+        groupName: trend
+        default: "#5ac8fa"
+        description: 'Optional. Für den originalen openHAB-Verlauf hier #5ac8fa und als erste Farbe #2196f3 einstellen.'
+      - name: trendOpacity
+        label: 'Trendlinie: Deckkraft (%)'
+        type: INTEGER
+        groupName: trend
+        default: 70
+        min: 0
+        max: 100
+        description: 0 = unsichtbar, 100 = volle Deckkraft. Standard 70 %.
+      - name: trendStrokeWidth
+        label: 'Trendlinie: Linienbreite'
+        type: INTEGER
+        groupName: trend
+        default: 3
+        min: 1
+        max: 10
+        description: 'Original openHAB: 3. Größere Werte ergeben eine dickere Linie.'
+      - name: pvPowerItem
+        label: PV-Produktion
+        type: TEXT
+        groupName: leistung
+        context: item
+        description: Momentane Leistung in W oder kW, keine Energie in kWh. Einheitenlose Werte werden als W behandelt.
+        default: inverterActivePower
+      - name: pvForecastPowerItem
+        label: 'PV-Prognose: aktuelle Leistung'
+        type: TEXT
+        groupName: leistung
+        context: item
+        description: 'Optional. Forecast Actual Power: die für jetzt prognostizierte PV-Leistung in W oder kW. Ohne Item ausgeblendet.'
+      - name: forecastIcon
+        label: 'PV-Prognose: Icon'
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:weather-cloudy-clock
+      - name: forecastColor
+        label: 'PV-Prognose: Farbe'
+        type: TEXT
+        groupName: farben
+        default: "#ffd60a"
+      - name: housePowerItem
+        label: Hausgesamtverbrauch
+        type: TEXT
+        groupName: leistung
+        context: item
+        description: Momentaner Gesamtverbrauch inklusive Wallbox, wenn diese bereits im Messwert enthalten ist. Der Wert wird unverändert verwendet.
+        default: TotalPowerConsumption
+      - name: wallboxPowerItem
+        label: Wallboxverbrauch
+        type: TEXT
+        groupName: leistung
+        context: item
+        description: Optional. Momentane Leistung in W oder kW; ohne Item wird die Wallbox ausgeblendet.
+        default: Shelly_Wallbox_Kumulierter_Verbrauch
+      - name: wallboxThreshold
+        label: Wallbox anzeigen oberhalb (W)
+        type: INTEGER
+        groupName: leistung
+        default: 10
+        min: 0
+        description: Icon, Wert und Verbindung werden nur oberhalb dieser Leistung angezeigt. 10 W blendet 4–6 W Standby aus.
+      - name: heatPumpPowerItem
+        label: Wärmepumpenverbrauch
+        type: TEXT
+        groupName: leistung
+        context: item
+        description: Optional. Momentane elektrische Leistung in W oder kW. Wird links neben dem Haus angezeigt.
+        default: Shelly_Warmepumpe_Kumulierter_Verbrauch
+      - name: heatPumpThreshold
+        label: Wärmepumpe anzeigen oberhalb (W)
+        type: INTEGER
+        groupName: leistung
+        default: 100
+        min: 0
+        description: Icon, Wert und Verbindung nur oberhalb dieser Leistung anzeigen. Passend zu deinem Standby-Verbrauch einstellen.
+      - name: gridImportItem
+        label: Netzbezug
+        type: TEXT
+        groupName: netz
+        context: item
+        description: Positive Bezugsleistung. Alternative zum gemeinsamen Netzleistungs-Item.
+        default: inverter1PowerDrawn
+      - name: gridExportItem
+        label: Netzeinspeisung
+        type: TEXT
+        groupName: netz
+        context: item
+        description: Positive Einspeiseleistung. Alternative zum gemeinsamen Netzleistungs-Item.
+        default: inverter1PowerGridFeedIn
+      - name: gridPowerItem
+        label: Netzleistung mit Vorzeichen
+        type: TEXT
+        groupName: netz
+        context: item
+        description: 'Optional. Hat Vorrang vor den getrennten Items. Standard: positiv = Bezug, negativ = Einspeisung.'
+      - name: gridPositiveImport
+        label: Positiver Netzwert = Bezug
+        type: BOOLEAN
+        groupName: netz
+        default: true
+        description: Ausschalten, wenn dein gemeinsames Netz-Item positive Einspeisung liefert.
+      - name: batteryChargeItem
+        label: In Batterie / Laden
+        type: TEXT
+        groupName: batterie
+        context: item
+        description: Positive Ladeleistung. Alternative zum gemeinsamen Batterieleistungs-Item.
+        default: inverter2PreBatCharge
+      - name: batteryDischargeItem
+        label: Aus Batterie / Entladen
+        type: TEXT
+        groupName: batterie
+        context: item
+        description: Positive Entladeleistung. Alternative zum gemeinsamen Batterieleistungs-Item.
+        default: inverter2PreBatDischarge
+      - name: batteryPowerItem
+        label: Batterieleistung mit Vorzeichen
+        type: TEXT
+        groupName: batterie
+        context: item
+        description: 'Optional. Hat Vorrang vor den getrennten Items. Standard: positiv = Laden, negativ = Entladen.'
+      - name: batteryPositiveCharge
+        label: Positiver Batteriewert = Laden
+        type: BOOLEAN
+        groupName: batterie
+        default: true
+        description: Ausschalten, wenn dein gemeinsames Batterie-Item positive Entladung liefert.
+      - name: batterySocItem
+        label: Batterie-Ladezustand (%)
+        type: TEXT
+        groupName: batterie
+        context: item
+        description: Ladezustand von 0 bis 100, mit oder ohne Prozent-Einheit.
+        default: inverter2BatStateCharge
+      - name: socWarningThreshold
+        label: 'Ladezustand: Orange unter (%)'
+        type: INTEGER
+        groupName: batterie
+        default: 30
+        min: 0
+        max: 100
+        description: 'Warnfarbe unter diesem Ladezustand. Die rote Stufe hat Vorrang. Standard: unter 30 %.'
+      - name: socCriticalThreshold
+        label: 'Ladezustand: Rot unter (%)'
+        type: INTEGER
+        groupName: batterie
+        default: 20
+        min: 0
+        max: 100
+        description: 'Kritische Farbe unter diesem Ladezustand. Üblicherweise niedriger als die orange Grenze einstellen. Standard: unter 20 %.'
+    component: oh-cell
+    config:
+      title: "=props.title || 'Strom'"
+      expandable: false
+      actionPropsParameterGroup: "=props.action != null ? 'action' : ''"
+      action: analyzer
+      actionAnalyzerItems:
+      - inverterActivePower
+      - TotalPowerConsumption
+      - inverter2BatStateCharge
+      - inverter1PowerDrawn
+      - inverter1PowerGridFeedIn
+      - inverter2PreBatCharge
+      - inverter2PreBatDischarge
+      style:
+        background: "=props.backgroundColor"
+      stylesheet: |-
+        .cell-contents { display: none; }
+        @keyframes pv-path-h { from { left: 0; } to { left: calc(100% - 3px); } }
+        @keyframes pv-path-v { from { top: 0; } to { top: calc(100% - 3px); } }
+        @keyframes pv-path-right { 0% { left: 0; top: -.5px; } 45% { left: calc(100% - 6px); top: -.5px; } 65% { left: calc(100% - 2.5px); top: 4px; } 100% { left: calc(100% - 2.5px); top: calc(100% - 3px); } }
+        @keyframes pv-path-left { 0% { left: calc(100% - 3px); top: -.5px; } 45% { left: 3px; top: -.5px; } 65% { left: -.5px; top: 4px; } 100% { left: -.5px; top: calc(100% - 3px); } }
+        @media (prefers-reduced-motion: reduce) { .pv-flow-dot { display: none !important; } .pv-battery-gauge * { transition: none !important; } }
+    slots:
+      background:
+      - component: oh-context
+        config:
+          functions:
+            power: "=(name, demo) => (props.demoMode === true || props.demoMode === 'true') ? demo : !name || !items[name] || !items[name].state || !/^[-+]?\\d+(?:[.,]\\d+)?(?:[eE][-+]?\\d+)?\\s*(?:W|kW|MW)?$/.test(items[name].state.trim()) ? Number.NaN : Number.parseFloat(items[name].state.replace(',', '.')) * (/kW$/.test(items[name].state.trim()) ? 1000 : /MW$/.test(items[name].state.trim()) ? 1000000 : 1)"
+            format: "=(watts) => !Number.isFinite(watts) ? '—' : Math.abs(watts) >= 1000 ? (Math.abs(watts) / 1000).toFixed(2).replace('.', ',') + ' kW' : watts === 0 ? '0 W' : Math.abs(watts) < 0.01 ? '<0,01 W' : Math.abs(watts) < 10 ? Math.abs(watts).toFixed(2).replace(/\\.?0+$/, '').replace('.', ',') + ' W' : Math.round(Math.abs(watts)) + ' W'"
+            soc: "=(name) => (props.demoMode === true || props.demoMode === 'true') ? 76 : !name || !items[name] || !items[name].state || !/^\\d+(?:[.,]\\d+)?\\s*%?$/.test(items[name].state.trim()) ? Number.NaN : Math.max(0, Math.min(100, Number.parseFloat(items[name].state.replace(',', '.'))))"
+        slots:
+          default:
+          - component: oh-trend
+            config:
+              visible: "=props.showTrend !== false && !!(props.trendItem || props.pvPowerItem)"
+              trendItem: "=props.trendItem || props.pvPowerItem"
+              trendStrokeWidth: "=props.trendStrokeWidth > 0 && Number.isFinite(Number(props.trendStrokeWidth)) ? Number(props.trendStrokeWidth) : 3"
+              trendGradient: "=[props.trendColor || '#2196f3', props.trendColorEnd || props.trendColor || '#5ac8fa']"
+              style:
+                position: absolute
+                inset: 0
+                width: 100%
+                height: 100%
+                opacity: "=props.trendOpacity !== undefined && props.trendOpacity !== null && props.trendOpacity !== '' && Number.isFinite(Number(props.trendOpacity)) ? Math.max(0, Math.min(100, Number(props.trendOpacity))) / 100 : 0.20"
+                pointer-events: none
+                display: "=(props.showTrend !== false && !!(props.trendItem || props.pvPowerItem)) ? 'block' : 'none'"
+          - component: div
+            config:
+              class: pv-cell-content
+              style:
+                position: absolute
+                inset: 0
+                padding: 8px
+                box-sizing: border-box
+                container-type: inline-size
+                color: "=props.textColor || 'var(--f7-text-color)'"
+                display: block
+            slots:
+              default:
+              - component: div
+                config:
+                  style:
+                    display: flex
+                    align-items: center
+                    justify-content: flex-start
+                    gap: 4px
+                    height: 18px
+                    position: absolute
+                    top: 5px
+                    left: 8px
+                    width: calc(50% - 20px)
+                    z-index: 2
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      style:
+                        display: "=(props.showTitle === true) ? 'flex' : 'none'"
+                        align-items: center
+                        gap: 4px
+                        min-width: 0
+                        width: 100%
+                      visible: "=props.showTitle === true"
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: "=props.icon || 'f7:sun_max'"
+                          width: 12
+                          height: 12
+                          style:
+                            display: block
+                            flex-shrink: 0
+                            width: 12px
+                            height: 12px
+                            color: "=props.iconColor || '#ffd60a'"
+                      - component: Label
+                        config:
+                          text: "=props.title || 'PV Anlage'"
+                          style:
+                            white-space: nowrap
+                            color: "=props.titleColor || props.textColor || 'var(--f7-text-color)'"
+                            font-size: clamp(7.5px, 4.8cqw, 11px)
+                            overflow: hidden
+                            text-overflow: ellipsis
+                            min-width: 0
+                            font-weight: 600
+                            line-height: 18px
+              - component: div
+                config:
+                  class: pv-diagram
+                  style:
+                    position: relative
+                    width: 100%
+                    height: 104px
+                    min-width: 0
+                    top: 0px
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      class: pv-flow pv-generation
+                      visible: "=true"
+                      style:
+                        position: absolute
+                        left: calc(50% - 1px)
+                        top: 28px
+                        width: 2px
+                        height: 41px
+                        color: "=Number.isFinite(fn.power(props.pvPowerItem, 5400)) && fn.power(props.pvPowerItem, 5400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (props.pvColor || '#ffd60a') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.power(props.pvPowerItem, 5400)) && fn.power(props.pvPowerItem, 5400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(true) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: "=(Number.isFinite(fn.power(props.pvPowerItem, 5400)) && fn.power(props.pvPowerItem, 5400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? ((true) ? '0 0 6px 0' : '6px 0 0 0') : '0'"
+                            background: currentColor
+                            border-radius: 2px
+                      - component: div
+                        config:
+                          class: pv-flow-dot
+                          visible: "=props.animate !== false && (Number.isFinite(fn.power(props.pvPowerItem, 5400)) && fn.power(props.pvPowerItem, 5400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))"
+                          style:
+                            position: absolute
+                            width: 3px
+                            height: 3px
+                            border-radius: 50%
+                            background: currentColor
+                            left: "-0.5px"
+                            animation: pv-path-v 1.8s linear infinite
+                            animation-direction: "=true ? 'normal' : 'reverse'"
+                            display: "=(props.animate !== false && (Number.isFinite(fn.power(props.pvPowerItem, 5400)) && fn.power(props.pvPowerItem, 5400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))) ? 'block' : 'none'"
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.power(props.pvPowerItem, 5400)) && fn.power(props.pvPowerItem, 5400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: "=(true) ? 'polygon(0 0, 100% 0, 50% 100%)' : 'polygon(50% 0, 100% 100%, 0 100%)'"
+                            left: "=(true) ? 'calc(1px - 3px)' : '-2px'"
+                            top: "=(true) ? 'calc(100% - 6px)' : '0px'"
+                            transform: none
+                            display: "=(Number.isFinite(fn.power(props.pvPowerItem, 5400)) && fn.power(props.pvPowerItem, 5400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? 'block' : 'none'"
+                  - component: div
+                    config:
+                      class: pv-flow pv-grid
+                      visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.gridPowerItem || !!props.gridImportItem || !!props.gridExportItem"
+                      style:
+                        position: absolute
+                        left: calc(12% + 12px)
+                        top: 31px
+                        width: calc(38% - 17px)
+                        height: 38px
+                        color: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0 ? (props.gridImportColor || '#ff453a') : (props.gridExportColor || '#64d2ff')) : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.gridPowerItem || !!props.gridImportItem || !!props.gridExportItem) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: "=(Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? ((((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0) ? '0 0 6px 0' : '0 0 0 6px') : '0'"
+                            box-sizing: border-box
+                            border-top: 2px solid currentColor
+                            border-right: 2px solid currentColor
+                            border-top-right-radius: 6px
+                      - component: div
+                        config:
+                          class: pv-flow-dot
+                          visible: "=props.animate !== false && (Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))"
+                          style:
+                            position: absolute
+                            width: 3px
+                            height: 3px
+                            border-radius: 50%
+                            background: currentColor
+                            top: "-0.5px"
+                            animation: pv-path-right 1.8s linear infinite
+                            animation-direction: "=((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0 ? 'normal' : 'reverse'"
+                            display: "=(props.animate !== false && (Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))) ? 'block' : 'none'"
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: "=(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0) ? 'polygon(0 0, 100% 0, 50% 100%)' : 'polygon(100% 0, 0 50%, 100% 100%)'"
+                            left: "=(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0) ? 'calc(calc(100% - 1px) - 3px)' : '0px'"
+                            top: "=(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0) ? 'calc(100% - 6px)' : '-2px'"
+                            transform: none
+                            display: "=(Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? 'block' : 'none'"
+                  - component: div
+                    config:
+                      class: pv-flow pv-battery
+                      visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.batteryPowerItem || !!props.batteryChargeItem || !!props.batteryDischargeItem || !!props.batterySocItem"
+                      style:
+                        position: absolute
+                        left: calc(50% + 5px)
+                        top: 31px
+                        width: calc(38% - 17px)
+                        height: 38px
+                        color: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) > 0 ? (props.batteryChargeColor || '#30d158') : (props.batteryDischargeColor || '#ff9f0a')) : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.batteryPowerItem || !!props.batteryChargeItem || !!props.batteryDischargeItem || !!props.batterySocItem) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: "=(Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? ((((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) < 0) ? '0 0 6px 0' : '0 6px 0 0') : '0'"
+                            box-sizing: border-box
+                            border-top: 2px solid currentColor
+                            border-left: 2px solid currentColor
+                            border-top-left-radius: 6px
+                      - component: div
+                        config:
+                          class: pv-flow-dot
+                          visible: "=props.animate !== false && (Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))"
+                          style:
+                            position: absolute
+                            width: 3px
+                            height: 3px
+                            border-radius: 50%
+                            background: currentColor
+                            top: "-0.5px"
+                            animation: pv-path-left 1.8s linear infinite
+                            animation-direction: "=((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) < 0 ? 'normal' : 'reverse'"
+                            display: "=(props.animate !== false && (Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))) ? 'block' : 'none'"
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: "=(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) < 0) ? 'polygon(0 0, 100% 0, 50% 100%)' : 'polygon(0 0, 100% 50%, 0 100%)'"
+                            left: "=(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) < 0) ? 'calc(1px - 3px)' : 'calc(100% - 6px)'"
+                            top: "=(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) < 0) ? 'calc(100% - 6px)' : '-2px'"
+                            transform: none
+                            display: "=(Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? 'block' : 'none'"
+                  - component: div
+                    config:
+                      class: pv-flow pv-wallbox
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxPowerItem) && Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.wallboxThreshold !== undefined && props.wallboxThreshold !== null && props.wallboxThreshold !== '' && Number.isFinite(Number(props.wallboxThreshold)) && Number(props.wallboxThreshold) >= 0 ? Number(props.wallboxThreshold) : 10)"
+                      style:
+                        position: absolute
+                        left: calc(50% + 13px)
+                        top: 81px
+                        width: calc(38% - 25px)
+                        height: 2px
+                        color: "=Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (props.wallboxColor || '#40cbbd') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxPowerItem) && Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.wallboxThreshold !== undefined && props.wallboxThreshold !== null && props.wallboxThreshold !== '' && Number.isFinite(Number(props.wallboxThreshold)) && Number(props.wallboxThreshold) >= 0 ? Number(props.wallboxThreshold) : 10)) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: "=(Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? ((true) ? '0 6px 0 0' : '0 0 0 6px') : '0'"
+                            background: currentColor
+                            border-radius: 2px
+                      - component: div
+                        config:
+                          class: pv-flow-dot
+                          visible: "=props.animate !== false && (Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))"
+                          style:
+                            position: absolute
+                            width: 3px
+                            height: 3px
+                            border-radius: 50%
+                            background: currentColor
+                            top: "-0.5px"
+                            animation: pv-path-h 1.8s linear infinite
+                            animation-direction: "=true ? 'normal' : 'reverse'"
+                            display: "=(props.animate !== false && (Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))) ? 'block' : 'none'"
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: "=(true) ? 'polygon(0 0, 100% 50%, 0 100%)' : 'polygon(100% 0, 0 50%, 100% 100%)'"
+                            left: "=(true) ? 'calc(100% - 6px)' : '0px'"
+                            top: "=(true) ? '-2px' : '-2px'"
+                            transform: none
+                            display: "=(Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? 'block' : 'none'"
+                  - component: div
+                    config:
+                      class: pv-flow pv-heat-pump
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpPowerItem) && Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.heatPumpThreshold !== undefined && props.heatPumpThreshold !== null && props.heatPumpThreshold !== '' && Number.isFinite(Number(props.heatPumpThreshold)) && Number(props.heatPumpThreshold) >= 0 ? Number(props.heatPumpThreshold) : 100)"
+                      style:
+                        position: absolute
+                        left: calc(12% + 12px)
+                        top: 81px
+                        width: calc(38% - 25px)
+                        height: 2px
+                        color: "=Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (props.heatPumpColor || '#a78bfa') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpPowerItem) && Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.heatPumpThreshold !== undefined && props.heatPumpThreshold !== null && props.heatPumpThreshold !== '' && Number.isFinite(Number(props.heatPumpThreshold)) && Number(props.heatPumpThreshold) >= 0 ? Number(props.heatPumpThreshold) : 100)) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: "=(Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? ((false) ? '0 6px 0 0' : '0 0 0 6px') : '0'"
+                            background: currentColor
+                            border-radius: 2px
+                      - component: div
+                        config:
+                          class: pv-flow-dot
+                          visible: "=props.animate !== false && (Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))"
+                          style:
+                            position: absolute
+                            width: 3px
+                            height: 3px
+                            border-radius: 50%
+                            background: currentColor
+                            top: "-0.5px"
+                            animation: pv-path-h 1.8s linear infinite
+                            animation-direction: "=false ? 'normal' : 'reverse'"
+                            display: "=(props.animate !== false && (Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0))) ? 'block' : 'none'"
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: "=(false) ? 'polygon(0 0, 100% 50%, 0 100%)' : 'polygon(100% 0, 0 50%, 100% 100%)'"
+                            left: "=(false) ? 'calc(100% - 6px)' : '0px'"
+                            top: "=(false) ? '-2px' : '-2px'"
+                            transform: none
+                            display: "=(Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0)) ? 'block' : 'none'"
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-PV
+                      visible: "=true"
+                      title: PV
+                      style:
+                        position: absolute
+                        left: 37%
+                        top: "-4px"
+                        width: 26%
+                        display: "=(true) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.power(props.pvPowerItem, 5400)) && Math.abs(fn.power(props.pvPowerItem, 5400)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (props.pvColor || '#ffd60a') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.power(props.pvPowerItem, 5400)) && Math.abs(fn.power(props.pvPowerItem, 5400)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.pvIcon || 'material:solar_power'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                      - component: Label
+                        config:
+                          text: "=fn.format(fn.power(props.pvPowerItem, 5400))"
+                          style:
+                            white-space: nowrap
+                            font-size: clamp(8px, 5.7cqw, 11px)
+                            line-height: 13px
+                            font-weight: 500
+                            font-variant-numeric: tabular-nums
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Netz
+                      visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.gridPowerItem || !!props.gridImportItem || !!props.gridExportItem"
+                      title: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) ? (((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0 ? 'Netzbezug' : ((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) < 0 ? 'Netzeinspeisung' : 'Netz') : 'Netz'"
+                      style:
+                        position: absolute
+                        left: 0%
+                        top: 24px
+                        width: 24%
+                        display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.gridPowerItem || !!props.gridImportItem || !!props.gridExportItem) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0 ? (props.gridImportColor || '#ff453a') : (props.gridExportColor || '#64d2ff')) : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) > 0 ? (props.gridImportIcon || 'iconify:mdi:power-from-grid') : ((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN) < 0 ? (props.gridExportIcon || 'iconify:mdi:power-to-grid') : (props.gridIdleIcon || 'iconify:mdi:transmission-tower')"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Batterie
+                      visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.batteryPowerItem || !!props.batteryChargeItem || !!props.batteryDischargeItem || !!props.batterySocItem"
+                      title: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) ? (((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) > 0 ? 'Batterie laden' : ((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) < 0 ? 'Batterie entladen' : 'Batterie') : 'Batterie'"
+                      style:
+                        position: absolute
+                        left: 76%
+                        top: 24px
+                        width: 24%
+                        display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.batteryPowerItem || !!props.batteryChargeItem || !!props.batteryDischargeItem || !!props.batterySocItem) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 1px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) > 0 ? (props.batteryChargeColor || '#30d158') : (props.batteryDischargeColor || '#ff9f0a')) : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) && Math.abs(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) > 0 ? (props.batteryChargeIcon || 'iconify:mdi:battery-arrow-down-outline') : ((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN) < 0 ? (props.batteryDischargeIcon || 'iconify:mdi:battery-arrow-up-outline') : (props.batteryIdleIcon || 'iconify:mdi:battery-outline')"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                      - component: div
+                        config:
+                          class: pv-battery-soc
+                          visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.batterySocItem"
+                          title: Batterie-Ladezustand
+                          style:
+                            display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.batterySocItem) ? 'flex' : 'none'"
+                            flex-direction: column
+                            align-items: center
+                            gap: 0
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              style:
+                                display: flex
+                                align-items: center
+                                justify-content: center
+                                height: "=props.socIcon ? '14px' : '8px'"
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: pv-battery-gauge
+                                  title: Batterie-Ladezustand
+                                  style:
+                                    position: relative
+                                    width: 16px
+                                    height: 7px
+                                    flex-shrink: 0
+                                    color: "=Number.isFinite(fn.soc(props.batterySocItem)) ? (fn.soc(props.batterySocItem) < (props.socCriticalThreshold !== undefined && props.socCriticalThreshold !== null && props.socCriticalThreshold !== '' && Number.isFinite(Number(props.socCriticalThreshold)) ? Math.max(0, Math.min(100, Number(props.socCriticalThreshold))) : 20) ? (props.socLowColor || '#ff453a') : fn.soc(props.batterySocItem) < (props.socWarningThreshold !== undefined && props.socWarningThreshold !== null && props.socWarningThreshold !== '' && Number.isFinite(Number(props.socWarningThreshold)) ? Math.max(0, Math.min(100, Number(props.socWarningThreshold))) : 30) ? (props.socWarningColor || '#ff9f0a') : (props.batteryColor || '#30d158')) : (props.inactiveColor || '#8e8e93')"
+                                    display: "=(!props.socIcon) ? 'block' : 'none'"
+                                  visible: "=!props.socIcon"
+                                slots:
+                                  default:
+                                  - component: div
+                                    config:
+                                      class: pv-battery-gauge-body
+                                      style:
+                                        position: absolute
+                                        left: 0
+                                        top: 0
+                                        width: 14px
+                                        height: 100%
+                                        border: 1px solid currentColor
+                                        border-radius: 1px
+                                        box-sizing: border-box
+                                    slots:
+                                      default:
+                                      - component: div
+                                        config:
+                                          style:
+                                            position: absolute
+                                            inset: 1px
+                                            border-radius: 1px
+                                            overflow: hidden
+                                        slots:
+                                          default:
+                                          - component: div
+                                            config:
+                                              style:
+                                                height: 100%
+                                                width: "=Number.isFinite(fn.soc(props.batterySocItem)) ? fn.soc(props.batterySocItem) + '%' : '0%'"
+                                                background: currentColor
+                                                transition: width .5s ease
+                                  - component: div
+                                    config:
+                                      class: pv-battery-gauge-terminal
+                                      style:
+                                        position: absolute
+                                        left: 14px
+                                        top: 25%
+                                        width: 2px
+                                        height: 50%
+                                        background: currentColor
+                                        border-radius: 0 1px 1px 0
+                              - component: oh-icon
+                                config:
+                                  icon: "=props.socIcon || 'iconify:mdi:battery-outline'"
+                                  width: 14
+                                  height: 14
+                                  style:
+                                    display: "=(!!props.socIcon) ? 'block' : 'none'"
+                                    flex-shrink: 0
+                                    width: 14px
+                                    height: 14px
+                                    color: "=Number.isFinite(fn.soc(props.batterySocItem)) ? (fn.soc(props.batterySocItem) < (props.socCriticalThreshold !== undefined && props.socCriticalThreshold !== null && props.socCriticalThreshold !== '' && Number.isFinite(Number(props.socCriticalThreshold)) ? Math.max(0, Math.min(100, Number(props.socCriticalThreshold))) : 20) ? (props.socLowColor || '#ff453a') : fn.soc(props.batterySocItem) < (props.socWarningThreshold !== undefined && props.socWarningThreshold !== null && props.socWarningThreshold !== '' && Number.isFinite(Number(props.socWarningThreshold)) ? Math.max(0, Math.min(100, Number(props.socWarningThreshold))) : 30) ? (props.socWarningColor || '#ff9f0a') : (props.batteryColor || '#30d158')) : (props.inactiveColor || '#8e8e93')"
+                                  visible: "=!!props.socIcon"
+                          - component: Label
+                            config:
+                              text: "=Number.isFinite(fn.soc(props.batterySocItem)) ? Math.round(fn.soc(props.batterySocItem)) + '%' : '—%'"
+                              style:
+                                white-space: nowrap
+                                color: "=props.socTextColor || props.textColor || 'var(--f7-text-color)'"
+                                font-size: 9px
+                                line-height: 9px
+                                opacity: 0.9
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Haus
+                      visible: "=true"
+                      title: Haus
+                      style:
+                        position: absolute
+                        left: 36%
+                        top: 74px
+                        width: 28%
+                        display: "=(true) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.power(props.housePowerItem, 1400)) && Math.abs(fn.power(props.housePowerItem, 1400)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (props.houseColor || '#ff9f0a') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.power(props.housePowerItem, 1400)) && Math.abs(fn.power(props.housePowerItem, 1400)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.houseIcon || 'f7:house'"
+                              width: 18
+                              height: 18
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 18px
+                                height: 18px
+                      - component: Label
+                        config:
+                          text: "=fn.format(fn.power(props.housePowerItem, 1400))"
+                          style:
+                            white-space: nowrap
+                            font-size: clamp(8px, 5.7cqw, 11px)
+                            line-height: 13px
+                            font-weight: 650
+                            font-variant-numeric: tabular-nums
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Wallbox
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxPowerItem) && Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.wallboxThreshold !== undefined && props.wallboxThreshold !== null && props.wallboxThreshold !== '' && Number.isFinite(Number(props.wallboxThreshold)) && Number(props.wallboxThreshold) >= 0 ? Number(props.wallboxThreshold) : 10)"
+                      title: Wallbox
+                      style:
+                        position: absolute
+                        left: 76%
+                        top: 74px
+                        width: 24%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxPowerItem) && Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.wallboxThreshold !== undefined && props.wallboxThreshold !== null && props.wallboxThreshold !== '' && Number.isFinite(Number(props.wallboxThreshold)) && Number(props.wallboxThreshold) >= 0 ? Number(props.wallboxThreshold) : 10)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && Math.abs(fn.power(props.wallboxPowerItem, 400)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (props.wallboxColor || '#40cbbd') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && Math.abs(fn.power(props.wallboxPowerItem, 400)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.wallboxIcon || 'f7:car_fill'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Waermepumpe
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpPowerItem) && Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.heatPumpThreshold !== undefined && props.heatPumpThreshold !== null && props.heatPumpThreshold !== '' && Number.isFinite(Number(props.heatPumpThreshold)) && Number(props.heatPumpThreshold) >= 0 ? Number(props.heatPumpThreshold) : 100)"
+                      title: Waermepumpe
+                      style:
+                        position: absolute
+                        left: 0%
+                        top: 74px
+                        width: 24%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpPowerItem) && Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.heatPumpThreshold !== undefined && props.heatPumpThreshold !== null && props.heatPumpThreshold !== '' && Number.isFinite(Number(props.heatPumpThreshold)) && Number(props.heatPumpThreshold) >= 0 ? Number(props.heatPumpThreshold) : 100)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && Math.abs(fn.power(props.heatPumpPowerItem, 600)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? (props.heatPumpColor || '#a78bfa') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && Math.abs(fn.power(props.heatPumpPowerItem, 600)) > (props.flowThreshold >= 0 ? Number(props.flowThreshold) : 0) ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.heatPumpIcon || 'iconify:mdi:heat-pump-outline'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                  - component: Label
+                    config:
+                      text: DEMO
+                      style:
+                        white-space: nowrap
+                        position: absolute
+                        right: '0'
+                        top: '0'
+                        font-size: 7px
+                        line-height: 9px
+                        opacity: 0.55
+                        display: "=(!!(props.demoMode === true || props.demoMode === 'true')) ? 'block' : 'none'"
+                      visible: "=!!(props.demoMode === true || props.demoMode === 'true')"
+                  - component: Label
+                    config:
+                      text: "=fn.format(((props.demoMode === true || props.demoMode === 'true') ? -2000 : props.gridPowerItem ? fn.power(props.gridPowerItem, 0) * (props.gridPositiveImport === false ? -1 : 1) : props.gridImportItem || props.gridExportItem ? ((props.gridImportItem ? Math.max(0, fn.power(props.gridImportItem, 0)) : 0) - (props.gridExportItem ? Math.max(0, fn.power(props.gridExportItem, 0)) : 0)) : Number.NaN))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(18% + 3.5px)
+                        top: 36px
+                        width: 26%
+                        text-align: center
+                        display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.gridPowerItem || !!props.gridImportItem || !!props.gridExportItem) ? 'block' : 'none'"
+                      class: pv-value-Netz
+                      visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.gridPowerItem || !!props.gridImportItem || !!props.gridExportItem"
+                  - component: Label
+                    config:
+                      text: "=fn.format(((props.demoMode === true || props.demoMode === 'true') ? 2000 : props.batteryPowerItem ? fn.power(props.batteryPowerItem, 0) * (props.batteryPositiveCharge === false ? -1 : 1) : props.batteryChargeItem || props.batteryDischargeItem ? ((props.batteryChargeItem ? Math.max(0, fn.power(props.batteryChargeItem, 0)) : 0) - (props.batteryDischargeItem ? Math.max(0, fn.power(props.batteryDischargeItem, 0)) : 0)) : Number.NaN))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(56% - 3.5px)
+                        top: 36px
+                        width: 26%
+                        text-align: center
+                        display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.batteryPowerItem || !!props.batteryChargeItem || !!props.batteryDischargeItem || !!props.batterySocItem) ? 'block' : 'none'"
+                      class: pv-value-Batterie
+                      visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.batteryPowerItem || !!props.batteryChargeItem || !!props.batteryDischargeItem || !!props.batterySocItem"
+                  - component: Label
+                    config:
+                      text: "=fn.format(fn.power(props.heatPumpPowerItem, 600))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(18% - 0.5px)
+                        top: 64px
+                        width: 26%
+                        text-align: center
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpPowerItem) && Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.heatPumpThreshold !== undefined && props.heatPumpThreshold !== null && props.heatPumpThreshold !== '' && Number.isFinite(Number(props.heatPumpThreshold)) && Number(props.heatPumpThreshold) >= 0 ? Number(props.heatPumpThreshold) : 100)) ? 'block' : 'none'"
+                      class: pv-value-Waermepumpe
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpPowerItem) && Number.isFinite(fn.power(props.heatPumpPowerItem, 600)) && fn.power(props.heatPumpPowerItem, 600) > (props.heatPumpThreshold !== undefined && props.heatPumpThreshold !== null && props.heatPumpThreshold !== '' && Number.isFinite(Number(props.heatPumpThreshold)) && Number(props.heatPumpThreshold) >= 0 ? Number(props.heatPumpThreshold) : 100)"
+                  - component: Label
+                    config:
+                      text: "=fn.format(fn.power(props.wallboxPowerItem, 400))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(56% + 0.5px)
+                        top: 64px
+                        width: 26%
+                        text-align: center
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxPowerItem) && Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.wallboxThreshold !== undefined && props.wallboxThreshold !== null && props.wallboxThreshold !== '' && Number.isFinite(Number(props.wallboxThreshold)) && Number(props.wallboxThreshold) >= 0 ? Number(props.wallboxThreshold) : 10)) ? 'block' : 'none'"
+                      class: pv-value-Wallbox
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxPowerItem) && Number.isFinite(fn.power(props.wallboxPowerItem, 400)) && fn.power(props.wallboxPowerItem, 400) > (props.wallboxThreshold !== undefined && props.wallboxThreshold !== null && props.wallboxThreshold !== '' && Number.isFinite(Number(props.wallboxThreshold)) && Number(props.wallboxThreshold) >= 0 ? Number(props.wallboxThreshold) : 10)"
+                  - component: div
+                    config:
+                      class: pv-forecast-power
+                      title: Prognostizierte PV-Leistung zum aktuellen Zeitpunkt
+                      visible: "=(props.demoMode === true || props.demoMode === 'true') || !!props.pvForecastPowerItem"
+                      style:
+                        position: absolute
+                        left: calc(50% + 13px)
+                        top: "-2px"
+                        display: "=((props.demoMode === true || props.demoMode === 'true') || !!props.pvForecastPowerItem) ? 'flex' : 'none'"
+                        flex-direction: row
+                        align-items: center
+                        gap: 3px
+                        color: "=Number.isFinite(fn.power(props.pvForecastPowerItem, 6200)) && fn.power(props.pvForecastPowerItem, 6200) > 0 ? (props.forecastColor || '#ffd60a') : (props.inactiveColor || '#8e8e93')"
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: "=props.forecastIcon || 'iconify:mdi:weather-cloudy-clock'"
+                          width: 10
+                          height: 10
+                          style:
+                            display: block
+                            flex-shrink: 0
+                            width: 10px
+                            height: 10px
+                            color: "=Number.isFinite(fn.power(props.pvForecastPowerItem, 6200)) && fn.power(props.pvForecastPowerItem, 6200) > 0 ? (props.forecastColor || '#ffd60a') : (props.inactiveColor || '#8e8e93')"
+                      - component: Label
+                        config:
+                          text: "=fn.format(fn.power(props.pvForecastPowerItem, 6200))"
+                          style:
+                            white-space: nowrap
+                            font-size: clamp(7px, 4.5cqw, 9px)
+                            line-height: 12px

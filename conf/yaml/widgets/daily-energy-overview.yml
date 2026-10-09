@@ -1,0 +1,939 @@
+version: 1
+widgets:
+  daily_energy_overview:
+    tags:
+    - Strom
+    - Tageswerte
+    - Cell
+    props:
+      parameterGroups:
+      - name: anzeige
+        label: Anzeige
+      - name: tageswerte
+        label: Tageswerte
+      - name: prognose
+        label: PV-Prognose
+      - name: icons
+        label: Icons
+      - name: farben
+        label: Farben
+      - name: trend
+        label: Trendlinie
+      - name: action
+        label: Action
+        context: action
+        description: 'Aktion beim Antippen. Standard: Tageswerte im Analyzer öffnen.'
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        groupName: anzeige
+        default: Strom heute
+      - name: showTitle
+        label: Titelzeile anzeigen
+        type: BOOLEAN
+        groupName: anzeige
+        default: true
+        description: Kompakte Überschrift oben links.
+      - name: icon
+        label: Titel-Icon
+        type: TEXT
+        groupName: anzeige
+        default: f7:bolt_circle
+        description: Framework7-Icon wie beim Wetter-Widget. Zum Beispiel f7:sun_max, f7:sun_max_fill oder f7:leaf_arrow_circlepath.
+      - name: iconColor
+        label: 'Titel-Icon: Farbe'
+        type: TEXT
+        groupName: anzeige
+        default: "#FFD60A"
+        description: 'Optional. CSS-Farbe wie #ffd60a oder orange. OH-Icons behalten ihre eigene Farbe.'
+      - name: pvColor
+        label: PV
+        type: TEXT
+        groupName: farben
+        default: "#ffd60a"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: houseColor
+        label: Haus
+        type: TEXT
+        groupName: farben
+        default: "#ff9f0a"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: wallboxColor
+        label: Wallbox
+        type: TEXT
+        groupName: farben
+        default: "#40cbbd"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: heatPumpColor
+        label: Wärmepumpe
+        type: TEXT
+        groupName: farben
+        default: "#BF9AF7"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: inactiveColor
+        label: Inaktive Icons und Leitungen
+        type: TEXT
+        groupName: farben
+        default: "#8e8e93"
+        description: 'CSS-Farbe, z. B. #64d2ff, orange oder rgb(100, 210, 255).'
+      - name: gridImportColor
+        label: Netz → Haus (Bezug)
+        type: TEXT
+        groupName: farben
+        default: "#ff453a"
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: batteryDischargeColor
+        label: Batterie → Haus (Entladen)
+        type: TEXT
+        groupName: farben
+        default: "#ff9f0a"
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: textColor
+        label: Messwerte und Texte
+        type: TEXT
+        groupName: farben
+        default: var(--f7-text-color)
+        description: CSS-Farbe. Die Richtungsfarben gelten für Icon, Leitung, Pfeil und Animationspunkt.
+      - name: backgroundColor
+        label: Zellenhintergrund
+        type: TEXT
+        groupName: farben
+        description: Optionale CSS-Farbe. Leer lassen für die bisherige Standardfarbe.
+      - name: titleColor
+        label: Titeltext
+        type: TEXT
+        groupName: farben
+        description: Optionale CSS-Farbe. Leer lassen für die bisherige Standardfarbe.
+      - name: demoMode
+        label: Demo mit Beispielwerten
+        type: BOOLEAN
+        groupName: anzeige
+        default: false
+        description: Zeigt gekennzeichnete Beispielwerte ohne Items. Zum Testen aktivieren; danach ausschalten.
+      - name: pvIcon
+        label: PV-Produktion-Icon
+        type: TEXT
+        groupName: icons
+        default: material:solar_power
+      - name: houseIcon
+        label: Haus-Icon
+        type: TEXT
+        groupName: icons
+        default: f7:house
+      - name: wallboxIcon
+        label: Wallbox-Icon
+        type: TEXT
+        groupName: icons
+        default: f7:car_fill
+      - name: heatPumpIcon
+        label: Wärmepumpe-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:heat-pump-outline
+      - name: gridImportIcon
+        label: Netzbezug-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:power-from-grid
+      - name: batteryDischargeIcon
+        label: Batterie entladen-Icon
+        type: TEXT
+        groupName: icons
+        default: iconify:mdi:battery-arrow-up-outline
+      - name: showTrend
+        label: Trendlinie anzeigen
+        type: BOOLEAN
+        groupName: trend
+        default: false
+      - name: trendItem
+        label: Trend-Item
+        type: TEXT
+        groupName: trend
+        context: item
+        description: Optional. Eigenes historisiertes Trend-Item. Ohne Auswahl wird die PV-Tagesproduktion verwendet.
+      - name: trendColor
+        label: Trendfarbe
+        type: TEXT
+        groupName: trend
+        default: "#2196f3"
+        description: 'CSS-Farbe, z. B. #2196f3. Ohne zweite Farbe wird die gesamte Linie in dieser Farbe angezeigt.'
+      - name: trendColorEnd
+        label: 'Trendfarbe: zweite Verlaufsfarbe'
+        type: TEXT
+        groupName: trend
+        default: "#5ac8fa"
+        description: 'Optional. Für den originalen openHAB-Verlauf hier #5ac8fa und als erste Farbe #2196f3 einstellen.'
+      - name: trendOpacity
+        label: 'Trendlinie: Deckkraft (%)'
+        type: INTEGER
+        groupName: trend
+        default: 70
+        min: 0
+        max: 100
+        description: 0 = unsichtbar, 100 = volle Deckkraft. Standard 70 %.
+      - name: trendStrokeWidth
+        label: 'Trendlinie: Linienbreite'
+        type: INTEGER
+        groupName: trend
+        default: 3
+        min: 1
+        max: 10
+        description: 'Original openHAB: 3. Größere Werte ergeben eine dickere Linie.'
+      - name: pvEnergyItem
+        label: PV-Produktion heute
+        type: TEXT
+        context: item
+        groupName: tageswerte
+        description: Tageswert seit Mitternacht in Wh, kWh oder MWh. Keine Leistung in W und kein fortlaufender Gesamtzähler. Ohne Item wird das Feld ausgeblendet.
+      - name: houseEnergyItem
+        label: Hausgesamtverbrauch heute
+        type: TEXT
+        context: item
+        groupName: tageswerte
+        description: Tageswert seit Mitternacht in Wh, kWh oder MWh. Keine Leistung in W und kein fortlaufender Gesamtzähler. Ohne Item wird das Feld ausgeblendet.
+      - name: gridEnergyItem
+        label: Netzbezug heute
+        type: TEXT
+        context: item
+        groupName: tageswerte
+        description: Tageswert seit Mitternacht in Wh, kWh oder MWh. Keine Leistung in W und kein fortlaufender Gesamtzähler. Ohne Item wird das Feld ausgeblendet.
+      - name: batteryEnergyItem
+        label: Batterieentladung heute
+        type: TEXT
+        context: item
+        groupName: tageswerte
+        description: Tageswert seit Mitternacht in Wh, kWh oder MWh. Keine Leistung in W und kein fortlaufender Gesamtzähler. Ohne Item wird das Feld ausgeblendet.
+      - name: wallboxEnergyItem
+        label: Wallboxverbrauch heute
+        type: TEXT
+        context: item
+        groupName: tageswerte
+        description: Tageswert seit Mitternacht in Wh, kWh oder MWh. Keine Leistung in W und kein fortlaufender Gesamtzähler. Ohne Item wird das Feld ausgeblendet.
+      - name: heatPumpEnergyItem
+        label: Wärmepumpenverbrauch heute
+        type: TEXT
+        context: item
+        groupName: tageswerte
+        description: Tageswert seit Mitternacht in Wh, kWh oder MWh. Keine Leistung in W und kein fortlaufender Gesamtzähler. Ohne Item wird das Feld ausgeblendet.
+      - name: pvRemainingItem
+        label: 'PV-Erzeugung: Rest heute'
+        type: TEXT
+        context: item
+        groupName: prognose
+        description: Verbleibende PV-Erzeugungsprognose für heute. Wird unverändert angezeigt.
+      - name: energyUnit
+        label: Einheit für Werte ohne Einheit
+        type: TEXT
+        groupName: tageswerte
+        default: kWh
+        options:
+        - value: Wh
+          label: Wh
+        - value: kWh
+          label: kWh
+        - value: MWh
+          label: MWh
+        description: Nur für Rohzustände ohne Einheit. Zustände mit Einheit werden automatisch in kWh umgerechnet.
+      - name: energyDecimals
+        label: Nachkommastellen (kWh)
+        type: INTEGER
+        groupName: anzeige
+        default: 1
+        min: 0
+        max: 3
+      - name: forecastColor
+        label: 'Rest heute: Farbe'
+        type: TEXT
+        groupName: farben
+        default: "#ffd60a"
+      - name: wallboxEnergyThreshold
+        label: Wallbox anzeigen oberhalb (kWh)
+        type: DECIMAL
+        groupName: tageswerte
+        default: 0
+        min: 0
+        description: Icon, Tageswert und Pfeil nur oberhalb dieses Tagesverbrauchs anzeigen. Angabe in kWh, z. B. 0.1. Ohne Item oder bei unbekanntem Wert ausgeblendet.
+      - name: heatPumpEnergyThreshold
+        label: Wärmepumpe anzeigen oberhalb (kWh)
+        type: DECIMAL
+        groupName: tageswerte
+        default: 0
+        min: 0
+        description: Icon, Tageswert und Pfeil nur oberhalb dieses Tagesverbrauchs anzeigen. Angabe in kWh, z. B. 0.1. Ohne Item oder bei unbekanntem Wert ausgeblendet.
+      - name: forecastIcon
+        label: 'Restprognose: Icon'
+        type: TEXT
+        groupName: icons
+        default: f7:timer
+    component: oh-cell
+    config:
+      title: "=props.title || 'Strom heute'"
+      expandable: false
+      actionPropsParameterGroup: "=props.action != null ? 'action' : ''"
+      action: analyzer
+      actionAnalyzerItems: "=[props.pvEnergyItem, props.houseEnergyItem, props.batteryEnergyItem, props.gridEnergyItem, props.wallboxEnergyItem, props.heatPumpEnergyItem, props.pvRemainingItem].filter((name) => !!name)"
+      style:
+        background: "=props.backgroundColor"
+      stylesheet: ".cell-contents { display: none; }"
+    slots:
+      background:
+      - component: oh-context
+        config:
+          functions:
+            energy: "=(name, demo) => (props.demoMode === true || props.demoMode === 'true') ? demo : !name || !items[name] || !items[name].state || !/^\\+?\\d+(?:[.,]\\d+)?(?:[eE][-+]?\\d+)?\\s*(?:Wh|kWh|MWh)?$/.test(items[name].state.trim()) ? Number.NaN : Number.parseFloat(items[name].state.replace(',', '.')) * (/MWh$/.test(items[name].state.trim()) ? 1000 : /kWh$/.test(items[name].state.trim()) ? 1 : /Wh$/.test(items[name].state.trim()) ? 0.001 : props.energyUnit === 'Wh' ? 0.001 : props.energyUnit === 'MWh' ? 1000 : 1)"
+            format: "=(kwh) => !Number.isFinite(kwh) ? '—' : kwh.toFixed(props.energyDecimals >= 0 && props.energyDecimals <= 3 ? Number(props.energyDecimals) : 1).replace('.', ',') + ' kWh'"
+        slots:
+          default:
+          - component: oh-trend
+            config:
+              visible: "=props.showTrend === true && !!(props.trendItem || props.pvEnergyItem)"
+              trendItem: "=props.trendItem || props.pvEnergyItem"
+              trendStrokeWidth: "=props.trendStrokeWidth > 0 && Number.isFinite(Number(props.trendStrokeWidth)) ? Number(props.trendStrokeWidth) : 3"
+              trendGradient: "=[props.trendColor || '#2196f3', props.trendColorEnd || props.trendColor || '#5ac8fa']"
+              style:
+                position: absolute
+                inset: 0
+                width: 100%
+                height: 100%
+                opacity: "=props.trendOpacity !== undefined && props.trendOpacity !== null && props.trendOpacity !== '' && Number.isFinite(Number(props.trendOpacity)) ? Math.max(0, Math.min(100, Number(props.trendOpacity))) / 100 : 0.20"
+                pointer-events: none
+                display: "=(props.showTrend === true && !!(props.trendItem || props.pvEnergyItem)) ? 'block' : 'none'"
+          - component: div
+            config:
+              class: pv-cell-content
+              style:
+                position: absolute
+                inset: 0
+                padding: 8px
+                box-sizing: border-box
+                container-type: inline-size
+                color: "=props.textColor || 'var(--f7-text-color)'"
+                display: block
+            slots:
+              default:
+              - component: div
+                config:
+                  style:
+                    display: flex
+                    align-items: center
+                    justify-content: flex-start
+                    gap: 4px
+                    height: 18px
+                    position: absolute
+                    top: 5px
+                    left: 8px
+                    width: calc(50% - 20px)
+                    z-index: 2
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      style:
+                        display: "=(props.showTitle === true) ? 'flex' : 'none'"
+                        align-items: center
+                        gap: 4px
+                        min-width: 0
+                        width: 100%
+                      visible: "=props.showTitle === true"
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: "=props.icon || 'f7:sun_max'"
+                          width: 12
+                          height: 12
+                          style:
+                            display: block
+                            flex-shrink: 0
+                            width: 12px
+                            height: 12px
+                            color: "=props.iconColor || '#ffd60a'"
+                      - component: Label
+                        config:
+                          text: "=props.title || 'Strom heute'"
+                          style:
+                            white-space: nowrap
+                            color: "=props.titleColor || props.textColor || 'var(--f7-text-color)'"
+                            font-size: clamp(7.5px, 4.8cqw, 11px)
+                            overflow: hidden
+                            text-overflow: ellipsis
+                            min-width: 0
+                            font-weight: 600
+                            line-height: 18px
+              - component: div
+                config:
+                  class: pv-diagram
+                  style:
+                    position: relative
+                    width: 100%
+                    height: 104px
+                    min-width: 0
+                    top: 0px
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      class: pv-flow pv-generation
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.pvEnergyItem)"
+                      style:
+                        position: absolute
+                        left: calc(50% - 1px)
+                        top: 28px
+                        width: 2px
+                        height: 41px
+                        color: "=Number.isFinite(fn.energy(props.pvEnergyItem, 18.6)) && fn.energy(props.pvEnergyItem, 18.6) > 0 ? (props.pvColor || '#ffd60a') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.energy(props.pvEnergyItem, 18.6)) && fn.energy(props.pvEnergyItem, 18.6) > 0 ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.pvEnergyItem)) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: 0 0 6px 0
+                            background: currentColor
+                            border-radius: 2px
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.energy(props.pvEnergyItem, 18.6)) && fn.energy(props.pvEnergyItem, 18.6) > 0"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: polygon(0 0, 100% 0, 50% 100%)
+                            left: "-2px"
+                            top: calc(100% - 6px)
+                            transform: none
+                            display: "=(Number.isFinite(fn.energy(props.pvEnergyItem, 18.6)) && fn.energy(props.pvEnergyItem, 18.6) > 0) ? 'block' : 'none'"
+                            transform-origin: center
+                  - component: div
+                    config:
+                      class: pv-flow pv-grid
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.gridEnergyItem)"
+                      style:
+                        position: absolute
+                        left: calc(12% + 12px)
+                        top: 31px
+                        width: calc(38% - 17px)
+                        height: 38px
+                        color: "=Number.isFinite(fn.energy(props.gridEnergyItem, 3.4)) && fn.energy(props.gridEnergyItem, 3.4) > 0 ? (props.gridImportColor || '#ff453a') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.energy(props.gridEnergyItem, 3.4)) && fn.energy(props.gridEnergyItem, 3.4) > 0 ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.gridEnergyItem)) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: 0 0 6px 0
+                            box-sizing: border-box
+                            border-top: 2px solid currentColor
+                            border-right: 2px solid currentColor
+                            border-top-right-radius: 6px
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.energy(props.gridEnergyItem, 3.4)) && fn.energy(props.gridEnergyItem, 3.4) > 0"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: polygon(0 0, 100% 0, 50% 100%)
+                            left: calc(100% - 4px)
+                            top: calc(100% - 6px)
+                            transform: none
+                            display: "=(Number.isFinite(fn.energy(props.gridEnergyItem, 3.4)) && fn.energy(props.gridEnergyItem, 3.4) > 0) ? 'block' : 'none'"
+                            transform-origin: center
+                  - component: div
+                    config:
+                      class: pv-flow pv-battery
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.batteryEnergyItem)"
+                      style:
+                        position: absolute
+                        left: calc(50% + 5px)
+                        top: 31px
+                        width: calc(38% - 17px)
+                        height: 38px
+                        color: "=Number.isFinite(fn.energy(props.batteryEnergyItem, 4.8)) && fn.energy(props.batteryEnergyItem, 4.8) > 0 ? (props.batteryDischargeColor || '#ff9f0a') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.energy(props.batteryEnergyItem, 4.8)) && fn.energy(props.batteryEnergyItem, 4.8) > 0 ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.batteryEnergyItem)) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: 0 0 6px 0
+                            box-sizing: border-box
+                            border-top: 2px solid currentColor
+                            border-left: 2px solid currentColor
+                            border-top-left-radius: 6px
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.energy(props.batteryEnergyItem, 4.8)) && fn.energy(props.batteryEnergyItem, 4.8) > 0"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: polygon(0 0, 100% 0, 50% 100%)
+                            left: "-2px"
+                            top: calc(100% - 6px)
+                            transform: none
+                            display: "=(Number.isFinite(fn.energy(props.batteryEnergyItem, 4.8)) && fn.energy(props.batteryEnergyItem, 4.8) > 0) ? 'block' : 'none'"
+                            transform-origin: center
+                  - component: div
+                    config:
+                      class: pv-flow pv-wallbox
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxEnergyItem) && Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > (props.wallboxEnergyThreshold !== undefined && props.wallboxEnergyThreshold !== null && props.wallboxEnergyThreshold !== '' && Number.isFinite(Number(props.wallboxEnergyThreshold)) ? Math.max(0, Number(props.wallboxEnergyThreshold)) : 0)"
+                      style:
+                        position: absolute
+                        left: calc(50% + 13px)
+                        top: 81px
+                        width: calc(38% - 25px)
+                        height: 2px
+                        color: "=Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > 0 ? (props.wallboxColor || '#40cbbd') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > 0 ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxEnergyItem) && Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > (props.wallboxEnergyThreshold !== undefined && props.wallboxEnergyThreshold !== null && props.wallboxEnergyThreshold !== '' && Number.isFinite(Number(props.wallboxEnergyThreshold)) ? Math.max(0, Number(props.wallboxEnergyThreshold)) : 0)) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: 0 6px 0 0
+                            background: currentColor
+                            border-radius: 2px
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > 0"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: polygon(0 0, 100% 50%, 0 100%)
+                            left: calc(100% - 6px)
+                            top: "-2px"
+                            transform: none
+                            display: "=(Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > 0) ? 'block' : 'none'"
+                            transform-origin: center
+                  - component: div
+                    config:
+                      class: pv-flow pv-heat-pump
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpEnergyItem) && Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > (props.heatPumpEnergyThreshold !== undefined && props.heatPumpEnergyThreshold !== null && props.heatPumpEnergyThreshold !== '' && Number.isFinite(Number(props.heatPumpEnergyThreshold)) ? Math.max(0, Number(props.heatPumpEnergyThreshold)) : 0)"
+                      style:
+                        position: absolute
+                        left: calc(12% + 12px)
+                        top: 81px
+                        width: calc(38% - 25px)
+                        height: 2px
+                        color: "=Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > 0 ? (props.heatPumpColor || '#BF9AF7') : (props.inactiveColor || '#8e8e93')"
+                        opacity: "=Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > 0 ? 1 : 0.25"
+                        pointer-events: none
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpEnergyItem) && Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > (props.heatPumpEnergyThreshold !== undefined && props.heatPumpEnergyThreshold !== null && props.heatPumpEnergyThreshold !== '' && Number.isFinite(Number(props.heatPumpEnergyThreshold)) ? Math.max(0, Number(props.heatPumpEnergyThreshold)) : 0)) ? 'block' : 'none'"
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pv-flow-line
+                          style:
+                            position: absolute
+                            inset: 0 0 0 6px
+                            background: currentColor
+                            border-radius: 2px
+                      - component: div
+                        config:
+                          class: pv-flow-arrow
+                          visible: "=Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > 0"
+                          style:
+                            position: absolute
+                            width: 6px
+                            height: 6px
+                            background: currentColor
+                            clip-path: polygon(100% 0, 0 50%, 100% 100%)
+                            left: 0px
+                            top: "-2px"
+                            transform: none
+                            display: "=(Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > 0) ? 'block' : 'none'"
+                            transform-origin: center
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-PV
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.pvEnergyItem)"
+                      title: PV-Tagesproduktion
+                      style:
+                        position: absolute
+                        left: 37%
+                        top: "-4px"
+                        width: 26%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.pvEnergyItem)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.energy(props.pvEnergyItem, 18.6)) && fn.energy(props.pvEnergyItem, 18.6) > 0 ? (props.pvColor || '#ffd60a') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.energy(props.pvEnergyItem, 18.6)) && fn.energy(props.pvEnergyItem, 18.6) > 0 ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.pvIcon || 'material:solar_power'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                      - component: Label
+                        config:
+                          text: "=fn.format(fn.energy(props.pvEnergyItem, 18.6))"
+                          style:
+                            white-space: nowrap
+                            font-size: clamp(7px, 4.5cqw, 9px)
+                            line-height: 13px
+                            font-weight: 500
+                            font-variant-numeric: tabular-nums
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Netz
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.gridEnergyItem)"
+                      title: Tagesbezug aus dem Netz
+                      style:
+                        position: absolute
+                        left: 0%
+                        top: 24px
+                        width: 24%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.gridEnergyItem)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.energy(props.gridEnergyItem, 3.4)) && fn.energy(props.gridEnergyItem, 3.4) > 0 ? (props.gridImportColor || '#ff453a') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.energy(props.gridEnergyItem, 3.4)) && fn.energy(props.gridEnergyItem, 3.4) > 0 ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.gridImportIcon || 'iconify:mdi:power-from-grid'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Batterie
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.batteryEnergyItem)"
+                      title: Batterieentladung heute
+                      style:
+                        position: absolute
+                        left: 76%
+                        top: 24px
+                        width: 24%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.batteryEnergyItem)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 1px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.energy(props.batteryEnergyItem, 4.8)) && fn.energy(props.batteryEnergyItem, 4.8) > 0 ? (props.batteryDischargeColor || '#ff9f0a') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.energy(props.batteryEnergyItem, 4.8)) && fn.energy(props.batteryEnergyItem, 4.8) > 0 ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.batteryDischargeIcon || 'iconify:mdi:battery-arrow-up-outline'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Haus
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.houseEnergyItem)"
+                      title: Hausgesamtverbrauch heute
+                      style:
+                        position: absolute
+                        left: 36%
+                        top: 74px
+                        width: 28%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.houseEnergyItem)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.energy(props.houseEnergyItem, 14.2)) && fn.energy(props.houseEnergyItem, 14.2) > 0 ? (props.houseColor || '#ff9f0a') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.energy(props.houseEnergyItem, 14.2)) && fn.energy(props.houseEnergyItem, 14.2) > 0 ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.houseIcon || 'f7:house'"
+                              width: 18
+                              height: 18
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 18px
+                                height: 18px
+                      - component: Label
+                        config:
+                          text: "=fn.format(fn.energy(props.houseEnergyItem, 14.2))"
+                          style:
+                            white-space: nowrap
+                            font-size: clamp(7px, 4.5cqw, 9px)
+                            line-height: 13px
+                            font-weight: 650
+                            font-variant-numeric: tabular-nums
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Wallbox
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxEnergyItem) && Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > (props.wallboxEnergyThreshold !== undefined && props.wallboxEnergyThreshold !== null && props.wallboxEnergyThreshold !== '' && Number.isFinite(Number(props.wallboxEnergyThreshold)) ? Math.max(0, Number(props.wallboxEnergyThreshold)) : 0)"
+                      title: Wallboxverbrauch heute
+                      style:
+                        position: absolute
+                        left: 76%
+                        top: 74px
+                        width: 24%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxEnergyItem) && Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > (props.wallboxEnergyThreshold !== undefined && props.wallboxEnergyThreshold !== null && props.wallboxEnergyThreshold !== '' && Number.isFinite(Number(props.wallboxEnergyThreshold)) ? Math.max(0, Number(props.wallboxEnergyThreshold)) : 0)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > 0 ? (props.wallboxColor || '#40cbbd') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > 0 ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.wallboxIcon || 'f7:car_fill'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                  - component: div
+                    config:
+                      class: pv-energy-node pv-node-Waermepumpe
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpEnergyItem) && Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > (props.heatPumpEnergyThreshold !== undefined && props.heatPumpEnergyThreshold !== null && props.heatPumpEnergyThreshold !== '' && Number.isFinite(Number(props.heatPumpEnergyThreshold)) ? Math.max(0, Number(props.heatPumpEnergyThreshold)) : 0)"
+                      title: Wärmepumpenverbrauch heute
+                      style:
+                        position: absolute
+                        left: 0%
+                        top: 74px
+                        width: 24%
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpEnergyItem) && Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > (props.heatPumpEnergyThreshold !== undefined && props.heatPumpEnergyThreshold !== null && props.heatPumpEnergyThreshold !== '' && Number.isFinite(Number(props.heatPumpEnergyThreshold)) ? Math.max(0, Number(props.heatPumpEnergyThreshold)) : 0)) ? 'flex' : 'none'"
+                        flex-direction: column
+                        align-items: center
+                        gap: 2px
+                        min-width: 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          style:
+                            display: flex
+                            align-items: center
+                            justify-content: center
+                            gap: 3px
+                            height: 16px
+                            color: "=Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > 0 ? (props.heatPumpColor || '#BF9AF7') : (props.inactiveColor || '#8e8e93')"
+                            opacity: "=Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > 0 ? 1 : 0.6"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=props.heatPumpIcon || 'iconify:mdi:heat-pump-outline'"
+                              width: 16
+                              height: 16
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 16px
+                                height: 16px
+                  - component: Label
+                    config:
+                      text: DEMO
+                      style:
+                        white-space: nowrap
+                        position: absolute
+                        right: '0'
+                        font-size: 7px
+                        line-height: 9px
+                        opacity: 0.55
+                        display: "=(!!(props.demoMode === true || props.demoMode === 'true')) ? 'block' : 'none'"
+                        bottom: '0'
+                      visible: "=!!(props.demoMode === true || props.demoMode === 'true')"
+                  - component: Label
+                    config:
+                      text: "=fn.format(fn.energy(props.gridEnergyItem, 3.4))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(18% + 3.5px)
+                        top: 36px
+                        width: 26%
+                        text-align: center
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.gridEnergyItem)) ? 'block' : 'none'"
+                      class: pv-value-Netz
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.gridEnergyItem)"
+                  - component: Label
+                    config:
+                      text: "=fn.format(fn.energy(props.batteryEnergyItem, 4.8))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(56% - 3.5px)
+                        top: 36px
+                        width: 26%
+                        text-align: center
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.batteryEnergyItem)) ? 'block' : 'none'"
+                      class: pv-value-Batterie
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.batteryEnergyItem)"
+                  - component: Label
+                    config:
+                      text: "=fn.format(fn.energy(props.heatPumpEnergyItem, 3.2))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(18% - 0.5px)
+                        top: 64px
+                        width: 26%
+                        text-align: center
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpEnergyItem) && Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > (props.heatPumpEnergyThreshold !== undefined && props.heatPumpEnergyThreshold !== null && props.heatPumpEnergyThreshold !== '' && Number.isFinite(Number(props.heatPumpEnergyThreshold)) ? Math.max(0, Number(props.heatPumpEnergyThreshold)) : 0)) ? 'block' : 'none'"
+                      class: pv-value-Waermepumpe
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.heatPumpEnergyItem) && Number.isFinite(fn.energy(props.heatPumpEnergyItem, 3.2)) && fn.energy(props.heatPumpEnergyItem, 3.2) > (props.heatPumpEnergyThreshold !== undefined && props.heatPumpEnergyThreshold !== null && props.heatPumpEnergyThreshold !== '' && Number.isFinite(Number(props.heatPumpEnergyThreshold)) ? Math.max(0, Number(props.heatPumpEnergyThreshold)) : 0)"
+                  - component: Label
+                    config:
+                      text: "=fn.format(fn.energy(props.wallboxEnergyItem, 6.5))"
+                      style:
+                        white-space: nowrap
+                        font-size: clamp(7px, 4.5cqw, 9px)
+                        line-height: 13px
+                        font-weight: 500
+                        font-variant-numeric: tabular-nums
+                        position: absolute
+                        left: calc(56% + 0.5px)
+                        top: 64px
+                        width: 26%
+                        text-align: center
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxEnergyItem) && Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > (props.wallboxEnergyThreshold !== undefined && props.wallboxEnergyThreshold !== null && props.wallboxEnergyThreshold !== '' && Number.isFinite(Number(props.wallboxEnergyThreshold)) ? Math.max(0, Number(props.wallboxEnergyThreshold)) : 0)) ? 'block' : 'none'"
+                      class: pv-value-Wallbox
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.wallboxEnergyItem) && Number.isFinite(fn.energy(props.wallboxEnergyItem, 6.5)) && fn.energy(props.wallboxEnergyItem, 6.5) > (props.wallboxEnergyThreshold !== undefined && props.wallboxEnergyThreshold !== null && props.wallboxEnergyThreshold !== '' && Number.isFinite(Number(props.wallboxEnergyThreshold)) ? Math.max(0, Number(props.wallboxEnergyThreshold)) : 0)"
+                  - component: div
+                    config:
+                      class: day-pv-remaining
+                      title: Prognostizierte PV-Erzeugung für den Rest des Tages
+                      style:
+                        position: absolute
+                        left: calc(50% + 13px)
+                        top: "-2px"
+                        display: "=(((props.demoMode === true || props.demoMode === 'true') || !!props.pvRemainingItem)) ? 'flex' : 'none'"
+                        flex-direction: row
+                        align-items: center
+                        gap: 3px
+                        color: "=Number.isFinite(fn.energy(props.pvRemainingItem, 5.2)) && fn.energy(props.pvRemainingItem, 5.2) > 0 ? (props.forecastColor || '#ffd60a') : (props.inactiveColor || '#8e8e93')"
+                      visible: "=((props.demoMode === true || props.demoMode === 'true') || !!props.pvRemainingItem)"
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: "=props.forecastIcon || 'f7:timer'"
+                          width: 10
+                          height: 10
+                          style:
+                            display: block
+                            width: 10px
+                            height: 10px
+                            flex-shrink: 0
+                      - component: Label
+                        config:
+                          text: "=fn.format(fn.energy(props.pvRemainingItem, 5.2))"
+                          style:
+                            font-size: clamp(7px, 4.5cqw, 9px)
+                            line-height: 12px
+                            white-space: nowrap

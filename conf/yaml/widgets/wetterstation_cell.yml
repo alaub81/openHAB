@@ -18,6 +18,8 @@ widgets:
         description: Aktion beim Antippen der gesamten Zelle. Ohne eigene Auswahl wird wie bisher die Temperatur im Analyzer geöffnet.
       - name: licht
         label: Licht
+      - name: uv
+        label: UV-Index
       - name: trend
         label: Trendlinie
       parameters:
@@ -107,6 +109,42 @@ widgets:
         context: item
         groupName: licht
         description: Optional. Item für die Beleuchtungsstärke, z. B. Number:Illuminance.
+      - name: uvItem
+        label: UV-Index
+        type: TEXT
+        context: item
+        groupName: uv
+        description: 'Optional. Ohne Zuordnung ausgeblendet. Für Garten: Shelly_Wetterstation_uvindex.'
+      - name: uvIcon
+        label: UV-Icon
+        type: TEXT
+        groupName: uv
+        default: iconify:mdi:sun-wireless
+      - name: uvLowColor
+        label: 'Niedrig: Farbe'
+        type: TEXT
+        groupName: uv
+        default: green
+      - name: uvMediumColor
+        label: 'Mittel: Farbe'
+        type: TEXT
+        groupName: uv
+        default: "#f1c40f"
+      - name: uvHighColor
+        label: 'Hoch: Farbe'
+        type: TEXT
+        groupName: uv
+        default: orange
+      - name: uvVeryHighColor
+        label: 'Sehr hoch: Farbe'
+        type: TEXT
+        groupName: uv
+        default: red
+      - name: uvExtremeColor
+        label: 'Extrem: Farbe'
+        type: TEXT
+        groupName: uv
+        default: purple
       - name: trendItem
         label: Trend-Item
         type: TEXT
@@ -125,14 +163,6 @@ widgets:
         groupName: trend
         default: "#5ac8fa"
         description: 'Optional. Für den originalen openHAB-Verlauf hier #5ac8fa und als erste Farbe #2196f3 einstellen.'
-      - name: trendOpacity
-        label: 'Trendlinie: Deckkraft (%)'
-        type: INTEGER
-        groupName: trend
-        default: 20
-        min: 0
-        max: 100
-        description: 0 = unsichtbar, 100 = volle Deckkraft. Standard 20 %. Bei Bedarf z. B. auf 40 % erhöhen.
       - name: trendStrokeWidth
         label: 'Trendlinie: Linienbreite'
         type: INTEGER
@@ -141,6 +171,14 @@ widgets:
         min: 1
         max: 10
         description: 'Original openHAB: 3. Größere Werte ergeben eine dickere Linie.'
+      - name: trendOpacity
+        label: 'Trendlinie: Deckkraft (%)'
+        type: INTEGER
+        groupName: trend
+        default: 20
+        min: 0
+        max: 100
+        description: 0 = unsichtbar, 100 = volle Deckkraft. Standard 20 %. Bei Bedarf z. B. auf 40 % erhöhen.
     component: oh-cell
     config:
       title: "=props.title || 'Garten'"
@@ -158,6 +196,10 @@ widgets:
             direction: "=(name) => !name || !items[name] || !items[name].state || items[name].state === 'NULL' || items[name].state === 'UNDEF' ? '—' : Number.isNaN(Number.parseFloat(items[name].state)) ? (items[name].displayState || items[name].state) : ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(((Number.parseFloat(items[name].state) % 360 + 360) % 360) / 22.5) % 16]"
             has: "=(name) => (name ? name.trim().length > 0 : false)"
             short: "=(text) => /^[-+]?\\d+(?:[.,]\\d+)?/.test(text) ? (Math.round(Number.parseFloat(text.replace(',', '.')) * 10) / 10).toFixed(1).replace('.', text.indexOf(',') >= 0 ? ',' : '.') + text.replace(/^[-+]?\\d+(?:[.,]\\d+)?/, '') : text"
+            uv: "=(name) => !name || !items[name] || !items[name].state || !/^\\+?\\d+(?:[.,]\\d+)?$/.test(items[name].state.trim()) ? Number.NaN : Number.parseFloat(items[name].state.replace(',', '.'))"
+            uvStatus: "=(value) => !Number.isFinite(value) ? 'Unbekannt' : value < 3 ? 'Niedrig' : value < 6 ? 'Mittel' : value < 8 ? 'Hoch' : value < 11 ? 'Sehr hoch' : 'Extrem'"
+            uvColor: "=(value) => !Number.isFinite(value) ? '#8e8e93' : value < 3 ? (props.uvLowColor || 'green') : value < 6 ? (props.uvMediumColor || '#f1c40f') : value < 8 ? (props.uvHighColor || 'orange') : value < 11 ? (props.uvVeryHighColor || 'red') : (props.uvExtremeColor || 'purple')"
+            uvFormat: "=(value) => !Number.isFinite(value) ? '—' : (Math.round(value * 10) / 10).toString().replace('.', ',')"
         slots:
           default:
           - component: oh-trend
@@ -266,7 +308,7 @@ widgets:
                 config:
                   style:
                     display: flex
-                    align-items: baseline
+                    align-items: "=fn.has(props.uvItem) ? 'flex-end' : 'baseline'"
                     justify-content: space-between
                     gap: 4px
                     min-width: 0
@@ -278,7 +320,7 @@ widgets:
                       style:
                         white-space: nowrap
                         min-width: 0
-                        font-size: clamp(18px, 13cqw, 24px)
+                        font-size: "=fn.has(props.uvItem) ? 'clamp(16px, 11.5cqw, 24px)' : 'clamp(18px, 13cqw, 24px)'"
                         line-height: 28px
                         flex-shrink: 0
                   - component: div
@@ -492,3 +534,39 @@ widgets:
                                 font-size: clamp(9.5px, 6.5cqw, 11px)
                                 line-height: 16px
                                 font-weight: 500
+              - component: div
+                config:
+                  class: weather-uv
+                  visible: "=fn.has(props.uvItem)"
+                  title: "='UV-Index: ' + fn.uvFormat(fn.uv(props.uvItem)) + ' · ' + fn.uvStatus(fn.uv(props.uvItem))"
+                  role: group
+                  aria-label: "='UV-Index: ' + fn.uvFormat(fn.uv(props.uvItem)) + ' · ' + fn.uvStatus(fn.uv(props.uvItem))"
+                  style:
+                    position: absolute
+                    right: 8px
+                    top: 27px
+                    display: "=fn.has(props.uvItem) ? 'flex' : 'none'"
+                    align-items: center
+                    gap: 3px
+                    color: "=fn.uvColor(fn.uv(props.uvItem))"
+                slots:
+                  default:
+                  - component: oh-icon
+                    config:
+                      icon: "=props.uvIcon || 'iconify:mdi:sun-wireless'"
+                      color: "=fn.uvColor(fn.uv(props.uvItem))"
+                      width: 11
+                      height: 11
+                      style:
+                        display: block
+                        flex-shrink: 0
+                        width: 11px
+                        height: 11px
+                  - component: Label
+                    config:
+                      text: "=Number.isFinite(fn.uv(props.uvItem)) ? fn.uvFormat(fn.uv(props.uvItem)) + ' · ' + fn.uvStatus(fn.uv(props.uvItem)) : '—'"
+                      style:
+                        white-space: nowrap
+                        min-width: 0
+                        font-size: clamp(8px, 5.5cqw, 10px)
+                        line-height: 14px

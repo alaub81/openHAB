@@ -102,7 +102,7 @@ widgets:
         type: TEXT
         context: item
         groupName: wind
-        description: Grad (0=N, 90=O) oder Text (z. B. SW). Gradwerte werden in Himmelsrichtungen übersetzt.
+        description: Windherkunft als Grad (0=N, 90=O) oder Text (z. B. SW). Der Pfeil zeigt um 180° versetzt in die Richtung, in die der Wind weht; die Himmelsrichtung nennt die Herkunft.
       - name: luxItem
         label: Beleuchtungsstärke (Lux)
         type: TEXT
@@ -501,9 +501,9 @@ widgets:
                                 font-weight: 500
                       - component: div
                         config:
-                          title: Windrichtung
+                          title: Windherkunft; der Pfeil zeigt die Richtung, in die der Wind weht
                           role: group
-                          aria-label: Windrichtung
+                          aria-label: Windherkunft; der Pfeil zeigt die Richtung, in die der Wind weht
                           style:
                             display: flex
                             align-items: center
@@ -524,7 +524,7 @@ widgets:
                                 flex-shrink: 0
                                 width: 13px
                                 height: 13px
-                                transform: "='rotate(' + Math.max(0, ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf(fn.direction(props.windDirectionItem))) * 22.5 + 'deg)'"
+                                transform: "='rotate(' + ((Math.max(0, ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf(fn.direction(props.windDirectionItem))) * 22.5 + 180) % 360) + 'deg)'"
                           - component: Label
                             config:
                               text: "=fn.direction(props.windDirectionItem)"

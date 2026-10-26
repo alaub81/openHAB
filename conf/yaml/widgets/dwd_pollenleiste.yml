@@ -1,0 +1,661 @@
+---
+version: 1
+widgets:
+  dwd_pollenleiste:
+    tags:
+    - Wetter
+    - DWD
+    - Pollen
+    props:
+      parameterGroups:
+      - name: alder
+        label: Erle
+      - name: hazel
+        label: Hasel
+      - name: ash
+        label: Esche
+      - name: birch
+        label: Birke
+      - name: grasses
+        label: Gräser
+      - name: rye
+        label: Roggen
+      - name: mugwort
+        label: Beifuß
+      - name: ambrosia
+        label: Ambrosia
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        default: DWD Pollenflug
+      - name: location
+        label: Region / Untertitel
+        type: TEXT
+        description: Optional, z. B. Zuhause oder die Bezeichnung deiner DWD-Region.
+      - name: updatedItem
+        label: DWD-Datenstand
+        type: TEXT
+        context: item
+        description: Optionales DateTime-Item am Bridge-Channel updates#last_update.
+          Kein eigener Abrufzeitpunkt.
+      - name: showAllToday
+        label: Auch unbelastete Arten direkt anzeigen
+        type: BOOLEAN
+        default: false
+      - name: testMode
+        label: Testmodus
+        type: TEXT
+        default: live
+        options:
+        - value: live
+          label: Live – verknüpfte Items
+        - value: none
+          label: Test – keine Belastung
+        - value: mixed
+          label: Test – unterschiedliche Belastung
+        - value: future
+          label: Test – erst morgen / übermorgen belastet
+        - value: missing
+          label: Test – fehlende Daten
+        description: Beispieldaten sind gekennzeichnet und verändern keine Items.
+      - name: alderToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: alder
+        description: String-Item für Erle. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: alderTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: alder
+        description: String-Item für Erle. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: alderDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: alder
+        description: String-Item für Erle. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: hazelToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: hazel
+        description: String-Item für Hasel. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: hazelTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: hazel
+        description: String-Item für Hasel. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: hazelDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: hazel
+        description: String-Item für Hasel. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: ashToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: ash
+        description: String-Item für Esche. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: ashTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: ash
+        description: String-Item für Esche. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: ashDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: ash
+        description: String-Item für Esche. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: birchToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: birch
+        description: String-Item für Birke. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: birchTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: birch
+        description: String-Item für Birke. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: birchDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: birch
+        description: String-Item für Birke. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: grassesToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: grasses
+        description: String-Item für Gräser. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: grassesTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: grasses
+        description: String-Item für Gräser. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: grassesDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: grasses
+        description: String-Item für Gräser. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: ryeToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: rye
+        description: String-Item für Roggen. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: ryeTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: rye
+        description: String-Item für Roggen. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: ryeDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: rye
+        description: String-Item für Roggen. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: mugwortToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: mugwort
+        description: String-Item für Beifuß. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: mugwortTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: mugwort
+        description: String-Item für Beifuß. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: mugwortDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: mugwort
+        description: String-Item für Beifuß. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: ambrosiaToday
+        label: Heute
+        type: TEXT
+        context: item
+        groupName: ambrosia
+        description: String-Item für Ambrosia. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)).
+      - name: ambrosiaTomorrow
+        label: Morgen
+        type: TEXT
+        context: item
+        groupName: ambrosia
+        description: String-Item für Ambrosia. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+      - name: ambrosiaDayAfter
+        label: Übermorgen
+        type: TEXT
+        context: item
+        groupName: ambrosia
+        description: String-Item für Ambrosia. Rohwert (z. B. 1-2) oder Text mit Index
+          in Klammern (z. B. gering bis mittel (1-2)). Optional.
+    component: f7-card
+    config:
+      class: dwd-pollen-widget
+      stylesheet: |
+        .pollen-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 16px; }
+        .pollen-title { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+        .pollen-location { font-size: 12px; opacity: .75; margin-top: 3px; overflow-wrap: anywhere; }
+        .pollen-count { border-radius: 12px; background: var(--f7-list-item-selected-bg-color, rgba(128,128,128,.12)); padding: 4px 10px; font-size: 12px; }
+        .pollen-notice { margin: 0 16px 12px; font-size: 13px; overflow-wrap: anywhere; }
+        .pollen-empty { display: flex; align-items: center; gap: 10px; padding: 0 16px 12px; font-size: 14px; }
+        .pollen-list { margin: 0 12px 10px; --f7-list-bg-color: transparent; --f7-list-item-title-white-space: normal; --f7-list-item-min-height: 62px; }
+        .pollen-list ul::before, .pollen-list ul::after, .pollen-details-list ul::before, .pollen-details-list ul::after { display: none; }
+        .pollen-row { margin-top: 8px; border-radius: 10px; border-left: 4px solid; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(128,128,128,.14); }
+        .pollen-row > .item-content { padding-left: 12px; }
+        .pollen-row .item-inner, .pollen-row .item-title { min-width: 0; white-space: normal; }
+        .pollen-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+        .pollen-name { font-size: 15px; font-weight: 600; }
+        .pollen-level { font-size: 13px; }
+        .pollen-forecast { font-size: 12px; opacity: .8; margin-top: 4px; overflow-wrap: anywhere; }
+        .pollen-details-list { margin: 0; --f7-list-bg-color: transparent; --f7-list-item-min-height: 44px; }
+        .pollen-details-list .item-title { white-space: normal; font-size: 13px; }
+        .pollen-details { padding: 0 16px 12px; }
+        .pollen-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px; }
+        .pollen-table th { text-align: left; font-weight: 500; opacity: .75; padding: 8px 5px; overflow-wrap: anywhere; }
+        .pollen-table td { padding: 10px 5px; border-top: 1px solid var(--f7-list-item-border-color, rgba(128,128,128,.15)); vertical-align: top; overflow-wrap: anywhere; }
+        .pollen-table td:first-child { font-weight: 500; }
+        .pollen-table-status { display: inline-flex; align-items: baseline; gap: 5px; }
+        .pollen-dot { flex: 0 0 7px; width: 7px; height: 7px; border-radius: 50%; }
+        .pollen-source { font-size: 12px; opacity: .75; padding: 0 16px 12px; overflow-wrap: anywhere; }
+      style:
+        overflow: hidden
+        color: var(--f7-text-color)
+    slots:
+      default:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name && items[name] && items[name].state ? items[name].state.trim()
+              : ''"
+            demo: "=() => !!props.testMode && props.testMode !== 'live'"
+            code: "=(value) => /^(0|0-1|1|1-2|2|2-3|3|-1)$/.test(value.replace(/[–−]/g,
+              '-').trim()) ? value.replace(/[–−]/g, '-').trim() : /\\((0|0-1|1|1-2|2|2-3|3|-1)\\)\\s*$/.test(value.replace(/[–−]/g,
+              '-')) ? value.replace(/[–−]/g, '-').match(/\\((0|0-1|1|1-2|2|2-3|3|-1)\\)\\s*$/)[1]
+              : ''"
+            rank: "=(code) => ['0','0-1','1','1-2','2','2-3','3'].indexOf(code)"
+            label: "=(code) => ({'0':'keine','0-1':'keine bis gering','1':'gering','1-2':'gering
+              bis mittel','2':'mittel','2-3':'mittel bis hoch','3':'hoch'})[code]
+              || 'keine Daten'"
+            color: "=(code) => ({'0':'#34a56f','0-1':'#80a638','1':'#c49b19','1-2':'#de851e','2':'#de851e','2-3':'#da4a4a','3':'#da4a4a'})[code]
+              || 'var(--f7-color-gray)'"
+            data: "=(spec, read, decode, demo, examples) => spec.filter((s) => demo
+              || !!(props[s.key + 'Today'] || props[s.key + 'Tomorrow'] || props[s.key
+              + 'DayAfter'])).map((s) => ({key: s.key, name: s.name, icon: s.icon,
+              today: decode(demo ? (props.testMode === 'mixed' ? examples[s.key][0]
+              : props.testMode === 'missing' && s.key === 'birch' ? 'UNDEF' : '0')
+              : read(props[s.key + 'Today'])), tomorrow: decode(demo ? (props.testMode
+              === 'mixed' ? examples[s.key][1] : props.testMode === 'future' && s.key
+              === 'birch' ? '3' : '0') : read(props[s.key + 'Tomorrow'])), after:
+              decode(demo ? (props.testMode === 'mixed' ? examples[s.key][2] : props.testMode
+              === 'future' && s.key === 'grasses' ? '2' : '0') : read(props[s.key
+              + 'DayAfter']))}))"
+            peak: "=(s, rank) => [{code:s.today,day:'Heute',index:0},{code:s.tomorrow,day:'Morgen',index:1},{code:s.after,day:'Übermorgen',index:2}].sort((a,b)
+              => rank(b.code) - rank(a.code) || a.index - b.index)[0]"
+            active: "=(data, rank, peak) => data.filter((s) => rank(peak(s,rank).code)
+              > 0).sort((a,b) => rank(peak(b,rank).code) - rank(peak(a,rank).code)
+              || peak(a,rank).index - peak(b,rank).index)"
+            known: "=(data, rank) => data.filter((s) => rank(s.today) >= 0).length"
+            unknown: "=(data, rank) => data.filter((s) => rank(s.today) < 0).length"
+            hasForecast: "=(spec, suffix, demo) => demo || spec.some((s) => !!props[s.key
+              + suffix])"
+            stamp: "=(value) => value && dayjs(value).isValid() ? dayjs(value).format('DD.MM.YYYY
+              HH:mm') : ''"
+            old: "=(value) => !!value && dayjs(value).isValid() && dayjs(value).format('YYYY-MM-DD')
+              !== dayjs().format('YYYY-MM-DD')"
+          constants:
+            species:
+            - key: alder
+              name: Erle
+              icon: f7:leaf_arrow_circlepath
+            - key: hazel
+              name: Hasel
+              icon: f7:leaf_arrow_circlepath
+            - key: ash
+              name: Esche
+              icon: f7:leaf_arrow_circlepath
+            - key: birch
+              name: Birke
+              icon: f7:leaf_arrow_circlepath
+            - key: grasses
+              name: Gräser
+              icon: material:grass
+            - key: rye
+              name: Roggen
+              icon: material:grass
+            - key: mugwort
+              name: Beifuß
+              icon: f7:leaf_arrow_circlepath
+            - key: ambrosia
+              name: Ambrosia
+              icon: f7:leaf_arrow_circlepath
+            examples:
+              alder:
+              - '0'
+              - '0'
+              - '0'
+              hazel:
+              - '0'
+              - '0'
+              - '0'
+              ash:
+              - '0'
+              - 0-1
+              - '1'
+              birch:
+              - '3'
+              - 2-3
+              - '2'
+              grasses:
+              - 1-2
+              - '2'
+              - 2-3
+              rye:
+              - '0'
+              - '0'
+              - '0'
+              mugwort:
+              - '0'
+              - '0'
+              - '0'
+              ambrosia:
+              - 0-1
+              - '1'
+              - 0-1
+        slots:
+          default:
+          - component: div
+            config:
+              class: pollen-header
+            slots:
+              default:
+              - component: div
+                config: {}
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: "=props.title || 'DWD Pollenflug'"
+                      class: pollen-title
+                  - component: Label
+                    config:
+                      text: "=props.location"
+                      class: pollen-location
+                      visible: "=!!props.location"
+              - component: Label
+                config:
+                  text: "=fn.data(const.species, fn.read, fn.code, fn.demo(), const.examples).length
+                    === 0 ? 'nicht eingerichtet' : fn.known(fn.data(const.species,
+                    fn.read, fn.code, fn.demo(), const.examples), fn.rank) === 0 &&
+                    fn.active(fn.data(const.species, fn.read, fn.code, fn.demo(),
+                    const.examples), fn.rank, fn.peak).length === 0 ? 'keine Daten'
+                    : fn.active(fn.data(const.species, fn.read, fn.code, fn.demo(),
+                    const.examples), fn.rank, fn.peak).length + ' Pollenarten'"
+                  class: pollen-count
+          - component: Label
+            config:
+              text: TESTMODUS · Beispieldaten, keine aktuelle DWD-Prognose.
+              class: pollen-notice
+              visible: "=fn.demo()"
+          - component: Label
+            config:
+              text: Bitte mindestens ein Pollen-Item auswählen.
+              class: pollen-notice
+              visible: "=fn.data(const.species, fn.read, fn.code, fn.demo(), const.examples).length
+                === 0"
+          - component: Label
+            config:
+              text: "=fn.unknown(fn.data(const.species, fn.read, fn.code, fn.demo(),
+                const.examples), fn.rank) + (fn.unknown(fn.data(const.species, fn.read,
+                fn.code, fn.demo(), const.examples), fn.rank) === 1 ? ' Pollenart:
+                heute keine Daten verfügbar.' : ' Pollenarten: heute keine Daten verfügbar.')"
+              class: pollen-notice
+              visible: "=fn.unknown(fn.data(const.species, fn.read, fn.code, fn.demo(),
+                const.examples), fn.rank) > 0"
+          - component: Label
+            config:
+              text: Der DWD-Datenstand ist nicht von heute.
+              class: pollen-notice
+              visible: "= !fn.demo() && fn.old(fn.read(props.updatedItem))"
+          - component: div
+            config:
+              class: pollen-empty
+              visible: "=fn.data(const.species, fn.read, fn.code, fn.demo(), const.examples).length
+                > 0 && fn.active(fn.data(const.species, fn.read, fn.code, fn.demo(),
+                const.examples), fn.rank, fn.peak).length === 0 && fn.known(fn.data(const.species,
+                fn.read, fn.code, fn.demo(), const.examples), fn.rank) > 0"
+            slots:
+              default:
+              - component: oh-icon
+                config:
+                  icon: f7:checkmark_shield
+                  width: 20
+                  height: 20
+              - component: Label
+                config:
+                  text: "=fn.unknown(fn.data(const.species, fn.read, fn.code, fn.demo(),
+                    const.examples), fn.rank) > 0 ? 'Bei den verfügbaren Arten ist
+                    keine Belastung gemeldet.' : 'Keine Pollenbelastung gemeldet.'"
+          - component: f7-list
+            config:
+              class: pollen-list
+              visible: "=fn.data(const.species, fn.read, fn.code, fn.demo(), const.examples).length
+                > 0 && (props.showAllToday === true || fn.active(fn.data(const.species,
+                fn.read, fn.code, fn.demo(), const.examples), fn.rank, fn.peak).length
+                > 0)"
+            slots:
+              default:
+              - component: oh-repeater
+                config:
+                  for: pollen
+                  sourceType: array
+                  in: "=props.showAllToday === true ? fn.data(const.species, fn.read,
+                    fn.code, fn.demo(), const.examples) : fn.active(fn.data(const.species,
+                    fn.read, fn.code, fn.demo(), const.examples), fn.rank, fn.peak)"
+                  fragment: true
+                slots:
+                  default:
+                  - component: f7-list-item
+                    config:
+                      class: pollen-row
+                      style:
+                        border-color: "=fn.color(fn.peak(loop.pollen, fn.rank).code)"
+                    slots:
+                      media:
+                      - component: oh-icon
+                        config:
+                          icon: "=loop.pollen.icon"
+                          width: 24
+                          height: 24
+                          style:
+                            color: "=fn.color(fn.peak(loop.pollen, fn.rank).code)"
+                      title:
+                      - component: div
+                        config: {}
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: pollen-line
+                            slots:
+                              default:
+                              - component: Label
+                                config:
+                                  text: "=loop.pollen.name"
+                                  class: pollen-name
+                              - component: Label
+                                config:
+                                  text: "=fn.peak(loop.pollen, fn.rank).day + ' ·
+                                    ' + fn.label(fn.peak(loop.pollen, fn.rank).code)"
+                                  class: pollen-level
+                          - component: Label
+                            config:
+                              text: "='Heute: ' + fn.label(loop.pollen.today) + (fn.hasForecast(const.species,
+                                'Tomorrow', fn.demo()) ? ' · Morgen: ' + fn.label(loop.pollen.tomorrow)
+                                : '') + (fn.hasForecast(const.species, 'DayAfter',
+                                fn.demo()) ? ' · ' : '') + (fn.hasForecast(const.species,
+                                'DayAfter', fn.demo()) ? 'Übermorgen: ' + fn.label(loop.pollen.after)
+                                : '')"
+                              class: pollen-forecast
+                              visible: "=fn.hasForecast(const.species, 'Tomorrow',
+                                fn.demo()) || fn.hasForecast(const.species, 'DayAfter',
+                                fn.demo())"
+          - component: f7-list
+            config:
+              class: pollen-details-list
+              visible: "=fn.data(const.species, fn.read, fn.code, fn.demo(), const.examples).length
+                > 0"
+            slots:
+              default:
+              - component: f7-list-item
+                config:
+                  accordionItem: true
+                  title: "=(fn.hasForecast(const.species, 'Tomorrow', fn.demo()) ||
+                    fn.hasForecast(const.species, 'DayAfter', fn.demo())) ? 'Alle
+                    Pollenarten & Vorhersage' : 'Alle Pollenarten anzeigen'"
+                slots:
+                  default:
+                  - component: f7-accordion-content
+                    config: {}
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: pollen-details
+                        slots:
+                          default:
+                          - component: table
+                            config:
+                              class: pollen-table
+                              aria-label: Pollenbelastung nach Art und Tag
+                            slots:
+                              default:
+                              - component: thead
+                                config: {}
+                                slots:
+                                  default:
+                                  - component: tr
+                                    config: {}
+                                    slots:
+                                      default:
+                                      - component: th
+                                        config:
+                                          scope: col
+                                        slots:
+                                          default:
+                                          - component: Label
+                                            config:
+                                              text: Pollenart
+                                      - component: th
+                                        config:
+                                          scope: col
+                                        slots:
+                                          default:
+                                          - component: Label
+                                            config:
+                                              text: Heute
+                                      - component: th
+                                        config:
+                                          scope: col
+                                          visible: "=fn.hasForecast(const.species,
+                                            'Tomorrow', fn.demo())"
+                                        slots:
+                                          default:
+                                          - component: Label
+                                            config:
+                                              text: Morgen
+                                      - component: th
+                                        config:
+                                          scope: col
+                                          visible: "=fn.hasForecast(const.species,
+                                            'DayAfter', fn.demo())"
+                                        slots:
+                                          default:
+                                          - component: Label
+                                            config:
+                                              text: Über­morgen
+                              - component: tbody
+                                config: {}
+                                slots:
+                                  default:
+                                  - component: oh-repeater
+                                    config:
+                                      for: species
+                                      sourceType: array
+                                      in: "=fn.data(const.species, fn.read, fn.code,
+                                        fn.demo(), const.examples)"
+                                      fragment: true
+                                    slots:
+                                      default:
+                                      - component: tr
+                                        config: {}
+                                        slots:
+                                          default:
+                                          - component: td
+                                            config: {}
+                                            slots:
+                                              default:
+                                              - component: Label
+                                                config:
+                                                  text: "=loop.species.name"
+                                          - component: td
+                                            config: {}
+                                            slots:
+                                              default:
+                                              - component: div
+                                                config:
+                                                  class: pollen-table-status
+                                                slots:
+                                                  default:
+                                                  - component: span
+                                                    config:
+                                                      class: pollen-dot
+                                                      aria-hidden: 'true'
+                                                      style:
+                                                        background-color: "=fn.color(loop.species.today)"
+                                                  - component: Label
+                                                    config:
+                                                      text: "=fn.label(loop.species.today)"
+                                          - component: td
+                                            config:
+                                              visible: "=fn.hasForecast(const.species,
+                                                'Tomorrow', fn.demo())"
+                                            slots:
+                                              default:
+                                              - component: div
+                                                config:
+                                                  class: pollen-table-status
+                                                slots:
+                                                  default:
+                                                  - component: span
+                                                    config:
+                                                      class: pollen-dot
+                                                      aria-hidden: 'true'
+                                                      style:
+                                                        background-color: "=fn.color(loop.species.tomorrow)"
+                                                  - component: Label
+                                                    config:
+                                                      text: "=fn.label(loop.species.tomorrow)"
+                                          - component: td
+                                            config:
+                                              visible: "=fn.hasForecast(const.species,
+                                                'DayAfter', fn.demo())"
+                                            slots:
+                                              default:
+                                              - component: div
+                                                config:
+                                                  class: pollen-table-status
+                                                slots:
+                                                  default:
+                                                  - component: span
+                                                    config:
+                                                      class: pollen-dot
+                                                      aria-hidden: 'true'
+                                                      style:
+                                                        background-color: "=fn.color(loop.species.after)"
+                                                  - component: Label
+                                                    config:
+                                                      text: "=fn.label(loop.species.after)"
+          - component: Label
+            config:
+              text: "='DWD-Datenstand: ' + fn.stamp(fn.read(props.updatedItem))"
+              class: pollen-source
+              visible: "= !fn.demo() && !!fn.stamp(fn.read(props.updatedItem))"

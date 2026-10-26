@@ -87,19 +87,19 @@ widgets:
           name: seticon
           required: false
           type: TEXT
-        - default: 18
+        - default: "18"
           description: Min Value
           label: Min
           name: min
           required: false
           type: DECIMAL
-        - default: 30
+        - default: "30"
           description: Max Value
           label: Max
           name: max
           required: false
           type: DECIMAL
-        - default: 0.1
+        - default: "0.1"
           description: Step Value
           label: Step
           name: step
@@ -483,7 +483,7 @@ widgets:
                                 - component: oh-button
                                   config:
                                     action: command
-                                    actionCommand: OFF
+                                    actionCommand: "OFF"
                                     actionItem: =props.istthermostat
                                     active: =props.istthermostat && items[props.istthermostat] && items[props.istthermostat].state === 'OFF'
                                     color: red

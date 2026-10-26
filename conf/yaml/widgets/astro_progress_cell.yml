@@ -1,0 +1,262 @@
+---
+version: 1
+widgets:
+  astro_progress_cell:
+    tags:
+    - Astro
+    - Sonne
+    - Mond
+    - Cell
+    props:
+      parameters:
+      - name: detailsGroup
+        label: Gruppe für Details beim Antippen
+        type: TEXT
+        context: item
+        description: Optional, z. B. deine Astro-Gruppe.
+      - name: title
+        label: Titel für Details
+        type: TEXT
+        default: Sonne & Mond
+      - name: sunColor
+        label: Farbe der Progressbar
+        type: TEXT
+        default: "#efb44f"
+      - name: demoMode
+        label: Beispieldaten anzeigen
+        type: BOOLEAN
+        default: false
+        description: Gekennzeichneter Test um 15:30; verändert keine Items.
+      - name: sunriseItem
+        label: Sonnenaufgang
+        description: DateTime am Astro-Channel rise#start.
+        type: TEXT
+        context: item
+      - name: sunsetItem
+        label: Sonnenuntergang
+        description: DateTime am Astro-Channel set#start.
+        type: TEXT
+        context: item
+      - name: moonriseItem
+        label: Mondaufgang
+        description: DateTime, unveränderter tatsächlicher Ereignistag.
+        type: TEXT
+        context: item
+      - name: moonsetItem
+        label: Monduntergang
+        description: DateTime, unveränderter tatsächlicher Ereignistag.
+        type: TEXT
+        context: item
+      - name: illuminationItem
+        label: Beleuchteter Mondanteil
+        description: Number:Dimensionless in Prozent.
+        type: TEXT
+        context: item
+      - name: moonPhaseItem
+        label: Mondphase
+        description: String am Astro-Channel phase#name für das dynamische Astro-Icon.
+        type: TEXT
+        context: item
+      - name: clockItem
+        label: Aktuelle Uhrzeit
+        description: DateTime-Item, das mindestens jede Minute aktualisiert wird.
+          Für laufenden Countdown erforderlich.
+        type: TEXT
+        context: item
+      parameterGroups: []
+    component: oh-cell
+    config:
+      title: "=props.title || 'Sonne & Mond'"
+      expandable: false
+      action: "=props.detailsGroup ? 'group' : ''"
+      actionGroupPopupItem: "=props.detailsGroup"
+      stylesheet: |
+        .cell-contents { display: none; }
+        .astro-content { position:absolute; inset:0; padding:8px 10px; box-sizing:border-box; container-type:inline-size; display:grid; grid-template-rows:18px minmax(26px,1fr) 14px 4px 25px; row-gap:3px; color:var(--f7-text-color); font-variant-numeric:tabular-nums; }
+        .astro-times { display:flex; align-items:center; justify-content:space-between; gap:6px; min-width:0; }
+        .astro-time { display:flex; align-items:center; gap:5px; min-width:0; font-size:14px; font-weight:500; white-space:nowrap; }
+        .astro-summary { display:flex; align-items:center; font-size:15px; font-weight:500; line-height:17px; overflow-wrap:anywhere; }
+        .astro-length { font-size:12px; line-height:14px; opacity:.75; white-space:nowrap; }
+        .astro-track { height:4px; border-radius:2px; background:rgba(160,145,115,.18); overflow:hidden; }
+        .astro-fill { height:100%; background:var(--astro-sun-color, #efb44f); border-radius:2px; }
+        .astro-moon { border-top:1px solid var(--f7-list-item-border-color,rgba(128,128,128,.22)); padding-top:4px; box-sizing:border-box; display:flex; align-items:center; gap:5px; min-width:0; font-size:12px; line-height:13px; opacity:.78; white-space:nowrap; }
+        .astro-moon-times { margin-left:auto; display:flex; gap:8px; min-width:0; }
+        .astro-moon-time { display:flex; align-items:center; gap:2px; }
+        .astro-demo { font-size:10px; color:var(--f7-color-orange); margin-left:auto; }
+        @container (max-width:230px) { .astro-summary { font-size:13px; line-height:14px; } .astro-length { font-size:11px; } .astro-moon { font-size:11px; } .astro-moon-times { flex-direction:column; gap:0; line-height:11px; } .astro-time {font-size:13px;gap:3px;} }
+    slots:
+      background:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name && items[name] && items[name].state ? items[name].state.trim()
+              : ''"
+            ts: "=(value) => value && value !== 'NULL' && value !== 'UNDEF' && dayjs(value).isValid()
+              ? dayjs(value).valueOf() : 0"
+            now: "=(value) => props.demoMode === true ? dayjs().hour(15).minute(30).second(0).millisecond(0).valueOf()
+              : value && dayjs(value).isValid() ? dayjs(value).valueOf() : dayjs().valueOf()"
+            input: "=(value, hour, minute) => props.demoMode === true ? dayjs().hour(hour).minute(minute).second(0).millisecond(0).toISOString()
+              : value"
+            valid: "=(r,s,n) => r > 0 && s > r && dayjs(r).format('YYYY-MM-DD') ===
+              dayjs(n).format('YYYY-MM-DD') && dayjs(s).format('YYYY-MM-DD') === dayjs(n).format('YYYY-MM-DD')"
+            sun: "=(r,s,n,valid) => ({mode: !valid(r,s,n) ? 'missing' : n < r ? 'before'
+              : n < s ? 'day' : 'night', progress: valid(r,s,n) ? Math.max(0,Math.min(100,(n-r)/(s-r)*100))
+              : 0, minutes: valid(r,s,n) ? Math.round((s-r)/60000) : -1, left: valid(r,s,n)
+              ? Math.max(0,Math.ceil(((n < r ? r : s)-n)/60000)) : -1})"
+            duration: "=(minutes) => minutes < 0 ? '—' : (minutes >= 60 ? Math.floor(minutes/60)
+              + ' h' : '') + (minutes >= 60 && minutes % 60 > 0 ? ' ' : '') + (minutes
+              % 60 > 0 || minutes === 0 ? minutes % 60 + ' min' : '')"
+            summary: "=(sun, duration) => sun.mode === 'missing' ? 'Astro-Daten fehlen
+              oder sind veraltet' : sun.mode === 'before' ? 'Aufgang in ' + duration(sun.left)
+              : sun.mode === 'day' ? 'Noch ' + duration(sun.left) + ' Tageslicht'
+              : 'Heute kein Tageslicht mehr'"
+            time: "=(value,n) => !value || !dayjs(value).isValid() ? '—' : dayjs(value).format('HH:mm')
+              + (dayjs(value).startOf('day').diff(dayjs(n).startOf('day'),'day') ===
+              1 ? '⁺¹' : dayjs(value).startOf('day').diff(dayjs(n).startOf('day'),'day')
+              === -1 ? '⁻¹' : dayjs(value).format('YYYY-MM-DD') === dayjs(n).format('YYYY-MM-DD')
+              ? '' : ' · ' + dayjs(value).format('DD.MM.'))"
+            fullTime: "=(value) => value && dayjs(value).isValid() ? dayjs(value).format('DD.MM.YYYY
+              HH:mm') : 'Keine Daten'"
+            percent: "=(value) => /^\\s*(?:100(?:[.,]0+)?|[0-9]{1,2}(?:[.,][0-9]+)?)\\s*%?\\s*$/.test(value)
+              ? Math.round(Number.parseFloat(value.replace(',','.'))*10)/10 : -1"
+            percentText: "=(p) => p >= 0 ? p.toFixed(1).replace('.',',').replace(',0','')
+              + ' %' : '—'"
+            phase: "=(value) => ['NEW','WAXING_CRESCENT','FIRST_QUARTER','WAXING_GIBBOUS','FULL','WANING_GIBBOUS','THIRD_QUARTER','WANING_CRESCENT'].indexOf(value)
+              >= 0 ? value : ''"
+            phaseLabel: "=(phase) => ({NEW:'Neumond',WAXING_CRESCENT:'Zunehmende Sichel',FIRST_QUARTER:'Zunehmender
+              Halbmond',WAXING_GIBBOUS:'Zunehmender Mond',FULL:'Vollmond',WANING_GIBBOUS:'Abnehmender
+              Mond',THIRD_QUARTER:'Abnehmender Halbmond',WANING_CRESCENT:'Abnehmende
+              Sichel'})[phase] || 'Mondphase nicht verfügbar'"
+        slots:
+          default:
+          - component: div
+            config:
+              class: astro-content
+              style:
+                "--astro-sun-color": "=props.sunColor || '#efb44f'"
+              role: group
+              aria-label: "=props.title || 'Sonne und Mond'"
+            slots:
+              default:
+              - component: div
+                config:
+                  class: astro-times
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      class: astro-time
+                      title: "='Sonnenaufgang: '+fn.fullTime(fn.input(fn.read(props.sunriseItem),7,3))"
+                      aria-label: "='Sonnenaufgang: '+fn.fullTime(fn.input(fn.read(props.sunriseItem),7,3))"
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: oh:sunrise
+                          width: 17
+                          height: 17
+                      - component: Label
+                        config:
+                          text: "=fn.time(fn.input(fn.read(props.sunriseItem),7,3),fn.now(fn.read(props.clockItem)))"
+                  - component: Label
+                    config:
+                      text: "=props.demoMode === true ? 'TEST' : ''"
+                      class: astro-demo
+                  - component: div
+                    config:
+                      class: astro-time
+                      title: "='Sonnenuntergang: '+fn.fullTime(fn.input(fn.read(props.sunsetItem),17,15))"
+                      aria-label: "='Sonnenuntergang: '+fn.fullTime(fn.input(fn.read(props.sunsetItem),17,15))"
+                    slots:
+                      default:
+                      - component: Label
+                        config:
+                          text: "=fn.time(fn.input(fn.read(props.sunsetItem),17,15),fn.now(fn.read(props.clockItem)))"
+                      - component: oh-icon
+                        config:
+                          icon: oh:sunset
+                          width: 17
+                          height: 17
+              - component: Label
+                config:
+                  text: "=fn.summary(fn.sun(fn.ts(fn.input(fn.read(props.sunriseItem),7,3)),fn.ts(fn.input(fn.read(props.sunsetItem),17,15)),fn.now(fn.read(props.clockItem)),fn.valid),fn.duration)"
+                  class: astro-summary
+              - component: Label
+                config:
+                  text: "='Tageslänge · '+fn.duration((fn.sun(fn.ts(fn.input(fn.read(props.sunriseItem),7,3)),fn.ts(fn.input(fn.read(props.sunsetItem),17,15)),fn.now(fn.read(props.clockItem)),fn.valid)).minutes)"
+                  class: astro-length
+              - component: div
+                config:
+                  class: astro-track
+                  role: progressbar
+                  aria-label: Vergangenes Tageslicht
+                  aria-valuemin: 0
+                  aria-valuemax: 100
+                  aria-valuenow: "=Math.round((fn.sun(fn.ts(fn.input(fn.read(props.sunriseItem),7,3)),fn.ts(fn.input(fn.read(props.sunsetItem),17,15)),fn.now(fn.read(props.clockItem)),fn.valid)).progress)"
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      class: astro-fill
+                      style:
+                        width: "=(fn.sun(fn.ts(fn.input(fn.read(props.sunriseItem),7,3)),fn.ts(fn.input(fn.read(props.sunsetItem),17,15)),fn.now(fn.read(props.clockItem)),fn.valid)).progress
+                          + '%'"
+              - component: div
+                config:
+                  class: astro-moon
+                  title: "=fn.phaseLabel(fn.phase(props.demoMode === true ? 'WAXING_GIBBOUS'
+                    : fn.read(props.moonPhaseItem)))+' · '+fn.percentText(fn.percent(props.demoMode
+                    === true ? '75 %' : fn.read(props.illuminationItem)))+' beleuchteter
+                    Mondanteil'"
+                slots:
+                  default:
+                  - component: oh-icon
+                    config:
+                      icon: "=fn.phase(props.demoMode === true ? 'WAXING_GIBBOUS'
+                        : fn.read(props.moonPhaseItem)) ? 'oh:astro:moon_phase' :
+                        'oh:moon'"
+                      width: 20
+                      height: 20
+                      state: "=fn.phase(props.demoMode === true ? 'WAXING_GIBBOUS'
+                        : fn.read(props.moonPhaseItem))"
+                      title: "=fn.phaseLabel(fn.phase(props.demoMode === true ? 'WAXING_GIBBOUS'
+                        : fn.read(props.moonPhaseItem)))"
+                  - component: Label
+                    config:
+                      text: "=fn.percentText(fn.percent(props.demoMode === true ?
+                        '75 %' : fn.read(props.illuminationItem)))"
+                  - component: div
+                    config:
+                      class: astro-moon-times
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: astro-moon-time
+                          title: "='Mondaufgang: ' + fn.fullTime(fn.input(fn.read(props.moonriseItem),16,32))"
+                          aria-label: "='Mondaufgang: ' + fn.fullTime(fn.input(fn.read(props.moonriseItem),16,32))"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:arrow_up
+                              width: 10
+                              height: 10
+                          - component: Label
+                            config:
+                              text: "=fn.time(fn.input(fn.read(props.moonriseItem),16,32),fn.now(fn.read(props.clockItem)))"
+                      - component: div
+                        config:
+                          class: astro-moon-time
+                          title: "='Monduntergang: ' + fn.fullTime(fn.input(fn.read(props.moonsetItem),6,9))"
+                          aria-label: "='Monduntergang: ' + fn.fullTime(fn.input(fn.read(props.moonsetItem),6,9))"
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:arrow_down
+                              width: 10
+                              height: 10
+                          - component: Label
+                            config:
+                              text: "=fn.time(fn.input(fn.read(props.moonsetItem),6,9),fn.now(fn.read(props.clockItem)))"

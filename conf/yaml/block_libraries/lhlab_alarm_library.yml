@@ -1,0 +1,431 @@
+---
+version: 1
+blocks:
+  lhlab_alarm_library:
+    tags:
+    - alarm
+    - notification
+    - laub-home
+    props:
+      parameters: []
+      parameterGroups: []
+    component: BlockLibrary
+    config:
+      name: lhlab – Alarmverwaltung
+    slots:
+      blocks:
+      - component: BlockType
+        config:
+          type: lhlab_dwd_monitor
+          message0: |-
+            DWD-Warnungen überwachen
+            Item-Präfix %1
+            Anzahl Warnplätze %2
+            Speicher-Item %3
+            Ereignisse bündeln (Sekunden) %4
+            bei neuer Warnung %5
+            bei geänderter Warnung %6
+            bei beendeter Warnung %7
+          args0:
+          - type: input_value
+            name: PREFIX
+            check: String
+          - type: input_value
+            name: COUNT
+            check: Number
+          - type: input_value
+            name: MEMORY
+            check: String
+          - type: input_value
+            name: DELAY
+            check: Number
+          - type: input_statement
+            name: NEW
+          - type: input_statement
+            name: CHANGED
+          - type: input_statement
+            name: CLEARED
+          previousStatement: ''
+          nextStatement: ''
+          inputsInline: false
+          colour: 15
+          tooltip: Liest alle DWD-Warnplätze nach kurzer Ruhezeit gemeinsam. Erwartet
+            Items mit den Endungen Warning_N, Type_N, Severity_N, Valid_From_N, Valid_To_N,
+            Headline_N, Description_N und Instruction_N. Aktueller Alarm liefert die
+            Daten in den drei Aktionsbereichen.
+          helpUrl: https://www.openhab.org/addons/bindings/dwdunwetter/
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: |
+                {{utility:lhlab_dwd_monitor}}([{{input:PREFIX}}][0], [{{input:COUNT}}][0], [{{input:MEMORY}}][0], [{{input:DELAY}}][0], (typeof ctx !== 'undefined' && ctx['alarmSeed'] === true), function(lhlabAlarmEvent) {
+                {{statements:NEW}}
+                }, function(lhlabAlarmEvent) {
+                {{statements:CHANGED}}
+                }, function(lhlabAlarmEvent) {
+                {{statements:CLEARED}}
+                });
+          toolbox:
+          - component: PresetInput
+            config:
+              name: PREFIX
+              type: text
+              shadow: true
+              fields:
+                TEXT: DWDUnwetterWarnungen_
+          - component: PresetInput
+            config:
+              name: COUNT
+              type: math_number
+              shadow: true
+              fields:
+                NUM: 5
+          - component: PresetInput
+            config:
+              name: MEMORY
+              type: text
+              shadow: true
+              fields:
+                TEXT: ''
+          - component: PresetInput
+            config:
+              name: DELAY
+              type: math_number
+              shadow: true
+              fields:
+                NUM: 2
+      - component: BlockType
+        config:
+          type: lhlab_alarm_group
+          message0: |-
+            Alarmgruppe %1
+            Alarmliste (Liste erstellen) %2
+            Speicher-Item (optional) %3
+            bei neuem Alarm %4
+            bei geändertem Alarm %5
+            bei Entwarnung %6
+          args0:
+          - type: input_value
+            name: GROUP
+            check: String
+          - type: input_value
+            name: ALARMS
+            check: Array
+          - type: input_value
+            name: MEMORY
+            check: String
+          - type: input_statement
+            name: NEW
+          - type: input_statement
+            name: CHANGED
+          - type: input_statement
+            name: CLEARED
+          previousStatement: ''
+          nextStatement: ''
+          inputsInline: false
+          colour: 15
+          tooltip: Vergleicht eine vollständige Alarmgruppe. In den drei Bereichen
+            können Push-, Echo- oder andere Aktionen stehen. Ohne Speicher-Item gilt
+            die Erinnerung bis zum Neuladen des Scripts. Pro Kennung nur einen solchen
+            Baustein in derselben Script-Aktion verwenden.
+          helpUrl: https://www.openhab.org/docs/configuration/blockly/
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: |
+                {{utility:lhlab_alarm_process}}([{{input:GROUP}}][0], [{{input:ALARMS}}][0], [{{input:MEMORY}}][0], function(lhlabAlarmEvent) {
+                {{statements:NEW}}
+                }, function(lhlabAlarmEvent) {
+                {{statements:CHANGED}}
+                }, function(lhlabAlarmEvent) {
+                {{statements:CLEARED}}
+                });
+          toolbox:
+          - component: PresetInput
+            config:
+              name: GROUP
+              type: text
+              shadow: true
+              fields:
+                TEXT: hausalarme
+          - component: PresetInput
+            config:
+              name: MEMORY
+              type: text
+              shadow: true
+              fields:
+                TEXT: ''
+      - component: BlockType
+        config:
+          type: lhlab_alarm_entry
+          message0: |-
+            Alarmdaten
+            Kennung %1
+            aktiv (Wahr/Falsch oder ON/OFF) %2
+            Titel %3
+            Meldung %4
+            zusätzlicher Vergleichswert %5
+          args0:
+          - type: input_value
+            name: ID
+            check: String
+          - type: input_value
+            name: ACTIVE
+          - type: input_value
+            name: TITLE
+            check: String
+          - type: input_value
+            name: MESSAGE
+            check: String
+          - type: input_value
+            name: COMPARISON
+            check: String
+          output: LhlabAlarmData
+          inputsInline: false
+          colour: 15
+          tooltip: Ein einzelner Alarm für die Alarmliste. Eine stabile Kennung bezeichnet
+            das Ereignis, nicht seinen Platz in einer Liste. NULL/UNDEF/fehlender
+            Status verhindert die Auswertung der gesamten Gruppe. Der Vergleichswert
+            kann z. B. den Schweregrad enthalten.
+          helpUrl: ''
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: "({id: [{{input:ID}}][0], active: [{{input:ACTIVE}}][0], title:
+                [{{input:TITLE}}][0], message: [{{input:MESSAGE}}][0], comparison:
+                [{{input:COMPARISON}}][0]})"
+          toolbox:
+          - component: PresetInput
+            config:
+              name: ID
+              type: text
+              shadow: true
+              fields:
+                TEXT: fenster-kueche
+          - component: PresetInput
+            config:
+              name: TITLE
+              type: text
+              shadow: true
+              fields:
+                TEXT: Fensteralarm
+          - component: PresetInput
+            config:
+              name: MESSAGE
+              type: text
+              shadow: true
+              fields:
+                TEXT: Das Küchenfenster ist offen.
+          - component: PresetInput
+            config:
+              name: COMPARISON
+              type: text
+              shadow: true
+              fields:
+                TEXT: ''
+      - component: BlockType
+        config:
+          type: lhlab_alarm_field
+          message0: 'aktueller Alarm: %1'
+          args0:
+          - type: field_dropdown
+            name: FIELD
+            options:
+            - - Meldung
+              - message
+            - - Titel
+              - title
+            - - Kennung
+              - id
+            - - Art (NEW/CHANGED/CLEARED)
+              - kind
+            - - Gruppe
+              - group
+            - - vorherige Meldung
+              - previousMessage
+            - - vorheriger Titel
+              - previousTitle
+            - - Vergleichswert
+              - comparison
+          output: String
+          colour: 15
+          tooltip: Nur innerhalb eines der drei Aktionsbereiche der Alarmgruppe verwenden.
+            Bei Entwarnung stehen Titel und Meldung des beendeten Alarms bereit; den
+            Entwarnungstext stellst du selbst zusammen.
+          helpUrl: ''
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: "(typeof lhlabAlarmEvent === 'undefined' ? '' : String(lhlabAlarmEvent['{{field:FIELD}}']
+                || ''))"
+      utilities:
+      - component: UtilityFunction
+        config:
+          name: lhlab_alarm_process
+          code: |
+            function {{name}}(group, entries, memoryItem, onNew, onChanged, onCleared, seedOnly) {
+              var api = require('openhab');
+              var groupKey = String(group == null ? '' : group).trim();
+              var memoryName = String(memoryItem == null ? '' : memoryItem).trim();
+              if (!groupKey) throw new Error('Alarmgruppe: eindeutige Kennung fehlt.');
+              if (!Array.isArray(entries)) throw new Error('Alarmgruppe: Liste von Alarmdaten erwartet.');
+
+              function text(value) { return value == null ? '' : String(value); }
+              function active(value) {
+                if (value === true || value === 'ON' || value === 'OPEN') return true;
+                if (value === false || value === 'OFF' || value === 'CLOSED') return false;
+                return null;
+              }
+              // Validate the complete snapshot before emitting anything. Unknown states must
+              // not turn missing data into a clearance of an existing alarm.
+              var current = Object.create(null);
+              var unknown = false;
+              entries.forEach(function(entry) {
+                if (!entry || typeof entry !== 'object') throw new Error('Ungültiger Alarmeintrag.');
+                var isActive = active(entry.active);
+                if (isActive === null) { unknown = true; return; }
+                if (!isActive) return;
+                var id = text(entry.id).trim();
+                if (!id) throw new Error('Aktiver Alarm: eindeutige Kennung fehlt.');
+                if (Object.prototype.hasOwnProperty.call(current, id)) throw new Error('Doppelte Alarmkennung: ' + id);
+                var title = text(entry.title);
+                var message = text(entry.message);
+                if (!title.trim() || !message.trim() || ['NULL', 'UNDEF'].indexOf(title.trim()) >= 0 || ['NULL', 'UNDEF'].indexOf(message.trim()) >= 0) {
+                  unknown = true;
+                  return;
+                }
+                current[id] = { id: id, title: title, message: message, comparison: text(entry.comparison) };
+              });
+              if (unknown) return;
+
+              var memory = null;
+              if (memoryName) {
+                memory = api.items.getItem(memoryName);
+                if (memory.type !== 'String') throw new Error('Alarm-Speicher muss ein String-Item sein: ' + memoryName);
+              }
+              var key = 'lhlab.alarm.v1:' + JSON.stringify([groupKey, memoryName]);
+              var raw = api.cache.private.get(key);
+              if (raw == null && memory) raw = String(memory.state);
+              var previous = Object.create(null);
+              if (raw != null && String(raw).trim() && ['NULL', 'UNDEF'].indexOf(String(raw).trim()) < 0) {
+                var parsed = JSON.parse(String(raw));
+                if (parsed.version !== 1 || !Array.isArray(parsed.alarms)) throw new Error('Unbekanntes Alarm-Speicherformat.');
+                parsed.alarms.forEach(function(entry) {
+                  if (!entry || typeof entry.id !== 'string' || typeof entry.title !== 'string' || typeof entry.message !== 'string' || typeof entry.comparison !== 'string' || Object.prototype.hasOwnProperty.call(previous, entry.id)) throw new Error('Ungültiger gespeicherter Alarm.');
+                  previous[entry.id] = entry;
+                });
+              }
+              function store() {
+                var serialized = JSON.stringify({ version: 1, alarms: Object.keys(previous).sort().map(function(id) { return previous[id]; }) });
+                api.cache.private.put(key, serialized);
+                if (memory) memory.postUpdate(serialized);
+              }
+              if (seedOnly === true) {
+                previous = current;
+                store();
+                return;
+              }
+              function emit(kind, next, old, callback) {
+                var record = next || old;
+                // Callers choose all notification channels. This library never sends them.
+                callback({ kind: kind, group: groupKey, id: record.id, title: record.title,
+                  message: record.message, previousTitle: old ? old.title : '',
+                  previousMessage: old ? old.message : '', comparison: record.comparison });
+                // A thrown callback leaves this event pending for a later evaluation.
+                if (next) previous[next.id] = next;
+                else delete previous[old.id];
+                store();
+              }
+              Object.keys(current).sort().forEach(function(id) {
+                var next = current[id];
+                var old = previous[id];
+                if (!old) emit('NEW', next, null, onNew);
+                else if (next.title !== old.title || next.message !== old.message || next.comparison !== old.comparison) emit('CHANGED', next, old, onChanged);
+              });
+              Object.keys(previous).sort().forEach(function(id) {
+                if (!Object.prototype.hasOwnProperty.call(current, id)) emit('CLEARED', null, previous[id], onCleared);
+              });
+            }
+      - component: UtilityFunction
+        config:
+          name: lhlab_dwd_monitor
+          code: |
+            function {{name}}(prefix, count, memoryItem, delaySeconds, seedOnly, onNew, onChanged, onCleared) {
+              var api = require('openhab');
+              var itemPrefix = String(prefix == null ? '' : prefix).trim();
+              var size = Number(count);
+              var delay = Math.max(1, Math.min(30, Math.round(Number(delaySeconds) || 2)));
+              if (!itemPrefix || !Number.isInteger(size) || size < 1 || size > 50) throw new Error('DWD: Item-Präfix und 1–50 Warnplätze erforderlich.');
+              var group = 'dwd:' + itemPrefix;
+              var timerKey = 'lhlab.dwd.timer:' + itemPrefix;
+              var formatter = api.time.DateTimeFormatter.ofPattern('dd.MM.yyyy HH:mm');
+              var levels = { Minor: 'Wetterwarnung', Moderate: 'Markantes Wetter', Severe: 'Unwetter', Extreme: 'Extremes Unwetter' };
+              function read(suffix, n) {
+                var name = itemPrefix + suffix + '_' + n;
+                var item = api.items.getItem(name, true);
+                return item == null ? '' : String(item.state).trim();
+              }
+              function valid(value) { return !!value && value !== 'NULL' && value !== 'UNDEF'; }
+              function snapshot() {
+                var rows = [];
+                var entries = [];
+                var complete = true;
+                var seen = Object.create(null);
+                for (var n = 1; n <= size; n++) {
+                  var row = { alarm: read('Warning', n), event: read('Type', n), severity: read('Severity', n),
+                    from: read('Valid_From', n), to: read('Valid_To', n), headline: read('Headline', n),
+                    description: read('Description', n), instruction: read('Instruction', n) };
+                  rows.push(row);
+                  if (row.alarm === 'OFF') continue;
+                  if (row.alarm !== 'ON' || !valid(row.event) || !levels[row.severity] || !valid(row.headline) || !valid(row.description) || !valid(row.from) || !valid(row.to)) {
+                    complete = false;
+                    continue;
+                  }
+                  try {
+                    var start = api.time.toZDT(row.from);
+                    var end = api.time.toZDT(row.to);
+                    if (!start || !end) throw new Error('Ungültiger Warnzeitraum');
+                    var id = JSON.stringify([row.event.toUpperCase(), String(start.toInstant())]);
+                    // Use event and onset rather than the warning slot. If the source has
+                    // ambiguous identities, retain the previous snapshot instead of guessing.
+                    if (seen[id]) { complete = false; continue; }
+                    seen[id] = true;
+                    var message = row.headline + '\nGültig: ' + start.format(formatter) + ' – ' + end.format(formatter) + '\n\n' + row.description;
+                    if (valid(row.instruction)) message += '\n\nVerhaltenshinweise:\n' + row.instruction;
+                    entries.push({ id: id, active: true, title: 'DWD · ' + levels[row.severity] + ': ' + row.event,
+                      message: message, comparison: JSON.stringify([row.severity, String(end.toInstant())]) });
+                  } catch (error) {
+                    complete = false;
+                  }
+                }
+                return { signature: JSON.stringify(rows), entries: entries, complete: complete };
+              }
+              function schedule(previousSignature, attempt) {
+                var timer = api.actions.ScriptExecution.createTimer(api.time.ZonedDateTime.now().plusSeconds(delay), function() {
+                  api.cache.private.remove(timerKey);
+                  try {
+                    var current = snapshot();
+                    if ((!current.complete || current.signature !== previousSignature) && attempt < 3) {
+                      schedule(current.signature, attempt + 1);
+                      return;
+                    }
+                    if (!current.complete || current.signature !== previousSignature) {
+                      console.warn('DWD-Alarm: Daten nach mehreren Prüfungen unvollständig oder nicht stabil; keine Meldung und keine Entwarnung erzeugt.');
+                      return;
+                    }
+                    {{lhlab_alarm_process}}(group, current.entries, memoryItem, onNew, onChanged, onCleared, seedOnly === true);
+                    if (seedOnly === true) console.info('DWD-Alarm: Ausgangsstand ohne Benachrichtigung gespeichert (' + current.entries.length + ' aktive Warnungen).');
+                  } catch (error) {
+                    console.error('DWD-Alarm fehlgeschlagen: ' + error);
+                  }
+                });
+                api.cache.private.put(timerKey, timer);
+              }
+              var old = api.cache.private.get(timerKey);
+              if (old != null) old.cancel();
+              schedule(snapshot().signature, 0);
+            }

@@ -1,0 +1,485 @@
+---
+version: 1
+widgets:
+  fenster_tueren_cell:
+    tags:
+    - Fenster
+    - Türen
+    - Alarm
+    - Cell
+    props:
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        default: Fenster & Türen
+      - name: contactGroup
+        label: Kontakt-Gruppe
+        description: Gruppe mit Contact-Items für die Übersicht.
+        type: TEXT
+        context: item
+        required: true
+      - name: equipmentGroup
+        label: Semantische Gerätegruppen
+        description: Technische Gruppe mit den Window-/Door-Gerätegruppen der Kontakte.
+        type: TEXT
+        context: item
+        required: true
+      - name: alarmGroupItem
+        label: Sammelalarm
+        description: Optionales ON/OFF-Item für nicht zugeordnete oder übergreifende
+          Alarme.
+        type: TEXT
+        context: item
+        required: false
+      - name: closeAlarmItem
+        label: Hinweis zum Schließen
+        description: 'Optionales ON/OFF-Item: Außen wärmer, Fenster schließen.'
+        type: TEXT
+        context: item
+        required: false
+      - name: testMode
+        label: Testmodus
+        type: TEXT
+        default: live
+        options:
+        - value: live
+          label: Live
+        - value: mixed
+          label: Test – offene Kontakte und Alarme
+        - value: closed
+          label: Test – alles geschlossen
+        - value: unknown
+          label: Test – unbekannter Status
+      parameterGroups: []
+    component: oh-cell
+    config:
+      title: "=props.title || 'Fenster & Türen'"
+      subtitle: Aktuelle Kontakte und Alarme
+      expandable: true
+      stylesheet: |
+        .cell-contents > .cell-button { display:none; }
+        .contact-compact { position:absolute; inset:0; box-sizing:border-box; padding:8px 9px; container-type:inline-size; display:grid; grid-template-rows:21px 23px 23px 18px; gap:5px; color:var(--f7-text-color); }
+        .contact-head { display:flex; gap:5px; align-items:center; min-width:0; }
+        .contact-headline { font-size:15px; font-weight:500; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+        .contact-badge { margin-left:auto; font-size:11px; white-space:nowrap; }
+        .contact-row { display:flex; align-items:center; gap:5px; min-width:0; }
+        .contact-name { font-size:13px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:12px; max-height:24px; }
+        .contact-state { font-size:11px; margin-left:auto; white-space:nowrap; }
+        .contact-footer { border-top:1px solid var(--f7-list-item-border-color,rgba(128,128,128,.2)); padding-top:3px; font-size:11px; line-height:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.8; }
+        .contact-empty { display:flex; gap:7px; align-items:center; font-size:12px; opacity:.8; grid-row:2 / 4; }
+        .contact-detail { width:100%; box-sizing:border-box; padding:0 8px 20px; max-height:calc(100vh - 225px); overflow-y:auto; color:var(--f7-text-color); }
+        .contact-detail .list { margin:8px 0; --f7-list-bg-color:transparent; }
+        .contact-detail .item-title { white-space:normal; font-size:14px; }
+        .contact-detail .item-footer { white-space:normal; font-size:12px; }
+        .contact-notice { font-size:13px; margin:8px 12px; }
+        @container (max-width:210px) { .contact-headline {font-size:13px;} .contact-badge {font-size:10px;} .contact-name {font-size:12px;line-height:11.5px;max-height:23px;} .contact-state {font-size:10px;} .contact-footer {font-size:10px;} }
+    slots:
+      background:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name && items[name] && items[name].state ? items[name].state.trim()
+              : ''"
+            meta: "=(s) => s.metadata && s.metadata.contactOverview ? s.metadata.contactOverview
+              : {value:'',config:{}}"
+            equipment: "=(s,eq) => eq.find((e) => s.metadata && s.metadata.semantics
+              && s.metadata.semantics.config && e.name === s.metadata.semantics.config.isPointOf)
+              || null"
+            data: "=(list,eq,read,meta,equipment) => list.filter((s) => s.type ===
+              'Contact').map((s) => ({name:s.name,label:meta(s).config && meta(s).config.label
+              || s.label || s.name,short:(meta(s).config && meta(s).config.label ||
+              s.label || s.name).replace(/\\s+Fenster\\b/g,'').replace(/\\s+Tür\\b/g,''),state:read(s.name),alarm:meta(s).value
+              || '',alarmState:read(meta(s).value),shared:!!(meta(s).config && meta(s).config.shared
+              === true),equipment:equipment(s,eq) ? equipment(s,eq).name : '',kind:equipment(s,eq)
+              ? (equipment(s,eq).tags || []).some((t) => t === 'Door' || /Door$/.test(t))
+              ? 'door' : (equipment(s,eq).tags || []).indexOf('Window') >= 0 ? 'window'
+              : 'contact' : 'contact'}))"
+            demo: "=(mode) => mode === 'closed' ? [{name:'demo1',label:'Badezimmer
+              Fenster',short:'Badezimmer',state:'CLOSED',alarm:'demoAlarm',alarmState:'OFF',shared:false,equipment:'',kind:'window'},{name:'demo2',label:'Eingang
+              Tür',short:'Eingang',state:'CLOSED',alarm:'',alarmState:'',shared:false,equipment:'',kind:'door'}]
+              : mode === 'unknown' ? [{name:'demo1',label:'Büro Fenster rechts',short:'Büro
+              rechts',state:'UNDEF',alarm:'',alarmState:'',shared:false,equipment:'',kind:'window'}]
+              : [{name:'demo1',label:'Badezimmer Fenster',short:'Badezimmer',state:'OPEN',alarm:'demoAlarm',alarmState:'ON',shared:false,equipment:'',kind:'window'},{name:'demo2',label:'Küche
+              Fenster',short:'Küche',state:'OPEN',alarm:'',alarmState:'',shared:false,equipment:'',kind:'window'},{name:'demo3',label:'Terrasse
+              Tür',short:'Terrasse',state:'OPEN',alarm:'',alarmState:'',shared:false,equipment:'',kind:'door'},{name:'demo4',label:'Schlafzimmer
+              Fenster links',short:'Schlafzimmer links',state:'OPEN',alarm:'demoRoom',alarmState:'ON',shared:true,equipment:'',kind:'window'},{name:'demo5',label:'Schlafzimmer
+              Fenster rechts',short:'Schlafzimmer rechts',state:'CLOSED',alarm:'demoRoom',alarmState:'ON',shared:true,equipment:'',kind:'window'}]"
+            rank: "=(r) => r.alarmState === 'ON' ? 0 : r.state === 'OPEN' ? 1 : r.state
+              !== 'CLOSED' || r.alarm && r.alarmState !== 'OFF' ? 2 : 3"
+            sorted: "=(rows,rank) => rows.slice().sort((a,b) => rank(a)-rank(b) ||
+              a.label.localeCompare(b.label,'de'))"
+            attention: "=(rows,rank) => rows.filter((r) => rank(r) < 3).sort((a,b)
+              => rank(a)-rank(b) || a.label.localeCompare(b.label,'de'))"
+            opened: "=(rows) => rows.filter((r) => r.state === 'OPEN').length"
+            unknown: "=(rows) => rows.filter((r) => (r.state !== 'OPEN' && r.state
+              !== 'CLOSED') || (r.alarm && r.alarmState !== 'ON' && r.alarmState !==
+              'OFF')).length"
+            alarms: "=(rows) => rows.filter((r) => r.alarm && r.alarmState === 'ON').map((r)
+              => r.alarm).filter((v,i,a) => a.indexOf(v) === i).length"
+            icon: "=(r) => r.kind === 'door' ? 'oh:door' : r.kind === 'window' ? 'oh:window'
+              : 'f7:square'"
+            brief: "=(r) => r.alarmState === 'ON' ? r.shared ? 'Raumalarm' : 'Alarm'
+              : r.state !== 'OPEN' && r.state !== 'CLOSED' ? 'unbekannt' : r.alarm
+              && r.alarmState !== 'OFF' ? 'Alarm unklar' : r.state === 'OPEN' ? 'offen'
+              : 'zu'"
+            detail: "=(r) => (r.state === 'OPEN' ? 'Offen' : r.state === 'CLOSED'
+              ? 'Geschlossen' : 'Kontaktstatus unbekannt') + (r.alarm ? r.alarmState
+              === 'ON' ? r.shared ? ' · Raumalarm aktiv' : ' · Alarm aktiv' : r.alarmState
+              === 'OFF' ? r.shared ? ' · Raumalarm nicht aktiv' : ' · Kein Alarm aktiv'
+              : ' · Alarmstatus unbekannt' : ' · Ohne Einzelalarm')"
+            rowColor: "=(r) => r.alarmState === 'ON' ? 'var(--f7-color-red)' : r.state
+              !== 'OPEN' && r.state !== 'CLOSED' || r.alarm && r.alarmState !== 'ON'
+              && r.alarmState !== 'OFF' ? 'var(--f7-color-gray)' : r.state === 'OPEN'
+              ? 'var(--f7-color-orange)' : 'var(--f7-color-green)'"
+            tone: "=(rows,read,alarms,opened,unknown) => alarms(rows) > 0 || (props.testMode
+              === 'live' || !props.testMode) && read(props.alarmGroupItem) === 'ON'
+              ? 'var(--f7-color-red)' : opened(rows) > 0 || (props.testMode === 'live'
+              || !props.testMode) && read(props.closeAlarmItem) === 'ON' ? 'var(--f7-color-orange)'
+              : rows.length === 0 || unknown(rows) > 0 ? 'var(--f7-color-gray)' :
+              'var(--f7-color-green)'"
+        slots:
+          default:
+          - component: oh-repeater
+            config:
+              for: eq
+              sourceType: itemsInGroup
+              groupItem: "=props.equipmentGroup"
+              fetchMetadata: semantics
+              cacheSource: true
+              fragment: true
+            slots:
+              default:
+              - component: oh-repeater
+                config:
+                  for: equipment
+                  sourceType: array
+                  in: "=loop.eq_idx === 0 ? [loop.eq_source] : []"
+                  fragment: true
+                slots:
+                  default:
+                  - component: oh-repeater
+                    config:
+                      for: member
+                      sourceType: itemsInGroup
+                      groupItem: "=props.contactGroup"
+                      fetchMetadata: semantics,contactOverview
+                      cacheSource: true
+                      fragment: true
+                    slots:
+                      default:
+                      - component: oh-repeater
+                        config:
+                          for: contacts
+                          sourceType: array
+                          in: "=loop.member_idx === 0 ? [loop.member_source] : []"
+                          fragment: true
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: contact-compact card-opened-fade-out
+                              role: group
+                              aria-label: "=props.title || 'Fenster und Türen'"
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: contact-head
+                                slots:
+                                  default:
+                                  - component: oh-icon
+                                    config:
+                                      icon: oh:window
+                                      width: 17
+                                      height: 17
+                                  - component: Label
+                                    config:
+                                      text: "=(props.testMode && props.testMode !==
+                                        'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)).length
+                                        === 0 ? 'Keine Kontakte' : fn.opened((props.testMode
+                                        && props.testMode !== 'live' ? fn.demo(props.testMode)
+                                        : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        > 0 ? fn.opened((props.testMode && props.testMode
+                                        !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        + ' offen' : fn.unknown((props.testMode &&
+                                        props.testMode !== 'live' ? fn.demo(props.testMode)
+                                        : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        > 0 ? 'Status prüfen' : 'Alles zu'"
+                                      class: contact-headline
+                                  - component: Label
+                                    config:
+                                      text: "=props.testMode && props.testMode !==
+                                        'live' ? 'TEST · ' + fn.alarms((props.testMode
+                                        && props.testMode !== 'live' ? fn.demo(props.testMode)
+                                        : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        + (fn.alarms((props.testMode && props.testMode
+                                        !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        === 1 ? ' Alarm' : ' Alarme') : fn.alarms((props.testMode
+                                        && props.testMode !== 'live' ? fn.demo(props.testMode)
+                                        : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        > 0 ? fn.alarms((props.testMode && props.testMode
+                                        !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        + (fn.alarms((props.testMode && props.testMode
+                                        !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        === 1 ? ' Alarm' : ' Alarme') : ((!props.testMode
+                                        || props.testMode === 'live') && fn.read(props.alarmGroupItem)
+                                        === 'ON') ? 'Alarm aktiv' : fn.unknown((props.testMode
+                                        && props.testMode !== 'live' ? fn.demo(props.testMode)
+                                        : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        > 0 ? fn.unknown((props.testMode && props.testMode
+                                        !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                        + ' unklar' : (props.testMode && props.testMode
+                                        !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)).length
+                                        + ' Kontakte'"
+                                      class: contact-badge
+                                      style:
+                                        color: "=fn.tone((props.testMode && props.testMode
+                                          !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.read,fn.alarms,fn.opened,fn.unknown)"
+                              - component: oh-repeater
+                                config:
+                                  for: row
+                                  sourceType: array
+                                  in: "=fn.attention((props.testMode && props.testMode
+                                    !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.rank).slice(0,2)"
+                                  fragment: true
+                                slots:
+                                  default:
+                                  - component: div
+                                    config:
+                                      class: contact-row
+                                      title: "=loop.row.label+': '+fn.detail(loop.row)"
+                                      aria-label: "=loop.row.label+': '+fn.detail(loop.row)"
+                                    slots:
+                                      default:
+                                      - component: oh-icon
+                                        config:
+                                          icon: "=fn.icon(loop.row)"
+                                          width: 16
+                                          height: 16
+                                          state: "=loop.row.state"
+                                      - component: Label
+                                        config:
+                                          text: "=loop.row.short"
+                                          class: contact-name
+                                      - component: Label
+                                        config:
+                                          text: "=fn.brief(loop.row)"
+                                          class: contact-state
+                                          style:
+                                            color: "=fn.rowColor(loop.row)"
+                              - component: div
+                                config:
+                                  class: contact-empty
+                                  visible: "=fn.attention((props.testMode && props.testMode
+                                    !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.rank).length
+                                    === 0"
+                                slots:
+                                  default:
+                                  - component: oh-icon
+                                    config:
+                                      icon: "=(!props.testMode || props.testMode ===
+                                        'live') && fn.read(props.alarmGroupItem) ===
+                                        'ON' ? 'oh:alarm' : 'f7:checkmark_shield'"
+                                      width: 18
+                                      height: 18
+                                  - component: Label
+                                    config:
+                                      text: "=(!props.testMode || props.testMode ===
+                                        'live') && fn.read(props.alarmGroupItem) ===
+                                        'ON' ? 'Alarm aktiv · Details öffnen' : (props.testMode
+                                        && props.testMode !== 'live' ? fn.demo(props.testMode)
+                                        : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)).length
+                                        === 0 ? 'Keine Kontakte verfügbar' : 'Fenster
+                                        & Türen geschlossen'"
+                              - component: Label
+                                config:
+                                  class: contact-footer
+                                  style:
+                                    grid-row: 4
+                                    color: "=((!props.testMode || props.testMode ===
+                                      'live') && fn.read(props.closeAlarmItem) ===
+                                      'ON') ? 'var(--f7-color-orange)' : 'var(--f7-text-color)'"
+                                  text: "=((!props.testMode || props.testMode ===
+                                    'live') && fn.read(props.closeAlarmItem) === 'ON')
+                                    ? (fn.attention((props.testMode && props.testMode
+                                    !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.rank).length
+                                    > 2 ? '+'+ (fn.attention((props.testMode && props.testMode
+                                    !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.rank).length-2)
+                                    + ' · ' : '') + 'Fenster schließen' : fn.attention((props.testMode
+                                    && props.testMode !== 'live' ? fn.demo(props.testMode)
+                                    : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.rank).length
+                                    > 2 ? '+'+(fn.attention((props.testMode && props.testMode
+                                    !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.rank).length-2)+'
+                                    weitere · Details ›' : 'Alle Kontakte · Details
+                                    ›'"
+      default:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name && items[name] && items[name].state ? items[name].state.trim()
+              : ''"
+            meta: "=(s) => s.metadata && s.metadata.contactOverview ? s.metadata.contactOverview
+              : {value:'',config:{}}"
+            equipment: "=(s,eq) => eq.find((e) => s.metadata && s.metadata.semantics
+              && s.metadata.semantics.config && e.name === s.metadata.semantics.config.isPointOf)
+              || null"
+            data: "=(list,eq,read,meta,equipment) => list.filter((s) => s.type ===
+              'Contact').map((s) => ({name:s.name,label:meta(s).config && meta(s).config.label
+              || s.label || s.name,short:(meta(s).config && meta(s).config.label ||
+              s.label || s.name).replace(/\\s+Fenster\\b/g,'').replace(/\\s+Tür\\b/g,''),state:read(s.name),alarm:meta(s).value
+              || '',alarmState:read(meta(s).value),shared:!!(meta(s).config && meta(s).config.shared
+              === true),equipment:equipment(s,eq) ? equipment(s,eq).name : '',kind:equipment(s,eq)
+              ? (equipment(s,eq).tags || []).some((t) => t === 'Door' || /Door$/.test(t))
+              ? 'door' : (equipment(s,eq).tags || []).indexOf('Window') >= 0 ? 'window'
+              : 'contact' : 'contact'}))"
+            demo: "=(mode) => mode === 'closed' ? [{name:'demo1',label:'Badezimmer
+              Fenster',short:'Badezimmer',state:'CLOSED',alarm:'demoAlarm',alarmState:'OFF',shared:false,equipment:'',kind:'window'},{name:'demo2',label:'Eingang
+              Tür',short:'Eingang',state:'CLOSED',alarm:'',alarmState:'',shared:false,equipment:'',kind:'door'}]
+              : mode === 'unknown' ? [{name:'demo1',label:'Büro Fenster rechts',short:'Büro
+              rechts',state:'UNDEF',alarm:'',alarmState:'',shared:false,equipment:'',kind:'window'}]
+              : [{name:'demo1',label:'Badezimmer Fenster',short:'Badezimmer',state:'OPEN',alarm:'demoAlarm',alarmState:'ON',shared:false,equipment:'',kind:'window'},{name:'demo2',label:'Küche
+              Fenster',short:'Küche',state:'OPEN',alarm:'',alarmState:'',shared:false,equipment:'',kind:'window'},{name:'demo3',label:'Terrasse
+              Tür',short:'Terrasse',state:'OPEN',alarm:'',alarmState:'',shared:false,equipment:'',kind:'door'},{name:'demo4',label:'Schlafzimmer
+              Fenster links',short:'Schlafzimmer links',state:'OPEN',alarm:'demoRoom',alarmState:'ON',shared:true,equipment:'',kind:'window'},{name:'demo5',label:'Schlafzimmer
+              Fenster rechts',short:'Schlafzimmer rechts',state:'CLOSED',alarm:'demoRoom',alarmState:'ON',shared:true,equipment:'',kind:'window'}]"
+            rank: "=(r) => r.alarmState === 'ON' ? 0 : r.state === 'OPEN' ? 1 : r.state
+              !== 'CLOSED' || r.alarm && r.alarmState !== 'OFF' ? 2 : 3"
+            sorted: "=(rows,rank) => rows.slice().sort((a,b) => rank(a)-rank(b) ||
+              a.label.localeCompare(b.label,'de'))"
+            attention: "=(rows,rank) => rows.filter((r) => rank(r) < 3).sort((a,b)
+              => rank(a)-rank(b) || a.label.localeCompare(b.label,'de'))"
+            opened: "=(rows) => rows.filter((r) => r.state === 'OPEN').length"
+            unknown: "=(rows) => rows.filter((r) => (r.state !== 'OPEN' && r.state
+              !== 'CLOSED') || (r.alarm && r.alarmState !== 'ON' && r.alarmState !==
+              'OFF')).length"
+            alarms: "=(rows) => rows.filter((r) => r.alarm && r.alarmState === 'ON').map((r)
+              => r.alarm).filter((v,i,a) => a.indexOf(v) === i).length"
+            icon: "=(r) => r.kind === 'door' ? 'oh:door' : r.kind === 'window' ? 'oh:window'
+              : 'f7:square'"
+            brief: "=(r) => r.alarmState === 'ON' ? r.shared ? 'Raumalarm' : 'Alarm'
+              : r.state !== 'OPEN' && r.state !== 'CLOSED' ? 'unbekannt' : r.alarm
+              && r.alarmState !== 'OFF' ? 'Alarm unklar' : r.state === 'OPEN' ? 'offen'
+              : 'zu'"
+            detail: "=(r) => (r.state === 'OPEN' ? 'Offen' : r.state === 'CLOSED'
+              ? 'Geschlossen' : 'Kontaktstatus unbekannt') + (r.alarm ? r.alarmState
+              === 'ON' ? r.shared ? ' · Raumalarm aktiv' : ' · Alarm aktiv' : r.alarmState
+              === 'OFF' ? r.shared ? ' · Raumalarm nicht aktiv' : ' · Kein Alarm aktiv'
+              : ' · Alarmstatus unbekannt' : ' · Ohne Einzelalarm')"
+            rowColor: "=(r) => r.alarmState === 'ON' ? 'var(--f7-color-red)' : r.state
+              !== 'OPEN' && r.state !== 'CLOSED' || r.alarm && r.alarmState !== 'ON'
+              && r.alarmState !== 'OFF' ? 'var(--f7-color-gray)' : r.state === 'OPEN'
+              ? 'var(--f7-color-orange)' : 'var(--f7-color-green)'"
+            tone: "=(rows,read,alarms,opened,unknown) => alarms(rows) > 0 || (props.testMode
+              === 'live' || !props.testMode) && read(props.alarmGroupItem) === 'ON'
+              ? 'var(--f7-color-red)' : opened(rows) > 0 || (props.testMode === 'live'
+              || !props.testMode) && read(props.closeAlarmItem) === 'ON' ? 'var(--f7-color-orange)'
+              : rows.length === 0 || unknown(rows) > 0 ? 'var(--f7-color-gray)' :
+              'var(--f7-color-green)'"
+        slots:
+          default:
+          - component: oh-repeater
+            config:
+              for: eq
+              sourceType: itemsInGroup
+              groupItem: "=props.equipmentGroup"
+              fetchMetadata: semantics
+              cacheSource: true
+              fragment: true
+            slots:
+              default:
+              - component: oh-repeater
+                config:
+                  for: equipment
+                  sourceType: array
+                  in: "=loop.eq_idx === 0 ? [loop.eq_source] : []"
+                  fragment: true
+                slots:
+                  default:
+                  - component: oh-repeater
+                    config:
+                      for: member
+                      sourceType: itemsInGroup
+                      groupItem: "=props.contactGroup"
+                      fetchMetadata: semantics,contactOverview
+                      cacheSource: true
+                      fragment: true
+                    slots:
+                      default:
+                      - component: oh-repeater
+                        config:
+                          for: contacts
+                          sourceType: array
+                          in: "=loop.member_idx === 0 ? [loop.member_source] : []"
+                          fragment: true
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: contact-detail
+                            slots:
+                              default:
+                              - component: Label
+                                config:
+                                  text: TESTMODUS · Beispieldaten
+                                  class: contact-notice
+                                  visible: "=!!props.testMode && props.testMode !==
+                                    'live'"
+                              - component: Label
+                                config:
+                                  text: Außen wärmer · Fenster schließen
+                                  class: contact-notice
+                                  visible: "=(!props.testMode || props.testMode ===
+                                    'live') && fn.read(props.closeAlarmItem) === 'ON'"
+                                  style:
+                                    color: var(--f7-color-orange)
+                              - component: Label
+                                config:
+                                  text: Mindestens ein weiterer Alarm ist aktiv.
+                                  class: contact-notice
+                                  visible: "=((!props.testMode || props.testMode ===
+                                    'live') && fn.read(props.alarmGroupItem) === 'ON')
+                                    && fn.alarms((props.testMode && props.testMode
+                                    !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)))
+                                    === 0 && !((!props.testMode || props.testMode
+                                    === 'live') && fn.read(props.closeAlarmItem) ===
+                                    'ON')"
+                                  style:
+                                    color: var(--f7-color-red)
+                              - component: f7-list
+                                config:
+                                  mediaList: true
+                                slots:
+                                  default:
+                                  - component: oh-repeater
+                                    config:
+                                      for: row
+                                      sourceType: array
+                                      in: "=fn.sorted((props.testMode && props.testMode
+                                        !== 'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)),fn.rank)"
+                                      fragment: true
+                                    slots:
+                                      default:
+                                      - component: f7-list-item
+                                        config:
+                                          title: "=loop.row.label"
+                                          footer: "=fn.detail(loop.row)"
+                                          style:
+                                            "--f7-list-item-footer-text-color": "=fn.rowColor(loop.row)"
+                                        slots:
+                                          media:
+                                          - component: oh-icon
+                                            config:
+                                              icon: "=fn.icon(loop.row)"
+                                              width: 24
+                                              height: 24
+                                              state: "=loop.row.state"
+                              - component: Label
+                                config:
+                                  text: Ein Raumalarm gilt gemeinsam für mehrere Kontakte.
+                                    Das auslösende Fenster ist dadurch nicht eindeutig
+                                    bestimmt.
+                                  class: contact-notice
+                                  visible: "=(props.testMode && props.testMode !==
+                                    'live' ? fn.demo(props.testMode) : fn.data(loop.contacts,loop.equipment,fn.read,fn.meta,fn.equipment)).some((r)
+                                    => r.shared)"

@@ -1,0 +1,556 @@
+# DWD Warnleiste: Styles am Root; Hilfsfunktionen mit expliziten Abhängigkeiten.
+version: 1
+widgets:
+  dwd_warnleiste:
+    tags:
+      - "Wetter"
+      - "DWD"
+      - "Warnungen"
+    props:
+      parameterGroups:
+        -
+          name: "warning1"
+          label: "Warnung 1"
+        -
+          name: "warning2"
+          label: "Warnung 2"
+        -
+          name: "warning3"
+          label: "Warnung 3"
+        -
+          name: "warning4"
+          label: "Warnung 4"
+        -
+          name: "warning5"
+          label: "Warnung 5"
+      parameters:
+        -
+          name: "title"
+          label: "Titel"
+          type: "TEXT"
+          default: "DWD Wetterwarnungen"
+        -
+          name: "testMode"
+          label: "Testmodus"
+          type: "TEXT"
+          default: "live"
+          description: "Beispieldaten dienen nur zur Vorschau. Für echte DWD-Warnungen unbedingt Live wählen. Es werden keine Items verändert."
+          options:
+            -
+              value: "live"
+              label: "Live – verknüpfte Items"
+            -
+              value: "0"
+              label: "Test – keine Warnung"
+            -
+              value: "1"
+              label: "Test – eine Warnung"
+            -
+              value: "2"
+              label: "Test – zwei Warnungen"
+            -
+              value: "5"
+              label: "Test – fünf Warnungen"
+        -
+          name: "alarm1"
+          label: "Alarm / Warnung vorhanden"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "Switch; ON = Meldung vorhanden, OFF = keine Meldung."
+        -
+          name: "event1"
+          label: "Event"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "Warnungsart für Symbol und kompakten Titel."
+        -
+          name: "severity1"
+          label: "Severity"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "Minor, Moderate, Severe oder Extreme."
+        -
+          name: "from1"
+          label: "Valid from"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "DateTime-Item: Beginn des Warnzeitraums."
+        -
+          name: "to1"
+          label: "Valid to"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "DateTime-Item: Ende des Warnzeitraums."
+        -
+          name: "headline1"
+          label: "Headline"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "Offizielle Überschrift im aufgeklappten Bereich."
+        -
+          name: "description1"
+          label: "Description"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "Vollständiger Warntext."
+        -
+          name: "instruction1"
+          label: "Instruction"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning1"
+          description: "Verhaltenshinweise; leere Inhalte werden ausgeblendet."
+        -
+          name: "alarm2"
+          label: "Alarm / Warnung vorhanden"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "Switch; ON = Meldung vorhanden, OFF = keine Meldung."
+        -
+          name: "event2"
+          label: "Event"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "Warnungsart für Symbol und kompakten Titel."
+        -
+          name: "severity2"
+          label: "Severity"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "Minor, Moderate, Severe oder Extreme."
+        -
+          name: "from2"
+          label: "Valid from"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "DateTime-Item: Beginn des Warnzeitraums."
+        -
+          name: "to2"
+          label: "Valid to"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "DateTime-Item: Ende des Warnzeitraums."
+        -
+          name: "headline2"
+          label: "Headline"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "Offizielle Überschrift im aufgeklappten Bereich."
+        -
+          name: "description2"
+          label: "Description"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "Vollständiger Warntext."
+        -
+          name: "instruction2"
+          label: "Instruction"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning2"
+          description: "Verhaltenshinweise; leere Inhalte werden ausgeblendet."
+        -
+          name: "alarm3"
+          label: "Alarm / Warnung vorhanden"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "Switch; ON = Meldung vorhanden, OFF = keine Meldung."
+        -
+          name: "event3"
+          label: "Event"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "Warnungsart für Symbol und kompakten Titel."
+        -
+          name: "severity3"
+          label: "Severity"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "Minor, Moderate, Severe oder Extreme."
+        -
+          name: "from3"
+          label: "Valid from"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "DateTime-Item: Beginn des Warnzeitraums."
+        -
+          name: "to3"
+          label: "Valid to"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "DateTime-Item: Ende des Warnzeitraums."
+        -
+          name: "headline3"
+          label: "Headline"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "Offizielle Überschrift im aufgeklappten Bereich."
+        -
+          name: "description3"
+          label: "Description"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "Vollständiger Warntext."
+        -
+          name: "instruction3"
+          label: "Instruction"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning3"
+          description: "Verhaltenshinweise; leere Inhalte werden ausgeblendet."
+        -
+          name: "alarm4"
+          label: "Alarm / Warnung vorhanden"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "Switch; ON = Meldung vorhanden, OFF = keine Meldung."
+        -
+          name: "event4"
+          label: "Event"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "Warnungsart für Symbol und kompakten Titel."
+        -
+          name: "severity4"
+          label: "Severity"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "Minor, Moderate, Severe oder Extreme."
+        -
+          name: "from4"
+          label: "Valid from"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "DateTime-Item: Beginn des Warnzeitraums."
+        -
+          name: "to4"
+          label: "Valid to"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "DateTime-Item: Ende des Warnzeitraums."
+        -
+          name: "headline4"
+          label: "Headline"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "Offizielle Überschrift im aufgeklappten Bereich."
+        -
+          name: "description4"
+          label: "Description"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "Vollständiger Warntext."
+        -
+          name: "instruction4"
+          label: "Instruction"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning4"
+          description: "Verhaltenshinweise; leere Inhalte werden ausgeblendet."
+        -
+          name: "alarm5"
+          label: "Alarm / Warnung vorhanden"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "Switch; ON = Meldung vorhanden, OFF = keine Meldung."
+        -
+          name: "event5"
+          label: "Event"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "Warnungsart für Symbol und kompakten Titel."
+        -
+          name: "severity5"
+          label: "Severity"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "Minor, Moderate, Severe oder Extreme."
+        -
+          name: "from5"
+          label: "Valid from"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "DateTime-Item: Beginn des Warnzeitraums."
+        -
+          name: "to5"
+          label: "Valid to"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "DateTime-Item: Ende des Warnzeitraums."
+        -
+          name: "headline5"
+          label: "Headline"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "Offizielle Überschrift im aufgeklappten Bereich."
+        -
+          name: "description5"
+          label: "Description"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "Vollständiger Warntext."
+        -
+          name: "instruction5"
+          label: "Instruction"
+          type: "TEXT"
+          context: "item"
+          groupName: "warning5"
+          description: "Verhaltenshinweise; leere Inhalte werden ausgeblendet."
+    component: "f7-card"
+    config:
+      class: "dwd-warning-widget"
+      stylesheet: |
+        .dwd-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 16px; }
+        .dwd-heading { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+        .dwd-count { border-radius: 12px; background: var(--f7-list-item-selected-bg-color, rgba(128,128,128,.12)); padding: 4px 10px; font-size: 12px; }
+        .dwd-notice { margin: 0 16px 12px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .dwd-list { margin: 0 12px 12px; --f7-list-bg-color: transparent; --f7-list-item-title-white-space: normal; --f7-list-item-min-height: 72px; }
+        .dwd-list ul::before, .dwd-list ul::after { display: none; }
+        .dwd-warning { margin-top: 8px; border-radius: 10px; border-left: 4px solid; background: var(--f7-card-bg-color); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(128,128,128,.14); }
+        .dwd-warning > .item-link > .item-content { padding-left: 12px; }
+        .dwd-warning .item-inner { min-width: 0; }
+        .dwd-warning .item-title { min-width: 0; width: 100%; white-space: normal; }
+        .dwd-title-line { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+        .dwd-event { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+        .dwd-level, .dwd-time { font-size: 12px; opacity: .85; white-space: normal; overflow-wrap: anywhere; }
+        .dwd-time { margin-top: 4px; }
+        .dwd-detail { padding: 8px 16px 16px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .dwd-detail-heading { display: block; font-weight: 600; margin-bottom: 10px; }
+        .dwd-instruction-title { display: block; font-weight: 600; margin-top: 14px; margin-bottom: 4px; }
+        .dwd-empty { display: flex; align-items: center; gap: 10px; padding: 0 16px 16px; font-size: 14px; }
+      style:
+        overflow: "hidden"
+        color: "var(--f7-text-color)"
+    slots:
+      default:
+        -
+          component: "oh-context"
+          config:
+            functions:
+              state: "=(name) => name && items[name] && items[name].state && items[name].state !== 'NULL' && items[name].state !== 'UNDEF' ? items[name].state.trim() : ''"
+              demo: "=() => !!props.testMode && props.testMode !== 'live'"
+              live: "= (read) => [1,2,3,4,5].filter((n) => !!props['alarm' + n]).map((n) => ({slot: n, alarm: read(props['alarm' + n]), event: read(props['event' + n]), severity: read(props['severity' + n]), from: read(props['from' + n]), to: read(props['to' + n]), headline: read(props['headline' + n]), description: read(props['description' + n]), instruction: read(props['instruction' + n])}))"
+              rank: "=(severity) => ({Extreme: 4, Severe: 3, Moderate: 2, Minor: 1})[severity] || 0"
+              warnings: "= (demo, live, rank, samples) => (demo ? samples.slice(0, Number(props.testMode)).map((w, i) => ({slot: i + 1, alarm: 'ON', event: w.event, severity: w.severity, from: dayjs().startOf('day').add(14 + i, 'hour').toISOString(), to: dayjs().startOf('day').add(22 + i * 3, 'hour').toISOString(), headline: w.headline, description: w.description, instruction: w.instruction})) : live.filter((w) => w.alarm === 'ON')).sort((a,b) => rank(b.severity) - rank(a.severity) || (dayjs(a.from).isValid() ? dayjs(a.from).valueOf() : 0) - (dayjs(b.from).isValid() ? dayjs(b.from).valueOf() : 0) || a.slot - b.slot)"
+              unknown: "= (demo, live) => !demo && live.filter((w) => w.alarm !== 'ON' && w.alarm !== 'OFF').length > 0"
+              color: "=(severity) => ({Minor: '#d2a000', Moderate: '#e78619', Severe: '#e04444', Extreme: '#a855b5'})[severity] || 'var(--f7-color-gray)'"
+              level: "=(severity) => ({Minor: 'Wetterwarnung', Moderate: 'Markantes Wetter', Severe: 'Unwetter', Extreme: 'Extremes Unwetter'})[severity] || 'Warnstufe unbekannt'"
+              icon: "=(event) => /TEST/i.test(event) ? 'material:warning' : /GEWITTER/i.test(event) ? 'f7:cloud_bolt' : /GLÄTTE|GLATTEIS|GLAETTE/i.test(event) ? 'material:warning' : /FROST/i.test(event) ? 'f7:thermometer_snowflake' : /SCHNEEVERWEHUNG|SCHNEEFALL/i.test(event) ? 'f7:cloud_snow' : /TAUWETTER/i.test(event) ? 'material:opacity' : /REGEN/i.test(event) ? 'f7:cloud_rain' : /BÖEN|BOEEN|WIND|STURM|ORKAN/i.test(event) ? 'f7:wind' : /NEBEL/i.test(event) ? 'f7:cloud_fog' : /HITZE/i.test(event) ? 'f7:thermometer_sun' : /UV/i.test(event) ? 'f7:sun_max' : 'material:warning'"
+              short: "=(event) => !event ? 'Wetterwarnung' : /GEWITTER/i.test(event) ? (/EXTREMES GEWITTER/i.test(event) ? 'Extremes Gewitter' : /SCHWERES GEWITTER/i.test(event) ? 'Schweres Gewitter' : /STARKES GEWITTER/i.test(event) ? 'Starkes Gewitter' : 'Gewitter') : event.replace(/^VORABINFORMATION\\s+/i, '').charAt(0).toUpperCase() + event.replace(/^VORABINFORMATION\\s+/i, '').slice(1).toLowerCase()"
+              date: "=(value) => !value || !dayjs(value).isValid() ? 'Zeit unbekannt' : (dayjs(value).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD') ? 'Heute' : dayjs(value).format('YYYY-MM-DD') === dayjs().add(1,'day').format('YYYY-MM-DD') ? 'Morgen' : dayjs(value).format('DD.MM.YYYY')) + ' ' + dayjs(value).format('HH:mm')"
+            constants:
+              samples:
+                -
+                  event: "STURMBÖEN"
+                  severity: "Moderate"
+                  headline: "BEISPIEL: Amtliche Warnung vor STURMBÖEN"
+                  description: "Es treten Sturmböen auf. Dieser Text ist ausschließlich eine Demonstration des Widgets und keine aktuelle DWD-Warnung."
+                  instruction: "Beispiel: Lose Gegenstände im Freien sichern."
+                -
+                  event: "FROST"
+                  severity: "Minor"
+                  headline: "BEISPIEL: Amtliche Warnung vor FROST"
+                  description: "Es tritt leichter Frost auf. Beispieldaten ohne Bezug zur aktuellen Wetterlage."
+                  instruction: ""
+                -
+                  event: "SCHWERES GEWITTER mit ORKANBÖEN und HEFTIGEM STARKREGEN"
+                  severity: "Severe"
+                  headline: "BEISPIEL: Amtliche Unwetterwarnung vor SCHWEREM GEWITTER"
+                  description: |-
+                    Beispiel einer längeren kombinierten Gewitterwarnung. Der kompakte Titel bleibt lesbar; dieser Bereich enthält den vollständigen Text.
+                    
+                    Auch Absätze bleiben erhalten.
+                  instruction: "Beispiel: Aufenthalt im Freien vermeiden."
+                -
+                  event: "EXTREMES GLATTEIS"
+                  severity: "Extreme"
+                  headline: "BEISPIEL: Amtliche Warnung vor EXTREMEM GLATTEIS"
+                  description: "Beispiel für die höchste Warnstufe. Die Sortierung setzt diese Meldung an die erste Stelle."
+                  instruction: "Beispiel: Unnötige Fahrten vermeiden."
+                -
+                  event: "VORABINFORMATION STARKER SCHNEEFALL / SCHNEEVERWEHUNG"
+                  severity: "Severe"
+                  headline: "BEISPIEL: Vorabinformation zu starkem Schneefall"
+                  description: "Beispiel einer Vorabinformation mit einem längeren Ereignistitel."
+                  instruction: ""
+          slots:
+            default:
+              -
+                component: "div"
+                config:
+                  class: "dwd-header"
+                slots:
+                  default:
+                    -
+                      component: "Label"
+                      config:
+                        text: "=props.title || 'DWD Wetterwarnungen'"
+                        class: "dwd-heading"
+                    -
+                      component: "Label"
+                      config:
+                        text: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length + ' aktiv'"
+                        class: "dwd-count"
+              -
+                component: "Label"
+                config:
+                  text: "TESTMODUS · Beispieldaten, keine aktuellen DWD-Warnungen."
+                  class: "dwd-notice"
+                  visible: "=fn.demo()"
+              -
+                component: "Label"
+                config:
+                  text: "Bitte mindestens das Alarm-Item für Warnung 1 auswählen."
+                  class: "dwd-notice"
+                  visible: "=!fn.demo() && fn.live(fn.state).length === 0"
+              -
+                component: "Label"
+                config:
+                  text: "Warnstatus nicht verfügbar: Mindestens ein konfiguriertes Alarm-Item liefert keinen gültigen ON/OFF-Zustand."
+                  class: "dwd-notice"
+                  visible: "=fn.unknown(fn.demo(), fn.live(fn.state))"
+              -
+                component: "div"
+                config:
+                  class: "dwd-empty"
+                  visible: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length === 0 && (fn.demo() || (fn.live(fn.state).length > 0 && !fn.unknown(fn.demo(), fn.live(fn.state))))"
+                slots:
+                  default:
+                    -
+                      component: "oh-icon"
+                      config:
+                        icon: "f7:checkmark_shield"
+                        width: 20
+                        height: 20
+                    -
+                      component: "Label"
+                      config:
+                        text: "Keine aktiven DWD-Warnungen"
+              -
+                component: "f7-list"
+                config:
+                  class: "dwd-list"
+                  accordionList: false
+                  visible: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length > 0"
+                slots:
+                  default:
+                    -
+                      component: "oh-repeater"
+                      config:
+                        for: "warning"
+                        sourceType: "array"
+                        in: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples)"
+                        fragment: true
+                      slots:
+                        default:
+                          -
+                            component: "f7-list-item"
+                            config:
+                              accordionItem: true
+                              class: "dwd-warning"
+                              style:
+                                "border-color": "=fn.color(loop.warning.severity)"
+                            slots:
+                              default:
+                                -
+                                  component: "f7-accordion-content"
+                                  config: {}
+                                  slots:
+                                    default:
+                                      -
+                                        component: "div"
+                                        config:
+                                          class: "dwd-detail"
+                                        slots:
+                                          default:
+                                            -
+                                              component: "Label"
+                                              config:
+                                                text: "=loop.warning.headline || loop.warning.event || 'Wetterwarnung'"
+                                                class: "dwd-detail-heading"
+                                            -
+                                              component: "Label"
+                                              config:
+                                                text: "=loop.warning.description || 'Keine Beschreibung verfügbar.'"
+                                            -
+                                              component: "Label"
+                                              config:
+                                                text: "Verhaltenshinweise"
+                                                class: "dwd-instruction-title"
+                                                visible: "=!!loop.warning.instruction"
+                                            -
+                                              component: "Label"
+                                              config:
+                                                text: "=loop.warning.instruction"
+                                                visible: "=!!loop.warning.instruction"
+                              media:
+                                -
+                                  component: "oh-icon"
+                                  config:
+                                    icon: "=fn.icon(loop.warning.event)"
+                                    width: 26
+                                    height: 26
+                                    style:
+                                      color: "=fn.color(loop.warning.severity)"
+                              title:
+                                -
+                                  component: "div"
+                                  config: {}
+                                  slots:
+                                    default:
+                                      -
+                                        component: "div"
+                                        config:
+                                          class: "dwd-title-line"
+                                        slots:
+                                          default:
+                                            -
+                                              component: "Label"
+                                              config:
+                                                text: "=(/VORABINFORMATION/i.test(loop.warning.event) ? 'Vorabinfo · ' : '') + fn.short(loop.warning.event)"
+                                                class: "dwd-event"
+                                            -
+                                              component: "Label"
+                                              config:
+                                                text: "=fn.level(loop.warning.severity)"
+                                                class: "dwd-level"
+                                      -
+                                        component: "Label"
+                                        config:
+                                          text: "=fn.date(loop.warning.from) + ' – ' + fn.date(loop.warning.to)"
+                                          class: "dwd-time"

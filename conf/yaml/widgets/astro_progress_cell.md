@@ -16,6 +16,8 @@ Mondaufgang und Monduntergang werden jeweils mit ihrem tatsächlichen Datum darg
 
 Die Mondphase kommt aus `phase#name`. Der Prozentwert ist der beleuchtete Anteil der Mondscheibe, keine gemessene Beleuchtungsstärke am Standort. Das Binding-Icon zeigt die entsprechende Phase in acht Stufen; der genaue Prozentwert steht daneben.
 
+Hinter dem Prozentwert zeigt `+` einen zunehmenden Mond an (z. B. `75 % +`), `−` einen abnehmenden Mond (z. B. `75 % −`). Die Zuordnung verwendet dasselbe `moonPhaseItem` wie das Icon: `WAXING_CRESCENT`, `FIRST_QUARTER` und `WAXING_GIBBOUS` ergeben `+`; `WANING_GIBBOUS`, `THIRD_QUARTER` und `WANING_CRESCENT` ergeben `−`. Bei Vollmond, Neumond oder unbekannter Phase entfällt der Zusatz. Fehlt der Prozentwert, erscheint nur `—`. Zusätzliche Items, Regeln oder Persistence sind dafür nicht erforderlich. Im Testmodus erscheint `75 % +`.
+
 Ungültige Zeiten erscheinen als `—`. Veraltete oder unvollständige Sonnenzeiten werden nicht für Tageslänge und Countdown verwendet. Die Uhrzeit und Ereignisse werden in der lokalen Zeitzone des Anzeigegeräts dargestellt; für die vorhandene Installation ist dies Europe/Amsterdam bzw. Europe/Berlin. Die Geräte sollten auf dieselbe Ortszeit eingestellt sein.
 
 ## Konfiguration auf der Overview

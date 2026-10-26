@@ -119,8 +119,10 @@ widgets:
               HH:mm') : 'Keine Daten'"
             percent: "=(value) => /^\\s*(?:100(?:[.,]0+)?|[0-9]{1,2}(?:[.,][0-9]+)?)\\s*%?\\s*$/.test(value)
               ? Math.round(Number.parseFloat(value.replace(',','.'))*10)/10 : -1"
-            percentText: "=(p) => p >= 0 ? p.toFixed(1).replace('.',',').replace(',0','')
-              + ' %' : '—'"
+            percentText: "=(p,phase) => p >= 0 ? p.toFixed(1).replace('.',',').replace(',0','')
+              + ' %' + (['WAXING_CRESCENT','FIRST_QUARTER','WAXING_GIBBOUS'].indexOf(phase)
+              >= 0 ? ' +' : ['WANING_GIBBOUS','THIRD_QUARTER','WANING_CRESCENT'].indexOf(phase)
+              >= 0 ? ' −' : '') : '—'"
             phase: "=(value) => ['NEW','WAXING_CRESCENT','FIRST_QUARTER','WAXING_GIBBOUS','FULL','WANING_GIBBOUS','THIRD_QUARTER','WANING_CRESCENT'].indexOf(value)
               >= 0 ? value : ''"
             phaseLabel: "=(phase) => ({NEW:'Neumond',WAXING_CRESCENT:'Zunehmende Sichel',FIRST_QUARTER:'Zunehmender
@@ -224,7 +226,8 @@ widgets:
                   - component: Label
                     config:
                       text: "=fn.percentText(fn.percent(props.demoMode === true ?
-                        '75 %' : fn.read(props.illuminationItem)))"
+                        '75 %' : fn.read(props.illuminationItem)),fn.phase(props.demoMode
+                        === true ? 'WAXING_GIBBOUS' : fn.read(props.moonPhaseItem)))"
                   - component: div
                     config:
                       class: astro-moon-times

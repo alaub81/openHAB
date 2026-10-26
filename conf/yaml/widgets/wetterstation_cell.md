@@ -19,10 +19,13 @@ Die Wurzel ist `oh-cell`. Die Zelle ist nicht aufklappbar; Antippen führt die k
 - Hauptwert: Temperatur, daneben optional die gefühlte Temperatur.
 - Bei zugeordnetem UV-Item zusätzlich rechts der UV-Index mit Bewertung und Farbe.
 - Darunter optional Minimum und Maximum, gekennzeichnet mit `↓` und `↑`.
-- Im unteren Bereich Luftfeuchtigkeit, Regenstatus beziehungsweise 24-Stunden-Niederschlag sowie Windgeschwindigkeit und Windrichtung.
+- Unten links: Luftfeuchtigkeit, Niederschlag der letzten Stunde, danach Niederschlag der letzten 24 Stunden.
+- Unten rechts: Windrichtung, Windgeschwindigkeit, darunter Böengeschwindigkeit mit der dezenten Beschriftung `Böen`.
 - Optional eine Temperatur-Trendlinie im Hintergrund.
 
-Die Schriftgrößen passen sich teilweise an die Breite der Zelle an. Die äußere Kartenhöhe bleibt unverändert. Viele lange Messwerttexte können auf schmalen Zellen dennoch Platz beanspruchen; kurze Formatierungen und passende Einheiten helfen bei der Lesbarkeit.
+Die Schriftgrößen für Temperatur und normale Messwerte richten sich nach der Zellbreite, nicht nach der Anzahl zugeordneter Items. Gleich breite Haus- und Gartenzellen verwenden dafür dieselben Schriftgrößen. Die unteren Messwertzeilen sind 14 Pixel hoch und haben einen Pixel Abstand. Die Höhe bleibt bei 120 Pixeln. Bei einer inneren Breite bis 190 Pixel entfällt das wiederholte Wind-Icon in der Böenzeile, damit Wert und Beschriftung passen. Nicht zugeordnete Zusatzwerte verschwinden; die Regenmengen sind mit `1h` beziehungsweise `24h` gekennzeichnet.
+
+Sehr lange Niederschlagswerte werden bei Bedarf etwas kleiner dargestellt. Die Schriftgrößen passen sich teilweise an die Breite der Zelle an. Die äußere Kartenhöhe bleibt unverändert. Viele lange Messwerttexte können auf schmalen Zellen dennoch Platz beanspruchen; kurze Formatierungen und passende Einheiten helfen bei der Lesbarkeit.
 
 ## Parameter: Titel und Messwerte
 
@@ -47,6 +50,7 @@ Das Widget berechnet weder gefühlte Temperatur noch Tagesminimum oder Tagesmaxi
 | `rainItem` | Binärer Regenstatus | Zeigt, ob es gerade regnet. Keine Niederschlagsmenge. |
 | `rainWetState` | Rohzustand | Regen erkannt; Standard `ON`. Beispielsweise auch `OPEN` oder `1`. |
 | `rainDryState` | Rohzustand | Trocken; Standard `OFF`. Beispielsweise auch `CLOSED` oder `0`. |
+| `rain1hItem` | Niederschlagsmenge der letzten Stunde | Optional, beispielsweise in Millimetern. |
 | `rain24hItem` | Niederschlagsmenge der letzten 24 Stunden | Optional, beispielsweise in Millimetern. |
 
 Die Rohzustände werden exakt und mit Beachtung der Groß-/Kleinschreibung verglichen:
@@ -56,7 +60,9 @@ Die Rohzustände werden exakt und mit Beachtung der Groß-/Kleinschreibung vergl
 - Anderer oder nicht verfügbarer Status: graues Fragezeichen-Icon.
 - Nur eine 24-Stunden-Menge, ohne binären Sensor: blaues Tropfen-Icon.
 
-Wenn `rain24hItem` zugeordnet ist, steht die Menge neben dem Regen- beziehungsweise Tropfensymbol. Ohne Mengen-Item zeigt der Bereich nur das Statussymbol. Die Beschriftung für den aktuellen Regenstatus ist zusätzlich als Tooltip beziehungsweise zugänglicher Text hinterlegt.
+Wenn `rain24hItem` zugeordnet ist, steht die Menge neben dem Regen- beziehungsweise Tropfensymbol. Ohne Mengen-Item zeigt der Bereich nur das Statussymbol. Die Zeiträume der Niederschlagsmengen sind zusätzlich als Tooltip beziehungsweise zugänglicher Text hinterlegt.
+
+Die Stundenmenge wird ebenfalls vom zugeordneten Item geliefert; das Widget berechnet keine Niederschlagssummen.
 
 Die 24-Stunden-Menge ist eine **rollierende Summe der letzten 24 Stunden**. Sie sollte nicht durch einen Gesamtzähler oder eine seit Mitternacht zurückgesetzte Tagesmenge ersetzt werden. Das Widget bildet diese Summe nicht selbst.
 
@@ -65,6 +71,7 @@ Die 24-Stunden-Menge ist eine **rollierende Summe der letzten 24 Stunden**. Sie 
 | Parameter | Inhalt | Funktion |
 | --- | --- | --- |
 | `windSpeedItem` | Windgeschwindigkeit mit gewünschter Einheit | Der Zahlenanteil wird auf eine Nachkommastelle formatiert; die Einheit wird übernommen. |
+| `windGustItem` | Böengeschwindigkeit mit gewünschter Einheit | Optional, unterhalb der Windgeschwindigkeit. Zahlenanteil auf eine Nachkommastelle. |
 | `windDirectionItem` | Windherkunft als Gradwert oder Himmelsrichtung | Textanzeige der Herkunft und ein um 180° versetzter Richtungspfeil. |
 
 Bei Gradwerten gilt `0 = N`, `90 = O`, `180 = S`, `270 = W`. Das Widget ordnet die Werte der nächstgelegenen von 16 Himmelsrichtungen zu:

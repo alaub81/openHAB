@@ -179,13 +179,27 @@ widgets:
         min: 0
         max: 100
         description: 0 = unsichtbar, 100 = volle Deckkraft. Standard 20 %. Bei Bedarf z. B. auf 40 % erhöhen.
+      - name: rain1hItem
+        label: Niederschlag letzte Stunde
+        type: TEXT
+        context: item
+        groupName: regen
+        description: Optional. Gemessene Niederschlagsmenge der letzten Stunde in mm.
+      - name: windGustItem
+        label: Böengeschwindigkeit
+        type: TEXT
+        context: item
+        groupName: wind
+        description: Optional. Item mit der gemessenen Böengeschwindigkeit inklusive Einheit.
     component: oh-cell
     config:
       title: "=props.title || 'Garten'"
       expandable: false
       action: analyzer
       actionAnalyzerItems: "=props.temperatureItem ? [props.temperatureItem] : []"
-      stylesheet: ".cell-contents { display: none; }"
+      stylesheet: |-
+        .cell-contents { display: none; }
+        @container (max-width: 190px) { .weather-wind-gust .weather-gust-icon { display: none !important; } }
       actionPropsParameterGroup: "=props.action != null ? 'action' : ''"
     slots:
       background:
@@ -223,11 +237,11 @@ widgets:
                 position: absolute
                 inset: 0
                 box-sizing: border-box
-                padding: 9px 8px
+                padding: 8px 8px 6px
                 container-type: inline-size
                 display: grid
-                grid-template-rows: "='18px 28px' + ((fn.has(props.minItem) || fn.has(props.maxItem)) ? ' 14px' : '') + (((fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)) || (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem))) ? ' auto' : '')"
-                row-gap: 2px
+                grid-template-rows: "='18px 28px' + ((fn.has(props.minItem) || fn.has(props.maxItem)) ? ' 12px' : '') + (((fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain1hItem) || fn.has(props.rain24hItem)) || (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem) || fn.has(props.windGustItem))) ? ' auto' : '')"
+                row-gap: 1px
                 color: var(--f7-text-color)
                 cursor: pointer
                 font-variant-numeric: tabular-nums
@@ -276,7 +290,7 @@ widgets:
                       role: group
                       aria-label: Beleuchtungsstärke
                       style:
-                        display: flex
+                        display: "=(fn.has(props.luxItem)) ? 'flex' : 'none'"
                         align-items: center
                         gap: 3px
                         min-width: 0
@@ -320,7 +334,7 @@ widgets:
                       style:
                         white-space: nowrap
                         min-width: 0
-                        font-size: "=fn.has(props.uvItem) ? 'clamp(16px, 11.5cqw, 24px)' : 'clamp(18px, 13cqw, 24px)'"
+                        font-size: clamp(18px, 12cqw, 24px)
                         line-height: 28px
                         flex-shrink: 0
                   - component: div
@@ -330,7 +344,7 @@ widgets:
                       role: group
                       aria-label: Gefühlte Temperatur
                       style:
-                        display: flex
+                        display: "=(fn.has(props.feelsLikeItem)) ? 'flex' : 'none'"
                         align-items: center
                         gap: 3px
                         flex-shrink: 0
@@ -363,27 +377,30 @@ widgets:
                     white-space: nowrap
                     min-width: 0
                     font-size: clamp(9.5px, 6cqw, 11px)
-                    line-height: 14px
+                    line-height: 12px
                     opacity: 0.85
+                    display: "=(fn.has(props.minItem) || fn.has(props.maxItem)) ? 'block' : 'none'"
+                    position: relative
+                    top: "-3px"
                   visible: "=fn.has(props.minItem) || fn.has(props.maxItem)"
               - component: div
                 config:
                   style:
-                    display: grid
-                    grid-template-columns: "=(fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)) && (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem)) ? 'minmax(0, 1fr) minmax(0, 1.2fr)' : 'minmax(0, 1fr)'"
+                    display: "=((fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain1hItem) || fn.has(props.rain24hItem)) || (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem) || fn.has(props.windGustItem))) ? 'grid' : 'none'"
+                    grid-template-columns: "=(fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain1hItem) || fn.has(props.rain24hItem)) && (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem) || fn.has(props.windGustItem)) ? ((fn.has(props.rain1hItem) || fn.has(props.windGustItem)) ? 'minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1.2fr)') : 'minmax(0, 1fr)'"
                     column-gap: 6px
                     align-items: start
-                  visible: "=(fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)) || (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem))"
+                  visible: "=(fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain1hItem) || fn.has(props.rain24hItem)) || (fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem) || fn.has(props.windGustItem))"
                 slots:
                   default:
                   - component: div
                     config:
                       style:
-                        display: grid
-                        row-gap: 2px
+                        display: "=(fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain1hItem) || fn.has(props.rain24hItem)) ? 'grid' : 'none'"
+                        row-gap: 1px
                         min-width: 0
-                        grid-auto-rows: 16px
-                      visible: "=fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain24hItem)"
+                        grid-auto-rows: 14px
+                      visible: "=fn.has(props.humidityItem) || fn.has(props.rainItem) || fn.has(props.rain1hItem) || fn.has(props.rain24hItem)"
                     slots:
                       default:
                       - component: div
@@ -392,9 +409,9 @@ widgets:
                           role: group
                           aria-label: Luftfeuchtigkeit
                           style:
-                            display: flex
+                            display: "=(fn.has(props.humidityItem)) ? 'flex' : 'none'"
                             align-items: center
-                            gap: 3px
+                            gap: 1px
                             min-width: 0
                             flex-shrink: 0
                           visible: "=fn.has(props.humidityItem)"
@@ -404,126 +421,152 @@ widgets:
                             config:
                               icon: f7:gauge
                               color: blue
-                              width: 13
-                              height: 13
+                              width: 12
+                              height: 12
                               style:
                                 display: block
                                 flex-shrink: 0
-                                width: 13px
-                                height: 13px
+                                width: 12px
+                                height: 12px
                           - component: Label
                             config:
                               text: "=fn.value(props.humidityItem)"
                               style:
                                 white-space: nowrap
                                 min-width: 0
-                                font-size: clamp(9.5px, 6.5cqw, 11px)
-                                line-height: 16px
+                                font-size: clamp(8.5px, 5.8cqw, 11px)
+                                line-height: 14px
                                 font-weight: 500
                       - component: div
                         config:
-                          title: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt') : 'Niederschlagsmenge letzte 24 Stunden'"
+                          title: Niederschlag letzte Stunde
                           role: group
-                          aria-label: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] ? (items[props.rainItem].state === (props.rainWetState || 'ON') ? 'Regen aktuell: Ja' : items[props.rainItem].state === (props.rainDryState || 'OFF') ? 'Regen aktuell: Nein' : 'Regen aktuell: unbekannt') : 'Regen aktuell: unbekannt') : 'Niederschlagsmenge letzte 24 Stunden'"
+                          aria-label: Niederschlag letzte Stunde
                           style:
-                            display: flex
+                            display: "=(fn.has(props.rain1hItem)) ? 'flex' : 'none'"
                             align-items: center
-                            gap: 3px
+                            gap: 1px
                             min-width: 0
                             flex-shrink: 0
-                          visible: "=fn.has(props.rainItem) || fn.has(props.rain24hItem)"
+                          visible: "=fn.has(props.rain1hItem)"
+                          class: weather-rain-1h
                         slots:
                           default:
                           - component: oh-icon
                             config:
                               icon: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] && (items[props.rainItem].state === (props.rainWetState || 'ON') || items[props.rainItem].state === (props.rainDryState || 'OFF')) ? 'f7:cloud_rain' : 'f7:question_circle') : 'f7:drop'"
                               color: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] && items[props.rainItem].state === (props.rainWetState || 'ON') ? 'blue' : 'gray') : 'blue'"
-                              width: 13
-                              height: 13
+                              width: 12
+                              height: 12
                               style:
                                 display: block
                                 flex-shrink: 0
-                                width: 13px
-                                height: 13px
+                                width: 12px
+                                height: 12px
+                          - component: Label
+                            config:
+                              text: "=fn.value(props.rain1hItem)"
+                              style:
+                                white-space: nowrap
+                                min-width: 0
+                                font-size: "=fn.value(props.rain1hItem).length >= 8 ? 'clamp(8px, 5.5cqw, 11px)' : 'clamp(8.5px, 5.8cqw, 11px)'"
+                                line-height: 14px
+                                font-weight: 500
+                                display: "=(fn.has(props.rain1hItem)) ? 'block' : 'none'"
+                              visible: "=fn.has(props.rain1hItem)"
+                          - component: Label
+                            config:
+                              text: 1h
+                              visible: "=fn.has(props.rain1hItem)"
+                              style:
+                                font-size: clamp(7px, 4.8cqw, 8px)
+                                line-height: 13px
+                                opacity: 0.65
+                                white-space: nowrap
+                                display: "=(fn.has(props.rain1hItem)) ? 'block' : 'none'"
+                      - component: div
+                        config:
+                          title: Niederschlag letzte 24 Stunden
+                          role: group
+                          aria-label: Niederschlag letzte 24 Stunden
+                          style:
+                            display: "=(fn.has(props.rainItem) || fn.has(props.rain24hItem)) ? 'flex' : 'none'"
+                            align-items: center
+                            gap: 1px
+                            min-width: 0
+                            flex-shrink: 0
+                          visible: "=fn.has(props.rainItem) || fn.has(props.rain24hItem)"
+                          class: weather-rain-24h
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] && (items[props.rainItem].state === (props.rainWetState || 'ON') || items[props.rainItem].state === (props.rainDryState || 'OFF')) ? 'f7:cloud_rain' : 'f7:question_circle') : 'f7:drop'"
+                              color: "=fn.has(props.rainItem) ? (props.rainItem && items[props.rainItem] && items[props.rainItem].state === (props.rainWetState || 'ON') ? 'blue' : 'gray') : 'blue'"
+                              width: 12
+                              height: 12
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 12px
+                                height: 12px
                           - component: Label
                             config:
                               text: "=fn.value(props.rain24hItem)"
                               style:
                                 white-space: nowrap
                                 min-width: 0
-                                font-size: clamp(9.5px, 6.5cqw, 11px)
-                                line-height: 16px
+                                font-size: "=fn.value(props.rain24hItem).length >= 8 ? 'clamp(8px, 5.5cqw, 11px)' : 'clamp(8.5px, 5.8cqw, 11px)'"
+                                line-height: 14px
                                 font-weight: 500
+                                display: "=(fn.has(props.rain24hItem)) ? 'block' : 'none'"
                               visible: "=fn.has(props.rain24hItem)"
+                          - component: Label
+                            config:
+                              text: 24h
+                              visible: "=fn.has(props.rain24hItem)"
+                              style:
+                                font-size: clamp(7px, 4.8cqw, 8px)
+                                line-height: 13px
+                                opacity: 0.65
+                                white-space: nowrap
+                                display: "=(fn.has(props.rain24hItem)) ? 'block' : 'none'"
                   - component: div
                     config:
                       style:
-                        display: grid
-                        row-gap: 2px
+                        display: "=(fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem) || fn.has(props.windGustItem)) ? 'grid' : 'none'"
+                        row-gap: 1px
                         min-width: 0
-                        grid-auto-rows: 16px
-                      visible: "=fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem)"
+                        grid-auto-rows: 14px
+                      visible: "=fn.has(props.windSpeedItem) || fn.has(props.windDirectionItem) || fn.has(props.windGustItem)"
                     slots:
                       default:
                       - component: div
                         config:
-                          title: Windgeschwindigkeit
+                          title: Windrichtung
                           role: group
-                          aria-label: Windgeschwindigkeit
+                          aria-label: Windrichtung
                           style:
-                            display: flex
+                            display: "=(fn.has(props.windDirectionItem)) ? 'flex' : 'none'"
                             align-items: center
-                            gap: 3px
-                            min-width: 0
-                            flex-shrink: 0
-                          visible: "=fn.has(props.windSpeedItem)"
-                        slots:
-                          default:
-                          - component: oh-icon
-                            config:
-                              icon: f7:wind
-                              color: teal
-                              width: 13
-                              height: 13
-                              style:
-                                display: block
-                                flex-shrink: 0
-                                width: 13px
-                                height: 13px
-                          - component: Label
-                            config:
-                              text: "=fn.short(fn.value(props.windSpeedItem))"
-                              style:
-                                white-space: nowrap
-                                min-width: 0
-                                font-size: clamp(9.5px, 6.5cqw, 11px)
-                                line-height: 16px
-                                font-weight: 500
-                      - component: div
-                        config:
-                          title: Windherkunft; der Pfeil zeigt die Richtung, in die der Wind weht
-                          role: group
-                          aria-label: Windherkunft; der Pfeil zeigt die Richtung, in die der Wind weht
-                          style:
-                            display: flex
-                            align-items: center
-                            gap: 3px
+                            gap: 1px
                             min-width: 0
                             flex-shrink: 0
                           visible: "=fn.has(props.windDirectionItem)"
+                          class: weather-wind-direction
                         slots:
                           default:
                           - component: oh-icon
                             config:
                               icon: f7:location_north
                               color: teal
-                              width: 13
-                              height: 13
+                              width: 12
+                              height: 12
                               style:
                                 display: block
                                 flex-shrink: 0
-                                width: 13px
-                                height: 13px
+                                width: 12px
+                                height: 12px
                                 transform: "='rotate(' + ((Math.max(0, ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'].indexOf(fn.direction(props.windDirectionItem))) * 22.5 + 180) % 360) + 'deg)'"
                           - component: Label
                             config:
@@ -531,9 +574,89 @@ widgets:
                               style:
                                 white-space: nowrap
                                 min-width: 0
-                                font-size: clamp(9.5px, 6.5cqw, 11px)
-                                line-height: 16px
+                                font-size: clamp(8.5px, 5.8cqw, 11px)
+                                line-height: 14px
                                 font-weight: 500
+                      - component: div
+                        config:
+                          title: Windgeschwindigkeit
+                          role: group
+                          aria-label: Windgeschwindigkeit
+                          style:
+                            display: "=(fn.has(props.windSpeedItem)) ? 'flex' : 'none'"
+                            align-items: center
+                            gap: 1px
+                            min-width: 0
+                            flex-shrink: 0
+                          visible: "=fn.has(props.windSpeedItem)"
+                          class: weather-wind-speed
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:wind
+                              color: teal
+                              width: 12
+                              height: 12
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 12px
+                                height: 12px
+                          - component: Label
+                            config:
+                              text: "=fn.short(fn.value(props.windSpeedItem))"
+                              style:
+                                white-space: nowrap
+                                min-width: 0
+                                font-size: clamp(8.5px, 5.8cqw, 11px)
+                                line-height: 14px
+                                font-weight: 500
+                      - component: div
+                        config:
+                          title: Böengeschwindigkeit
+                          role: group
+                          aria-label: Böengeschwindigkeit
+                          style:
+                            display: "=(fn.has(props.windGustItem)) ? 'flex' : 'none'"
+                            align-items: center
+                            gap: 1px
+                            min-width: 0
+                            flex-shrink: 0
+                          visible: "=fn.has(props.windGustItem)"
+                          class: weather-wind-gust
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:wind
+                              color: teal
+                              width: 12
+                              height: 12
+                              style:
+                                display: block
+                                flex-shrink: 0
+                                width: 12px
+                                height: 12px
+                              class: weather-gust-icon
+                          - component: Label
+                            config:
+                              text: "=fn.short(fn.value(props.windGustItem))"
+                              style:
+                                white-space: nowrap
+                                min-width: 0
+                                font-size: clamp(8.5px, 5.8cqw, 11px)
+                                line-height: 14px
+                                font-weight: 500
+                          - component: Label
+                            config:
+                              text: Böen
+                              style:
+                                font-size: clamp(7px, 4.8cqw, 8px)
+                                line-height: 13px
+                                opacity: 0.65
+                                white-space: nowrap
+                                flex-shrink: 0
               - component: div
                 config:
                   class: weather-uv

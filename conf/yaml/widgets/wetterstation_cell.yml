@@ -191,15 +191,19 @@ widgets:
         context: item
         groupName: wind
         description: Optional. Item mit der gemessenen Böengeschwindigkeit inklusive Einheit.
+      - name: windGustIcon
+        label: Böen-Icon
+        type: TEXT
+        groupName: wind
+        default: f7:tornado
+        description: Eigenes Icon für Böen. Wird auch in schmalen Zellen angezeigt.
     component: oh-cell
     config:
       title: "=props.title || 'Garten'"
       expandable: false
       action: analyzer
       actionAnalyzerItems: "=props.temperatureItem ? [props.temperatureItem] : []"
-      stylesheet: |-
-        .cell-contents { display: none; }
-        @container (max-width: 190px) { .weather-wind-gust .weather-gust-icon { display: none !important; } }
+      stylesheet: ".cell-contents { display: none; }"
       actionPropsParameterGroup: "=props.action != null ? 'action' : ''"
     slots:
       background:
@@ -595,7 +599,7 @@ widgets:
                           - component: oh-icon
                             config:
                               icon: f7:wind
-                              color: teal
+                              color: "=Number.isFinite(Number.parseFloat(fn.short(fn.value(props.windSpeedItem)).replace(',', '.'))) && Number.parseFloat(fn.short(fn.value(props.windSpeedItem)).replace(',', '.')) > 0 ? 'teal' : 'gray'"
                               width: 12
                               height: 12
                               style:
@@ -629,8 +633,8 @@ widgets:
                           default:
                           - component: oh-icon
                             config:
-                              icon: f7:wind
-                              color: teal
+                              icon: "=props.windGustIcon || 'f7:tornado'"
+                              color: "=Number.isFinite(Number.parseFloat(fn.short(fn.value(props.windGustItem)).replace(',', '.'))) && Number.parseFloat(fn.short(fn.value(props.windGustItem)).replace(',', '.')) > 0 ? 'teal' : 'gray'"
                               width: 12
                               height: 12
                               style:
@@ -648,15 +652,6 @@ widgets:
                                 font-size: clamp(8.5px, 5.8cqw, 11px)
                                 line-height: 14px
                                 font-weight: 500
-                          - component: Label
-                            config:
-                              text: Böen
-                              style:
-                                font-size: clamp(7px, 4.8cqw, 8px)
-                                line-height: 13px
-                                opacity: 0.65
-                                white-space: nowrap
-                                flex-shrink: 0
               - component: div
                 config:
                   class: weather-uv

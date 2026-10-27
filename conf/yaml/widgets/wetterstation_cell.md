@@ -20,10 +20,10 @@ Die Wurzel ist `oh-cell`. Die Zelle ist nicht aufklappbar; Antippen führt die k
 - Bei zugeordnetem UV-Item zusätzlich rechts der UV-Index mit Bewertung und Farbe.
 - Darunter optional Minimum und Maximum, gekennzeichnet mit `↓` und `↑`.
 - Unten links: Luftfeuchtigkeit, Niederschlag der letzten Stunde, danach Niederschlag der letzten 24 Stunden.
-- Unten rechts: Windrichtung, Windgeschwindigkeit, darunter Böengeschwindigkeit mit der dezenten Beschriftung `Böen`.
+- Unten rechts: Windrichtung, Windgeschwindigkeit, darunter Böengeschwindigkeit mit eigenem Wirbel-Icon (`f7:tornado`).
 - Optional eine Temperatur-Trendlinie im Hintergrund.
 
-Die Schriftgrößen für Temperatur und normale Messwerte richten sich nach der Zellbreite, nicht nach der Anzahl zugeordneter Items. Gleich breite Haus- und Gartenzellen verwenden dafür dieselben Schriftgrößen. Die unteren Messwertzeilen sind 14 Pixel hoch und haben einen Pixel Abstand. Die Höhe bleibt bei 120 Pixeln. Bei einer inneren Breite bis 190 Pixel entfällt das wiederholte Wind-Icon in der Böenzeile, damit Wert und Beschriftung passen. Nicht zugeordnete Zusatzwerte verschwinden; die Regenmengen sind mit `1h` beziehungsweise `24h` gekennzeichnet.
+Die Schriftgrößen für Temperatur und normale Messwerte richten sich nach der Zellbreite, nicht nach der Anzahl zugeordneter Items. Gleich breite Haus- und Gartenzellen verwenden dafür dieselben Schriftgrößen. Die unteren Messwertzeilen sind 14 Pixel hoch und haben einen Pixel Abstand. Die Höhe bleibt bei 120 Pixeln. Das Böen-Icon bleibt auch in schmalen Zellen sichtbar. Auf den Textzusatz „Böen“ wird zugunsten des vollständigen Messwerts verzichtet. Nicht zugeordnete Zusatzwerte verschwinden; die Regenmengen sind mit `1h` beziehungsweise `24h` gekennzeichnet.
 
 Sehr lange Niederschlagswerte werden bei Bedarf etwas kleiner dargestellt. Die Schriftgrößen passen sich teilweise an die Breite der Zelle an. Die äußere Kartenhöhe bleibt unverändert. Viele lange Messwerttexte können auf schmalen Zellen dennoch Platz beanspruchen; kurze Formatierungen und passende Einheiten helfen bei der Lesbarkeit.
 
@@ -71,6 +71,7 @@ Die 24-Stunden-Menge ist eine **rollierende Summe der letzten 24 Stunden**. Sie 
 | Parameter | Inhalt | Funktion |
 | --- | --- | --- |
 | `windSpeedItem` | Windgeschwindigkeit mit gewünschter Einheit | Der Zahlenanteil wird auf eine Nachkommastelle formatiert; die Einheit wird übernommen. |
+| `windGustIcon` | Icon für Böengeschwindigkeit | Standard `f7:tornado`; frei konfigurierbar. |
 | `windGustItem` | Böengeschwindigkeit mit gewünschter Einheit | Optional, unterhalb der Windgeschwindigkeit. Zahlenanteil auf eine Nachkommastelle. |
 | `windDirectionItem` | Windherkunft als Gradwert oder Himmelsrichtung | Textanzeige der Herkunft und ein um 180° versetzter Richtungspfeil. |
 
@@ -88,6 +89,8 @@ Für textuelle Zustände sollten genau diese Kürzel verwendet werden, insbesond
 | `O` | Westen |
 | `SW` | Nordosten |
 | `W` | Osten |
+
+Wind- und Böen-Icon werden getrennt eingefärbt: Ein angezeigter Wert von 0 oder ein unbekannter Messwert ergibt ein graues Icon; positive Werte ergeben Türkis. Maßgeblich ist der auf eine Nachkommastelle gerundete Anzeigewert. Das Windrichtungs-Icon bleibt unverändert.
 
 Die Windgeschwindigkeit wird durch das Widget nicht in eine andere Einheit umgerechnet. Bei nicht auswertbaren Richtungstexten ist die Pfeilrichtung nicht verlässlich; deshalb passende Rohwerte beziehungsweise Kürzel zuordnen.
 

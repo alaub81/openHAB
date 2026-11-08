@@ -3,3 +3,4 @@ openhab_api_key
 /archive/
 data/openhab/conf/items/thermostat*.items
 AGENTS.md
+/backups/

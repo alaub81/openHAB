@@ -104,6 +104,12 @@ Autoheal's own check runs every 60 seconds and its monitoring loop every 120
 seconds. `unhealthy` alone does not restart a container; Autoheal selects the
 containers carrying its configured label.
 
+## Grafana process user
+
+Grafana uses the image default non-root user. For an existing installation that
+previously ran as root, follow the [migration and verification guide](docs/grafana-non-root-migration.md)
+to back up data, adjust volume permissions, and verify the running service.
+
 ## Scripts / Tools
 
 here you can find some usefull scripts I am using to administrate my openHAB setup. For example there are some scripts to do things in the persistence layer - influxDB. Or to bring more stability into the digitalstrom binding. Just have a look at the descriptions on top of each script.

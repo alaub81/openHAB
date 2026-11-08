@@ -7,6 +7,7 @@ services:
       mosquitto:
         condition: service_healthy
     restart: unless-stopped
+    stop_grace_period: 2m
     # if you do not need persistent log files
     #tmpfs:
     #   - /openhab/userdata/logs
@@ -67,6 +68,7 @@ services:
   influxdb:
     image: influxdb:${INFLUXDB_VERSION}
     restart: unless-stopped
+    stop_grace_period: 1m
     volumes:
       - "./data/influxdb/conf:/etc/influxdb2"
       - data_influxdb:/var/lib/influxdb2
@@ -100,6 +102,7 @@ services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
     restart: unless-stopped
+    stop_grace_period: 1m
     volumes:
       - data_postgres:/var/lib/postgresql/
     environment:
@@ -158,13 +161,12 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    user: "0"
     volumes:
       - data_grafana:/var/lib/grafana
     ports:
       - ${GRAFANA_HTTP_PORT}:3000
     environment:
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,briangann-gauge-panel,natel-plotly-panel,grafana-simple-json-datasource,volkovlabs-image-panel
+      - GF_PLUGINS_PREINSTALL_SYNC=grafana-clock-panel,briangann-gauge-panel,natel-plotly-panel,grafana-simple-json-datasource,volkovlabs-image-panel
       - GF_SERVER_ROOT_URL=${GRAFANA_SERVER_ROOT_URL}
       - GF_SMTP_ENABLED=${GRAFANA_SMTP_ENABLED}
       - GF_SMTP_HOST=${GRAFANA_SMTP_HOST}
@@ -180,7 +182,8 @@ services:
       - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE=true
       - GF_RENDERING_SERVER_URL=http://renderer:8081/render
       - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
-      - GF_LOG_FILTERS=rendering:debug
+      # Optional: enable rendering debug logs for troubleshooting.
+      # - GF_LOG_FILTERS=rendering:debug
       # for anonymous access to embedding graphs
       #- GF_AUTH_ANONYMOUS_ENABLED=true
       #- GF_SECURITY_ALLOW_EMBEDDING=true      

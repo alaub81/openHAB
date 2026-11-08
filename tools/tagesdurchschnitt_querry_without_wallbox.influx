@@ -1,0 +1,44 @@
+        //import "timezone"
+        import "date"
+        //option location = timezone.location(name: "Europe/Berlin")
+        // Today at midnight
+        nowTruncated = date.truncate(t: now(), unit: 1d)
+
+        // --- 1. Daily electricity consumption ---
+        verbrauch = from(bucket: "openhab_db")
+        //  |> range(start: -10d, stop: -1d)
+          |> range(start: date.sub(from: nowTruncated, d: 7d), stop: nowTruncated)
+          |> filter(fn: (r) =>
+            r["_measurement"] == "Strom_Tagesverbrauch_Number_Result" and
+            r["_field"] == "value"
+          )
+          |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
+          |> map(fn: (r) => ({
+              _time: date.truncate(t: r._time, unit: 1d),
+              _value: r._value,
+              _field: "verbrauch"
+          }))
+          |> keep(columns: ["_time", "_value", "_field"])
+
+        // --- 2. Days with wallbox activity ---
+        wallbox = from(bucket: "openhab_db")
+          |> range(start: date.sub(from: nowTruncated, d: 7d), stop: nowTruncated)
+          |> filter(fn: (r) => r["_measurement"] == "Wallbox_Switch")
+          |> aggregateWindow(every: 1d, fn: mean, createEmpty: true)
+          |> map(fn: (r) => ({
+              _time: date.truncate(t: r._time, unit: 1d),
+              _value: if exists r._value then (if r._value > 0.1 then 1.0 else 0.0) else 0.0,
+              _field: "wallbox"
+          }))
+          |> keep(columns: ["_time", "_value", "_field"])
+
+        // --- 3. Merge matching days ---
+        union(tables: [verbrauch, wallbox])
+          |> group(columns: ["_time"])  // per day
+          |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+          |> filter(fn: (r) =>
+            exists r.verbrauch and exists r.wallbox and r.wallbox < 0.1
+          )
+          |> group()  // combine all rows into one group for the overall mean
+          |> mean(column: "verbrauch")
+          |> map(fn: (r) => ({ _time: now(), _value: r.verbrauch }))

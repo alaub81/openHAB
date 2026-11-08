@@ -1,0 +1,322 @@
+---
+version: 1
+blocks:
+  lhlab_humity_alarm_library:
+    component: BlockLibrary
+    tags:
+    - alarm
+    - humidity
+    - laub-home
+    props:
+      parameters: []
+      parameterGroups: []
+    config:
+      name: lhlab – Luftfeuchtigkeitsalarme
+    slots:
+      blocks:
+      - component: BlockType
+        config:
+          type: monitor
+          message0: |-
+            Luftfeuchtigkeit überwachen
+            Sensorgruppe %1
+            Alarmgruppe %2
+            Warnschwelle (%) %3
+            Ausnahmen (Liste) %4
+            extern ausgewertete Alarm-Items (Liste) %5
+            frühestens nach Stunden erneut warnen %6
+            Meldungen bündeln (Sekunden) %7
+            bei Alarm %8
+            bei Entwarnung %9
+          args0:
+          - type: input_value
+            name: SENSORS
+            check:
+            - String
+            - oh_item
+          - type: input_value
+            name: ALARMS
+            check:
+            - String
+            - oh_item
+          - type: field_number
+            name: THRESHOLD
+            value: 75
+            min: 0
+            max: 100
+          - type: input_value
+            name: OVERRIDES
+            check: Array
+          - type: input_value
+            name: EXTERNAL
+            check: Array
+          - type: field_number
+            name: REPEAT
+            value: 12
+            min: 1
+          - type: field_number
+            name: DELAY
+            value: 2
+            min: 1
+            max: 30
+          - type: input_statement
+            name: ALARM
+          - type: input_statement
+            name: CLEAR
+          previousStatement: ''
+          nextStatement: ''
+          inputsInline: false
+          colour: 15
+          tooltip: Ordnet Feuchtesensoren und Alarm-Items über den semantischen Raum
+            zu. Pro Raum ein Sensor und ein Alarm. Unbekannte Werte ändern den Alarm
+            nicht. Wiederholungen erfolgen bei neuen Messwerten, ohne zwölfstündige
+            Timer. Beim Technikraum bleibt die MQTT-Auswertung zuständig. Meldung
+            über „aktueller Alarm → Meldung“ aus der Alarmverwaltung abrufen.
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: "{{utility:lhlab_humidity_monitor}}({\n      sensorGroup:
+                [{{input:SENSORS}}][0], alarmGroup: [{{input:ALARMS}}][0],\n      threshold:
+                {{field:THRESHOLD}}, overrides: [{{input:OVERRIDES}}][0],\n      externalAlarms:
+                [{{input:EXTERNAL}}][0], repeatHours: {{field:REPEAT}}, delaySeconds:
+                {{field:DELAY}}\n    }, (typeof event === 'undefined' ? null : event),
+                function(lhlabAlarmEvent) {\n    {{statements:ALARM}}\n    }, function(lhlabAlarmEvent)
+                {\n    {{statements:CLEAR}}\n    }, false);\n    "
+          toolbox:
+          - component: PresetInput
+            config:
+              name: SENSORS
+              type: text
+              shadow: true
+              fields:
+                TEXT: Humidity_Innen_ALL
+          - component: PresetInput
+            config:
+              name: ALARMS
+              type: text
+              shadow: true
+              fields:
+                TEXT: Humidity_Alarm
+          - component: PresetInput
+            config:
+              name: OVERRIDES
+              type: lists_create_empty
+              shadow: true
+              fields: {}
+          - component: PresetInput
+            config:
+              name: EXTERNAL
+              type: lists_create_empty
+              shadow: true
+              fields: {}
+      - component: BlockType
+        config:
+          type: threshold
+          message0: Feuchtesensor %1 Warnschwelle (%) %2
+          args0:
+          - type: input_value
+            name: SENSOR
+            check:
+            - String
+            - oh_item
+          - type: field_number
+            name: THRESHOLD
+            value: 80
+            min: 0
+            max: 100
+          output: lhlab_humidity_threshold
+          colour: 15
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: "({sensor: [{{input:SENSOR}}][0], threshold: {{field:THRESHOLD}}})"
+          toolbox:
+          - component: PresetInput
+            config:
+              name: SENSOR
+              type: text
+              shadow: true
+              fields:
+                TEXT: ''
+      utilities:
+      - component: UtilityFunction
+        config:
+          name: lhlab_humidity_monitor
+          code: |
+            function {{name}}(config, event, onAlarm, onClear, dryRun) {
+              const api = require('openhab');
+              const prefix = 'lhlab.humidity.v1:' + config.sensorGroup + ':' + config.alarmGroup;
+              const key = suffix => prefix + ':' + suffix;
+              const now = Date.now();
+              const repeatMs = Number(config.repeatHours) * 3600000;
+              const delay = Number(config.delaySeconds);
+              const defaultThreshold = Number(config.threshold);
+              if (!Number.isFinite(defaultThreshold) || defaultThreshold < 0 || defaultThreshold > 100 ||
+                  !Number.isFinite(repeatMs) || repeatMs <= 0 || !Number.isFinite(delay) || delay < 1 || delay > 30) {
+                throw new Error('Luftfeuchtigkeit: ungültige Schwelle, Wiederholzeit oder Bündelungszeit.');
+              }
+              const limits = Object.create(null);
+              (config.overrides || []).forEach(entry => {
+                const value = Number(entry.threshold);
+                if (!entry.sensor || !Number.isFinite(value) || value < 0 || value > 100 || limits[entry.sensor] !== undefined) {
+                  throw new Error('Luftfeuchtigkeit: ungültige oder doppelte Ausnahmeschwelle.');
+                }
+                limits[entry.sensor] = value;
+              });
+              const external = new Set(config.externalAlarms || []);
+              const report = { managed: [], external: [], missing: [], invalid: [], changes: [] };
+              const sensors = () => api.items.getItem(config.sensorGroup).members;
+              const alarms = () => api.items.getItem(config.alarmGroup).members;
+              function location(item) {
+                // Some existing equipment/point combinations have incomplete results from
+                // Semantics.getLocation despite valid generated semantic metadata.
+                const visited = new Set();
+                let current = item;
+                while (current && !visited.has(current.name)) {
+                  visited.add(current.name);
+                  const metadata = api.items.metadata.getMetadata(current.name, 'semantics');
+                  const relation = metadata && metadata.configuration;
+                  if (relation && relation.hasLocation) {
+                    const room = api.items.getItem(String(relation.hasLocation));
+                    return { name: room.name, label: room.label || room.name };
+                  }
+                  current = relation && relation.isPointOf ? api.items.getItem(String(relation.isPointOf)) : null;
+                }
+                const room = api.actions.Semantics.getLocation(item.rawItem);
+                return room ? { name: String(room.getName()), label: String(room.getLabel() || room.getName()) } : null;
+              }
+              function readJSON(name, fallback) {
+                const value = api.cache.private.get(key(name));
+                return value == null ? fallback : JSON.parse(String(value));
+              }
+              function writeJSON(name, value) {
+                api.cache.private.put(key(name), JSON.stringify(value));
+              }
+              function buildIndex() {
+                const byRoom = Object.create(null);
+                const alarmIndex = Object.create(null);
+                alarms().forEach(alarm => {
+                  const room = location(alarm);
+                  if (!room) return;
+                  if (byRoom[room.name]) throw new Error('Mehrere Feuchtigkeitsalarme im Raum ' + room.label);
+                  const entry = { alarm: alarm.name, room: room.label, external: external.has(alarm.name) };
+                  byRoom[room.name] = entry;
+                  alarmIndex[alarm.name] = entry;
+                });
+                const sensorIndex = Object.create(null);
+                const owners = Object.create(null);
+                sensors().forEach(sensor => {
+                  const room = location(sensor);
+                  if (!room || !byRoom[room.name]) return;
+                  const entry = byRoom[room.name];
+                  // Multiple sensors need an explicit aggregation policy, rather than allowing
+                  // the last sensor event to clear another sensor's warning.
+                  if (owners[entry.alarm]) throw new Error('Mehrere Feuchtesensoren im Raum ' + entry.room);
+                  owners[entry.alarm] = sensor.name;
+                  sensorIndex[sensor.name] = entry;
+                });
+                return { sensors: sensorIndex, alarms: alarmIndex, builtAt: now };
+              }
+              let index = dryRun ? null : readJSON('index', null);
+              if (!index || now - index.builtAt >= 300000 ||
+                  (event && event.itemName && !index.sensors[event.itemName] && !index.alarms[event.itemName])) {
+                index = buildIndex();
+                if (!dryRun) writeJSON('index', index);
+              }
+              function lastNotifications() { return readJSON('lastNotifications', {}); }
+              function needsNotification(alarm, state, sent, instant) {
+                if (state === 'ON') return sent[alarm] === undefined || instant - sent[alarm] >= repeatMs;
+                if (state === 'OFF') return sent[alarm] !== undefined;
+                return false;
+              }
+              function roomList(entries) {
+                const rooms = [...new Set(entries.map(entry => entry.room))].sort();
+                return rooms.length < 2 ? rooms.join('') : rooms.slice(0, -1).join(', ') + ' und ' + rooms[rooms.length - 1];
+              }
+              function flush() {
+                api.cache.private.remove(key('pending'));
+                const instant = Date.now();
+                const sent = lastNotifications();
+                const active = [], cleared = [];
+                alarms().forEach(alarm => {
+                  const room = location(alarm);
+                  if (!room || !needsNotification(alarm.name, alarm.state, sent, instant)) return;
+                  const entry = { alarm: alarm.name, room: room.label };
+                  (alarm.state === 'ON' ? active : cleared).push(entry);
+                });
+                if (active.length) {
+                  onAlarm({ kind: 'NEW', message: 'Achtung! Luftfeuchtigkeit im ' + roomList(active) + ' ist zu hoch.',
+                    title: 'Luftfeuchtigkeit', group: config.alarmGroup });
+                  active.forEach(entry => { sent[entry.alarm] = instant; });
+                  writeJSON('lastNotifications', sent);
+                }
+                if (cleared.length) {
+                  onClear({ kind: 'CLEARED', message: 'Luftfeuchtigkeit im ' + roomList(cleared) + ' wieder OK.',
+                    title: 'Luftfeuchtigkeit', group: config.alarmGroup });
+                  cleared.forEach(entry => { delete sent[entry.alarm]; });
+                  writeJSON('lastNotifications', sent);
+                }
+              }
+              function schedule() {
+                if (dryRun) return;
+                const pending = api.cache.private.get(key('pending'));
+                // Fixed deadline: a busy group must not postpone the notification indefinitely.
+                if (pending && pending.isActive()) return;
+                const timer = api.actions.ScriptExecution.createTimer(api.time.ZonedDateTime.now().plusSeconds(delay), function() {
+                  try { flush(); } catch (error) { console.error('Luftfeuchtigkeitsmeldung fehlgeschlagen: ' + error); }
+                });
+                api.cache.private.put(key('pending'), timer);
+              }
+              function evaluate(sensor) {
+                const entry = index.sensors[sensor.name];
+                if (!entry) { report.missing.push(sensor.name); return; }
+                if (entry.external) {
+                  report.external.push(sensor.name);
+                  const alarm = api.items.getItem(entry.alarm);
+                  if (needsNotification(alarm.name, alarm.state, lastNotifications(), now)) schedule();
+                  return;
+                }
+                report.managed.push(sensor.name);
+                // An unavailable sensor must never clear a previously active alarm.
+                const quantity = sensor.quantityState;
+                let humidity;
+                try { humidity = quantity == null ? NaN : Number(quantity.toUnit('%').float); }
+                catch (error) { humidity = NaN; }
+                if (!Number.isFinite(humidity) || humidity < 0 || humidity > 100) {
+                  report.invalid.push(sensor.name);
+                  return;
+                }
+                const threshold = limits[sensor.name] === undefined ? defaultThreshold : limits[sensor.name];
+                const desired = humidity >= threshold ? 'ON' : 'OFF';
+                const alarm = api.items.getItem(entry.alarm);
+                if (alarm.state !== desired) {
+                  report.changes.push({ sensor: sensor.name, alarm: entry.alarm, state: desired });
+                  if (!dryRun) alarm.sendCommandIfDifferent(desired);
+                  // Notification follows the alarm member's state change, not an assumed
+                  // immediate result of the asynchronous command.
+                } else if (needsNotification(alarm.name, desired, lastNotifications(), now)) {
+                  schedule();
+                }
+              }
+              if (dryRun || !event || !event.itemName) {
+                sensors().forEach(evaluate);
+                if (!dryRun) schedule();
+              } else if (index.sensors[event.itemName]) {
+                evaluate(api.items.getItem(event.itemName));
+              } else if (index.alarms[event.itemName]) {
+                const alarm = api.items.getItem(event.itemName);
+                if (needsNotification(alarm.name, alarm.state, lastNotifications(), now)) schedule();
+              } else {
+                report.missing.push(event.itemName);
+              }
+              if (!dryRun && report.missing.length) {
+                const lastWarning = Number(api.cache.private.get(key('lastMappingWarning')) || 0);
+                if (now - lastWarning >= 3600000) {
+                  console.warn('Luftfeuchtigkeit: Raum oder passendes Alarm-Item fehlt für ' + report.missing.join(', '));
+                  api.cache.private.put(key('lastMappingWarning'), now);
+                }
+              }
+              return report;
+            }

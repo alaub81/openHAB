@@ -1,0 +1,56 @@
+---
+version: 1
+blocks:
+  lhlab_thing_library:
+    component: BlockLibrary
+    tags:
+    - thing
+    - control
+    - laub-home
+    props:
+      parameters: []
+      parameterGroups: []
+    config:
+      name: lhlab – Thing-Steuerung
+    slots:
+      blocks:
+      - component: BlockType
+        config:
+          args0:
+          - name: METHOD
+            options:
+            - - disable
+              - 'false'
+            - - enable
+              - 'true'
+            type: field_dropdown
+          - name: THING_UID
+            type: input_value
+          colour: 0.0
+          helpUrl: ''
+          inputsInline: false
+          message0: set %1 for Thing %2
+          nextStatement: ''
+          previousStatement: ''
+          tooltip: Enable or disable a Thing by UID
+          type: Thing controller
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: 'var thingMgr = osgi.getService(''org.openhab.core.thing.ThingManager'');
+                var ThingUID =  Java.type(''org.openhab.core.thing.ThingUID''); thingMgr.setEnabled(new
+                ThingUID({{input:THING_UID}}), {{field:METHOD}});
+
+'
+          toolbox:
+          - component: PresetInput
+            config:
+              name: THING_UID
+              shadow: true
+              type: oh_thing
+      utilities:
+      - component: UtilityJavaType
+        config:
+          javaClass: org.openhab.core.thing.ThingManager
+          name: thingMgr

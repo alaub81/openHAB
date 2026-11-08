@@ -1,0 +1,16 @@
+version: 1
+
+things:
+  somfytahoma:lightsensor:0968c2c643:io20043626504414384853:
+    bridge: somfytahoma:bridge:0968c2c643
+    label: "Sonnensensor Ost"
+    location: "Somfy Switch"
+    config:
+      url: "io://2004-3626-5044/14384853"
+    channels:
+      luminance:
+        type: luminance
+      sensor_defect:
+        type: sensor_defect
+      rssi:
+        type: rssi

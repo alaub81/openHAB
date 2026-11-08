@@ -1,0 +1,437 @@
+---
+version: 1
+widgets:
+  luftfeuchtigkeit_alarm_cell:
+    tags:
+    - Luftfeuchtigkeit
+    - Alarm
+    - Cell
+    props:
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        default: Luftfeuchtigkeit
+      - name: alarmGroup
+        label: Alarm-Gruppe
+        description: Gruppe der ON/OFF-Raumalarme.
+        type: TEXT
+        context: item
+        required: true
+        default: Humidity_Alarm
+      - name: sensorGroup
+        label: Feuchtesensor-Gruppe
+        description: Gruppe mit den Feuchtesensoren im semantischen Modell.
+        type: TEXT
+        context: item
+        required: true
+        default: Humidity_Innen_ALL
+      - name: modelGroup
+        label: Semantische Hauptgruppe
+        description: Oberste Gruppe des Modells mit Räumen, Geräten und Sensoren.
+        type: TEXT
+        context: item
+        required: true
+        default: Home
+      parameterGroups: []
+    component: oh-cell
+    config:
+      title: "=props.title || 'Luftfeuchtigkeit'"
+      subtitle: Aktuelle Luftfeuchtigkeitsalarme
+      expandable: true
+      stylesheet: |
+        .cell-contents > .cell-button { display:none; }
+        .contact-compact { position:absolute; inset:0; box-sizing:border-box; padding:6px 9px 2px; container-type:inline-size; display:grid; grid-template-rows:21px repeat(3,22px) 17px; gap:2px; color:var(--f7-text-color); }
+        .contact-head { display:flex; gap:5px; align-items:center; min-width:0; }
+        .contact-headline { font-size:15px; font-weight:500; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+        .contact-badge { margin-left:auto; font-size:11px; white-space:nowrap; }
+        .contact-row { display:flex; align-items:center; gap:5px; min-width:0; }
+        .contact-name { font-size:12px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:10.5px; max-height:21px; }
+        .contact-row > :first-child { flex-shrink:0; }
+        .contact-state { font-size:10px; margin-left:auto; white-space:nowrap; }
+        .contact-footer { border-top:1px solid var(--f7-list-item-border-color,rgba(128,128,128,.2)); padding-top:3px; font-size:11px; line-height:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.8; }
+        .contact-empty { display:flex; gap:7px; align-items:center; font-size:12px; opacity:.8; grid-row:2 / 5; }
+        .contact-detail { width:100%; box-sizing:border-box; padding:0 8px 20px; max-height:calc(100vh - 225px); overflow-y:auto; color:var(--f7-text-color); }
+        .contact-detail .list { margin:8px 0; --f7-list-bg-color:transparent; }
+        .contact-detail .item-title { white-space:normal; font-size:14px; }
+        .contact-detail .item-footer { white-space:normal; font-size:12px; }
+        .contact-notice { font-size:13px; margin:8px 12px; }
+        @container (max-width:210px) { .contact-headline {font-size:13px;} .contact-badge {font-size:10px;} .contact-name {font-size:11px;line-height:10.5px;max-height:21px;} .contact-state {font-size:10px;} .contact-footer {font-size:10px;} }
+        /* single-fetch-loading */
+        .contact-shell {position:absolute;inset:0;background:var(--f7-card-bg-color);pointer-events:none;}
+        .contact-initial {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--f7-text-color);opacity:.8;}
+        .contact-shell:has(.contact-compact) .contact-initial {display:none;}
+
+        .contact-state { font-variant-numeric:tabular-nums; }
+      animate: false
+    slots:
+      background:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name ? (items[name].state || '').trim() : ''"
+            rows: "=(list,sensors,index,room,semantics,resolve,read,humidity) => list.filter((s)
+              => s.type === 'Switch').map((s) => ({item:s,mapping:resolve(s,sensors,room(s,index,semantics,room,[]))})).map((x)
+              => ({name:x.item.name,label:x.item.label || x.item.name,short:(x.item.label
+              || x.item.name).replace(/\\s*(Luftfeuchtigkeits?|Humidity|Feuchtigkeit)\\s*/gi,'
+              ').replace(/\\s*Alarm\\s*/gi,' ').trim() || x.item.label || x.item.name,state:read(x.item.name),sensor:x.mapping.sensor,issue:x.mapping.issue,humidity:humidity(read(x.mapping.sensor))}))"
+            rank: "=(r) => r.state === 'ON' ? 0 : r.issue || r.state && r.state !==
+              '-' && r.state !== 'OFF' ? 1 : 2"
+            brief: "=(r) => r.humidity + ' · ' + (r.state === 'ON' ? 'Alarm' : r.issue
+              ? 'unklar' : r.state === 'OFF' ? 'OK' : !r.state || r.state === '-'
+              ? 'Lädt …' : 'unklar')"
+            detail: "=(r) => (r.state === 'ON' ? 'Luftfeuchtigkeitsalarm aktiv' :
+              r.state === 'OFF' ? 'Kein Alarm aktiv' : !r.state || r.state === '-'
+              ? 'Status wird geladen …' : 'Alarmstatus unbekannt') + ' · ' + (r.issue
+              || (r.humidity !== '— %' ? 'Luftfeuchtigkeit: ' + r.humidity : 'Messwert
+              nicht verfügbar'))"
+            rowColor: "=(r) => r.state === 'ON' ? 'var(--f7-color-red)' : r.state
+              === 'OFF' && !r.issue ? 'var(--f7-color-green)' : 'var(--f7-color-gray)'"
+            sorted: "=(rows,rank) => rows.slice().sort((a,b) => rank(a)-rank(b) ||
+              a.label.localeCompare(b.label,'de'))"
+            summary: "=(rows,rank) => ({rows:rows,mappingIssues:rows.filter((r) =>
+              r.issue).length,ready:rows.every((r) => r.state && r.state !== '-'),alarms:rows.filter((r)
+              => r.state === 'ON').length,unknown:rows.filter((r) => r.state && r.state
+              !== '-' && r.state !== 'ON' && r.state !== 'OFF').length,attention:rows.filter((r)
+              => rank(r) < 2).sort((a,b) => rank(a)-rank(b) || a.label.localeCompare(b.label,'de'))})"
+            headline: "=(v) => v.alarms > 0 ? v.alarms + (v.alarms === 1 ? ' Alarm'
+              : ' Alarme') : v.unknown > 0 || v.mappingIssues > 0 ? 'Status prüfen'
+              : !v.ready ? 'Status wird geladen' : v.rows.length === 0 ? 'Keine Alarme
+              verfügbar' : 'Alles OK'"
+            tone: "=(v) => v.alarms > 0 ? 'var(--f7-color-red)' : !v.ready || v.unknown
+              > 0 || v.mappingIssues > 0 || v.rows.length === 0 ? 'var(--f7-color-gray)'
+              : 'var(--f7-color-green)'"
+            humidity: "=(state) => /^\\d+(?:[.,]\\d+)?\\s*%?$/.test(state) && Number.parseFloat(state.replace(',','.'))
+              >= 0 && Number.parseFloat(state.replace(',','.')) <= 100 ? Math.round(Number.parseFloat(state.replace(',','.'))
+              * 10) / 10 + ' %' : '— %'"
+            semantics: "=(s) => s && s.metadata && s.metadata.semantics && s.metadata.semantics.config
+              || {}"
+            flatten: "=(list,walk,depth) => depth > 32 ? [] : list.reduce((all,s)
+              => all.concat([s],walk(s.members || [],walk,depth+1)),[])"
+            room: "=(s,index,semantics,resolve,seen) => !s || seen.indexOf(s.name)
+              >= 0 ? '' : semantics(s).hasLocation || resolve(index.find((p) => p.name
+              === (semantics(s).isPointOf || semantics(s).isPartOf)),index,semantics,resolve,seen.concat([s.name]))"
+            sensors: "=(list,group,room,semantics) => list.filter((s,i,a) => (s.type
+              === 'Number' || s.type.indexOf('Number:') === 0) && (s.groupNames ||
+              []).indexOf(group) >= 0 && a.findIndex((p) => p.name === s.name) ===
+              i).map((s) => ({name:s.name,room:room(s,list,semantics,room,[])}))"
+            resolve: "=(alarm,sensors,room) => alarm.metadata && alarm.metadata.humidityOverview
+              && alarm.metadata.humidityOverview.value ? {sensor:alarm.metadata.humidityOverview.value,issue:''}
+              : !room ? {sensor:'',issue:'Raumzuordnung fehlt'} : sensors.filter((s)
+              => s.room === room).length === 1 ? {sensor:sensors.find((s) => s.room
+              === room).name,issue:''} : {sensor:'',issue:sensors.some((s) => s.room
+              === room) ? 'Zuordnung mehrdeutig' : 'Kein Feuchtesensor im Raum'}"
+        slots:
+          default:
+          - component: div
+            config:
+              class: contact-shell card-opened-fade-out
+            slots:
+              default:
+              - component: div
+                config:
+                  class: contact-initial
+                  role: status
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: Modell und Alarmgruppe werden geladen …
+              - component: oh-repeater
+                config:
+                  for: model
+                  sourceType: itemsInGroup
+                  groupItem: "=props.modelGroup || 'Home'"
+                  fetchMetadata: semantics
+                  cacheSource: true
+                  fragment: true
+                slots:
+                  default:
+                  - component: oh-repeater
+                    config:
+                      for: modelIndex
+                      sourceType: array
+                      in: "=loop.model_idx === 0 ? [fn.flatten(loop.model_source,fn.flatten,0)]
+                        : []"
+                      fragment: true
+                    slots:
+                      default:
+                      - component: oh-repeater
+                        config:
+                          for: sensorIndex
+                          sourceType: array
+                          in: "=[fn.sensors(loop.modelIndex,props.sensorGroup || 'Humidity_Innen_ALL',fn.room,fn.semantics)]"
+                          fragment: true
+                        slots:
+                          default:
+                          - component: oh-repeater
+                            config:
+                              for: member
+                              sourceType: itemsInGroup
+                              groupItem: "=props.alarmGroup || 'Humidity_Alarm'"
+                              fetchMetadata: semantics,humidityOverview
+                              cacheSource: true
+                              fragment: true
+                            slots:
+                              default:
+                              - component: oh-repeater
+                                config:
+                                  for: first
+                                  sourceType: array
+                                  in: "=loop.member_idx === 0 ? [true] : []"
+                                  fragment: true
+                                slots:
+                                  default:
+                                  - component: oh-repeater
+                                    config:
+                                      for: view
+                                      sourceType: array
+                                      fragment: true
+                                      in: "=[fn.summary(fn.rows(loop.member_source,loop.sensorIndex,loop.modelIndex,fn.room,fn.semantics,fn.resolve,fn.read,fn.humidity),fn.rank)]"
+                                    slots:
+                                      default:
+                                      - component: div
+                                        config:
+                                          class: contact-compact card-opened-fade-out
+                                          role: group
+                                          aria-label: "=props.title || 'Luftfeuchtigkeit'"
+                                        slots:
+                                          default:
+                                          - component: div
+                                            config:
+                                              class: contact-head
+                                            slots:
+                                              default:
+                                              - component: oh-icon
+                                                config:
+                                                  icon: oh:humidity
+                                                  width: 17
+                                                  height: 17
+                                              - component: Label
+                                                config:
+                                                  text: "=fn.headline(loop.view)"
+                                                  class: contact-headline
+                                              - component: Label
+                                                config:
+                                                  text: "=loop.view.unknown > 0 ||
+                                                    loop.view.mappingIssues > 0 ?
+                                                    'Bitte prüfen' : !loop.view.ready
+                                                    ? 'Lädt …' : loop.view.rows.length
+                                                    + ' Räume'"
+                                                  style:
+                                                    color: "=fn.tone(loop.view)"
+                                                  class: contact-badge
+                                          - component: oh-repeater
+                                            config:
+                                              for: row
+                                              sourceType: array
+                                              in: "=loop.view.attention.slice(0,3)"
+                                              fragment: true
+                                            slots:
+                                              default:
+                                              - component: div
+                                                config:
+                                                  class: contact-row
+                                                  title: '=loop.row.label + ": " +
+                                                    fn.detail(loop.row)'
+                                                slots:
+                                                  default:
+                                                  - component: oh-icon
+                                                    config:
+                                                      icon: oh:humidity
+                                                      width: 14
+                                                      height: 14
+                                                  - component: Label
+                                                    config:
+                                                      text: "=loop.row.short"
+                                                      class: contact-name
+                                                  - component: Label
+                                                    config:
+                                                      text: "=fn.brief(loop.row)"
+                                                      style:
+                                                        color: "=fn.rowColor(loop.row)"
+                                                      class: contact-state
+                                          - component: div
+                                            config:
+                                              class: contact-empty
+                                              visible: "=loop.view.attention.length
+                                                === 0"
+                                              role: status
+                                              aria-live: polite
+                                            slots:
+                                              default:
+                                              - component: oh-icon
+                                                config:
+                                                  icon: "=!loop.view.ready ? 'f7:ellipsis_circle'
+                                                    : loop.view.rows.length === 0
+                                                    ? 'f7:question_circle' : 'f7:checkmark_shield'"
+                                                  width: 18
+                                                  height: 18
+                                              - component: Label
+                                                config:
+                                                  text: "=!loop.view.ready ? 'Status
+                                                    wird geladen …' : loop.view.rows.length
+                                                    === 0 ? 'Keine Alarm-Items verfügbar'
+                                                    : 'Keine aktiven Feuchtealarme'"
+                                          - component: Label
+                                            config:
+                                              text: "=!loop.view.ready ? 'Live-Zustände
+                                                werden geladen' : loop.view.attention.length
+                                                > 3 ? '+' + (loop.view.attention.length-3)
+                                                + ' weitere · Details ›' : 'Alle Räume
+                                                · Details ›'"
+                                              style:
+                                                grid-row: 5
+                                              class: contact-footer
+      default:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name ? (items[name].state || '').trim() : ''"
+            rows: "=(list,sensors,index,room,semantics,resolve,read,humidity) => list.filter((s)
+              => s.type === 'Switch').map((s) => ({item:s,mapping:resolve(s,sensors,room(s,index,semantics,room,[]))})).map((x)
+              => ({name:x.item.name,label:x.item.label || x.item.name,short:(x.item.label
+              || x.item.name).replace(/\\s*(Luftfeuchtigkeits?|Humidity|Feuchtigkeit)\\s*/gi,'
+              ').replace(/\\s*Alarm\\s*/gi,' ').trim() || x.item.label || x.item.name,state:read(x.item.name),sensor:x.mapping.sensor,issue:x.mapping.issue,humidity:humidity(read(x.mapping.sensor))}))"
+            rank: "=(r) => r.state === 'ON' ? 0 : r.issue || r.state && r.state !==
+              '-' && r.state !== 'OFF' ? 1 : 2"
+            brief: "=(r) => r.humidity + ' · ' + (r.state === 'ON' ? 'Alarm' : r.issue
+              ? 'unklar' : r.state === 'OFF' ? 'OK' : !r.state || r.state === '-'
+              ? 'Lädt …' : 'unklar')"
+            detail: "=(r) => (r.state === 'ON' ? 'Luftfeuchtigkeitsalarm aktiv' :
+              r.state === 'OFF' ? 'Kein Alarm aktiv' : !r.state || r.state === '-'
+              ? 'Status wird geladen …' : 'Alarmstatus unbekannt') + ' · ' + (r.issue
+              || (r.humidity !== '— %' ? 'Luftfeuchtigkeit: ' + r.humidity : 'Messwert
+              nicht verfügbar'))"
+            rowColor: "=(r) => r.state === 'ON' ? 'var(--f7-color-red)' : r.state
+              === 'OFF' && !r.issue ? 'var(--f7-color-green)' : 'var(--f7-color-gray)'"
+            sorted: "=(rows,rank) => rows.slice().sort((a,b) => rank(a)-rank(b) ||
+              a.label.localeCompare(b.label,'de'))"
+            summary: "=(rows,rank) => ({rows:rows,mappingIssues:rows.filter((r) =>
+              r.issue).length,ready:rows.every((r) => r.state && r.state !== '-'),alarms:rows.filter((r)
+              => r.state === 'ON').length,unknown:rows.filter((r) => r.state && r.state
+              !== '-' && r.state !== 'ON' && r.state !== 'OFF').length,attention:rows.filter((r)
+              => rank(r) < 2).sort((a,b) => rank(a)-rank(b) || a.label.localeCompare(b.label,'de'))})"
+            headline: "=(v) => v.alarms > 0 ? v.alarms + (v.alarms === 1 ? ' Alarm'
+              : ' Alarme') : v.unknown > 0 || v.mappingIssues > 0 ? 'Status prüfen'
+              : !v.ready ? 'Status wird geladen' : v.rows.length === 0 ? 'Keine Alarme
+              verfügbar' : 'Alles OK'"
+            tone: "=(v) => v.alarms > 0 ? 'var(--f7-color-red)' : !v.ready || v.unknown
+              > 0 || v.mappingIssues > 0 || v.rows.length === 0 ? 'var(--f7-color-gray)'
+              : 'var(--f7-color-green)'"
+            humidity: "=(state) => /^\\d+(?:[.,]\\d+)?\\s*%?$/.test(state) && Number.parseFloat(state.replace(',','.'))
+              >= 0 && Number.parseFloat(state.replace(',','.')) <= 100 ? Math.round(Number.parseFloat(state.replace(',','.'))
+              * 10) / 10 + ' %' : '— %'"
+            semantics: "=(s) => s && s.metadata && s.metadata.semantics && s.metadata.semantics.config
+              || {}"
+            flatten: "=(list,walk,depth) => depth > 32 ? [] : list.reduce((all,s)
+              => all.concat([s],walk(s.members || [],walk,depth+1)),[])"
+            room: "=(s,index,semantics,resolve,seen) => !s || seen.indexOf(s.name)
+              >= 0 ? '' : semantics(s).hasLocation || resolve(index.find((p) => p.name
+              === (semantics(s).isPointOf || semantics(s).isPartOf)),index,semantics,resolve,seen.concat([s.name]))"
+            sensors: "=(list,group,room,semantics) => list.filter((s,i,a) => (s.type
+              === 'Number' || s.type.indexOf('Number:') === 0) && (s.groupNames ||
+              []).indexOf(group) >= 0 && a.findIndex((p) => p.name === s.name) ===
+              i).map((s) => ({name:s.name,room:room(s,list,semantics,room,[])}))"
+            resolve: "=(alarm,sensors,room) => alarm.metadata && alarm.metadata.humidityOverview
+              && alarm.metadata.humidityOverview.value ? {sensor:alarm.metadata.humidityOverview.value,issue:''}
+              : !room ? {sensor:'',issue:'Raumzuordnung fehlt'} : sensors.filter((s)
+              => s.room === room).length === 1 ? {sensor:sensors.find((s) => s.room
+              === room).name,issue:''} : {sensor:'',issue:sensors.some((s) => s.room
+              === room) ? 'Zuordnung mehrdeutig' : 'Kein Feuchtesensor im Raum'}"
+        slots:
+          default:
+          - component: oh-repeater
+            config:
+              for: model
+              sourceType: itemsInGroup
+              groupItem: "=props.modelGroup || 'Home'"
+              fetchMetadata: semantics
+              cacheSource: true
+              fragment: true
+            slots:
+              default:
+              - component: oh-repeater
+                config:
+                  for: modelIndex
+                  sourceType: array
+                  in: "=loop.model_idx === 0 ? [fn.flatten(loop.model_source,fn.flatten,0)]
+                    : []"
+                  fragment: true
+                slots:
+                  default:
+                  - component: oh-repeater
+                    config:
+                      for: sensorIndex
+                      sourceType: array
+                      in: "=[fn.sensors(loop.modelIndex,props.sensorGroup || 'Humidity_Innen_ALL',fn.room,fn.semantics)]"
+                      fragment: true
+                    slots:
+                      default:
+                      - component: oh-repeater
+                        config:
+                          for: member
+                          sourceType: itemsInGroup
+                          groupItem: "=props.alarmGroup || 'Humidity_Alarm'"
+                          fetchMetadata: semantics,humidityOverview
+                          cacheSource: true
+                          fragment: true
+                        slots:
+                          default:
+                          - component: oh-repeater
+                            config:
+                              for: first
+                              sourceType: array
+                              in: "=loop.member_idx === 0 ? [true] : []"
+                              fragment: true
+                            slots:
+                              default:
+                              - component: oh-repeater
+                                config:
+                                  for: view
+                                  sourceType: array
+                                  fragment: true
+                                  in: "=[fn.summary(fn.rows(loop.member_source,loop.sensorIndex,loop.modelIndex,fn.room,fn.semantics,fn.resolve,fn.read,fn.humidity),fn.rank)]"
+                                slots:
+                                  default:
+                                  - component: div
+                                    config:
+                                      class: contact-detail
+                                    slots:
+                                      default:
+                                      - component: Label
+                                        config:
+                                          text: Live-Zustände werden geladen …
+                                          visible: "=!loop.view.ready"
+                                          class: contact-notice
+                                      - component: f7-list
+                                        config:
+                                          mediaList: true
+                                        slots:
+                                          default:
+                                          - component: oh-repeater
+                                            config:
+                                              for: row
+                                              sourceType: array
+                                              in: "=fn.sorted(loop.view.rows,fn.rank)"
+                                              fragment: true
+                                            slots:
+                                              default:
+                                              - component: f7-list-item
+                                                config:
+                                                  title: "=loop.row.short"
+                                                  footer: "=fn.detail(loop.row)"
+                                                  style:
+                                                    "--f7-list-item-footer-text-color": "=fn.rowColor(loop.row)"
+                                                slots:
+                                                  media:
+                                                  - component: oh-icon
+                                                    config:
+                                                      icon: oh:humidity
+                                                      width: 24
+                                                      height: 24
+                                      - component: Label
+                                        config:
+                                          text: Angezeigt wird der aktuelle Alarmzustand
+                                            der Raumalarme.
+                                          class: contact-notice

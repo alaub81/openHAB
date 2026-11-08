@@ -1,0 +1,224 @@
+---
+version: 1
+blocks:
+  lhlab_battery_alarm_library:
+    component: BlockLibrary
+    tags:
+    - alarm
+    - battery
+    - laub-home
+    props:
+      parameters: []
+      parameterGroups: []
+    config:
+      name: lhlab – Batteriealarme
+    slots:
+      blocks:
+      - component: BlockType
+        config:
+          type: monitor
+          message0: |-
+            Batterien überwachen
+            Batteriegruppe %1
+            Warnschwelle (%) %2
+            frühestens nach Stunden erneut warnen %3
+            Meldungen bündeln (Sekunden) %4
+            niedrigen Wert bestätigen nach (Minuten) %5
+            bei niedrigem Batteriestand %6
+            bei Erholung (optional) %7
+          args0:
+          - type: input_value
+            name: GROUP
+            check:
+            - String
+            - oh_item
+          - type: field_number
+            name: THRESHOLD
+            value: 15
+            min: 0
+            max: 100
+          - type: field_number
+            name: REPEAT
+            value: 12
+            min: 1
+          - type: field_number
+            name: DELAY
+            value: 2
+            min: 1
+            max: 30
+          - type: field_number
+            name: CONFIRM
+            value: 5
+            min: 0
+          - type: input_statement
+            name: ALARM
+          - type: input_statement
+            name: CLEAR
+          previousStatement: ''
+          nextStatement: ''
+          inputsInline: false
+          colour: 15
+          tooltip: Prüft nach der einmaligen Initialisierung gezielt den geänderten
+            Batteriewert. Unterstützt Prozent-Quantities und normale Zahlen. Warnung
+            nach einstellbarer Wartezeit und erneuter Prüfung bei höchstens der Schwelle; erneute Warnung frühestens nach der Sperrzeit
+            bei einem weiteren Gruppenereignis. Aktueller Alarm → Meldung aus der
+            Alarmverwaltung liefert den Nachrichtentext.
+        slots:
+          code:
+          - component: BlockCodeTemplate
+            config:
+              template: |
+                {{utility:lhlab_battery_monitor}}({group: [{{input:GROUP}}][0], threshold: {{field:THRESHOLD}}, repeatHours: {{field:REPEAT}}, delaySeconds: {{field:DELAY}}, confirmMinutes: {{field:CONFIRM}}}, (typeof event === 'undefined' ? null : event), function(lhlabAlarmEvent) {
+                {{statements:ALARM}}
+                }, function(lhlabAlarmEvent) {
+                {{statements:CLEAR}}
+                }, false);
+          toolbox:
+          - component: PresetInput
+            config:
+              name: GROUP
+              type: text
+              shadow: true
+              fields:
+                TEXT: Battery_ALL
+      utilities:
+      - component: UtilityFunction
+        config:
+          name: lhlab_battery_monitor
+          code: |
+            function {{name}}(config, event, onAlarm, onClear, dryRun) {
+              const api = require('openhab');
+              const threshold = Number(config.threshold), repeatMs = Number(config.repeatHours) * 3600000;
+              const delay = Number(config.delaySeconds);
+              const confirmMs = Number(config.confirmMinutes === undefined ? 5 : config.confirmMinutes) * 60000;
+              if (!config.group || !Number.isFinite(threshold) || threshold < 0 || threshold > 100 ||
+                  !Number.isFinite(confirmMs) || confirmMs < 0 || !Number.isFinite(repeatMs) || repeatMs <= 0 || !Number.isFinite(delay) || delay < 1 || delay > 30) {
+                throw new Error('Batteriealarm: ungültige Gruppe, Schwelle, Wiederholzeit Bestätigungszeit oder Bündelungszeit.');
+              }
+              const key = 'lhlab.battery.v2:' + config.group + ':' + threshold + ':' + repeatMs + ':' + confirmMs;
+              let state = dryRun ? null : api.cache.private.get(key);
+              const fresh = !state;
+              if (!state) state = { low: Object.create(null), sent: Object.create(null), recovered: Object.create(null) };
+              const report = { evaluated: 0, invalid: [], low: [], notifications: [] };
+              function level(item) {
+                if (item.state === 'NULL' || item.state === 'UNDEF') return null;
+                let value;
+                try {
+                  const quantity = item.quantityState;
+                  value = quantity == null ? item.numericState : quantity.toUnit('%').float;
+                } catch (error) { return null; }
+                if (value == null) return null;
+                value = Number(value);
+                return Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+              }
+              function inspect(item) {
+                report.evaluated++;
+                const value = level(item);
+                if (value == null) {
+                  report.invalid.push(item.name);
+                  if (state.low[item.name]) state.low[item.name].suspended = true;
+                  if (state.recovered[item.name]) state.recovered[item.name].suspended = true;
+                  return;
+                }
+                if (value <= threshold) {
+                  const old = state.low[item.name];
+                  const confirmAt = old ? old.confirmAt : Date.now() + confirmMs;
+                  state.low[item.name] = { name: item.name, label: item.label || item.name, value: value,
+                    confirmAt: confirmAt,
+                    dueAt: Math.max(confirmAt, state.sent[item.name] === undefined ? 0 : state.sent[item.name] + repeatMs),
+                    notified: !!(old && old.notified), suspended: false };
+                  delete state.recovered[item.name];
+                } else {
+                  if (state.low[item.name] && state.low[item.name].notified) {
+                    state.recovered[item.name] = { name: item.name, label: item.label || item.name, value: value };
+                  }
+                  delete state.low[item.name];
+                  if (state.recovered[item.name]) {
+                    state.recovered[item.name].suspended = false;
+                    state.recovered[item.name].value = value;
+                  }
+                  // Preserve the twelve-hour warning cooldown even across a brief recovery.
+                }
+              }
+              function join(entries, showValues) {
+                const labels = entries.map(entry => entry.label + (showValues ? ' (' + entry.value + '%)' : '')).sort();
+                return labels.length < 2 ? labels.join('') : labels.slice(0, -1).join(', ') + ' und ' + labels[labels.length - 1];
+              }
+              function currentItem(name) {
+                const item = api.items.getItem(name, true);
+                if (item && item.groupNames.includes(config.group)) return item;
+                // Removed members must not continue producing reminders from cached state.
+                delete state.low[name]; delete state.recovered[name]; delete state.sent[name];
+                return null;
+              }
+              function flush() {
+                api.cache.private.remove(key + ':timer');
+                const instant = Date.now();
+                const active = [], cleared = [];
+                Object.keys(state.low).forEach(name => {
+                  const entry = state.low[name];
+                  if (entry.suspended || instant < entry.dueAt) return;
+                  const item = currentItem(name);
+                  if (!item) return;
+                  inspect(item);
+                  const current = state.low[name];
+                  if (current && !current.suspended && instant >= current.dueAt) active.push(current);
+                });
+                Object.keys(state.recovered).forEach(name => {
+                  const item = currentItem(name);
+                  if (!item) return;
+                  inspect(item);
+                  const value = level(item);
+                  if (value != null && value > threshold && state.recovered[name]) cleared.push(state.recovered[name]);
+                });
+                if (active.length) {
+                  onAlarm({ kind: 'NEW', group: config.group, title: 'Batteriealarm',
+                    message: 'Achtung! ' + join(active, true) + ': Batteriestand höchstens ' + threshold + ' %.' });
+                  active.forEach(entry => {
+                    state.sent[entry.name] = instant;
+                    entry.dueAt = instant + repeatMs;
+                    entry.notified = true;
+                  });
+                }
+                if (cleared.length) {
+                  onClear({ kind: 'CLEARED', group: config.group, title: 'Batteriealarm beendet',
+                    message: 'Batteriestand wieder über ' + threshold + ' %: ' + join(cleared, false) + '.' });
+                  cleared.forEach(entry => { delete state.recovered[entry.name]; });
+                }
+              }
+              function schedule(futureOnly) {
+                if (dryRun) return;
+                const instant = Date.now();
+                // Only confirmation deadlines wake themselves; repeat reminders still need an event.
+                const deadlines = Object.values(state.low).filter(entry => !entry.suspended &&
+                  ((!futureOnly && instant >= entry.dueAt) ||
+                   (entry.dueAt === entry.confirmAt && entry.confirmAt > instant)))
+                  .map(entry => Math.max(instant + delay * 1000, entry.dueAt));
+                if (!futureOnly && Object.values(state.recovered).some(entry => !entry.suspended)) {
+                  deadlines.push(instant + delay * 1000);
+                }
+                if (!deadlines.length) return;
+                const deadline = Math.min(...deadlines);
+                const pending = api.cache.private.get(key + ':timer');
+                if (pending && pending.isActive()) {
+                  if (state.timerAt <= deadline) return;
+                  pending.cancel();
+                }
+                state.timerAt = deadline;
+                api.cache.private.put(key + ':timer', api.actions.ScriptExecution.createTimer(
+                  api.time.ZonedDateTime.now().plusNanos(Math.ceil((deadline - instant) * 1000000)), function() {
+                    try { flush(); } catch (error) { console.error('Batteriemeldung fehlgeschlagen: ' + error); }
+                    finally { schedule(true); }
+                  }));
+              }
+              if (fresh || !event || !event.itemName) {
+                api.items.getItem(config.group).members.forEach(inspect);
+              } else {
+                const item = currentItem(event.itemName);
+                if (item) inspect(item);
+              }
+              report.low = Object.values(state.low).filter(entry => !entry.suspended)
+                .map(entry => ({ name: entry.name, label: entry.label, value: entry.value }));
+              if (!dryRun) { api.cache.private.put(key, state); schedule(); }
+              return report;
+            }

@@ -1,0 +1,365 @@
+---
+version: 1
+widgets:
+  batterie_ladestaende_cell:
+    tags:
+    - Batterie
+    - Cell
+    props:
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        default: Batterien
+      - name: batteryGroup
+        label: Batterie-Gruppe
+        description: Gruppe mit numerischen Batterieladeständen von 0 bis 100 %.
+        type: TEXT
+        context: item
+        required: true
+        default: Battery_ALL
+      parameterGroups: []
+    component: oh-cell
+    config:
+      title: "=props.title || 'Batterien'"
+      subtitle: Batterieladestände aufsteigend
+      expandable: true
+      animate: false
+      stylesheet: |
+        .cell-contents > .cell-button { display:none; }
+        .battery-compact { position:absolute; inset:0; box-sizing:border-box; padding:6px 9px 2px; container-type:inline-size; display:grid; grid-template-rows:21px repeat(3,22px) 17px; gap:2px; color:var(--f7-text-color); }
+        .battery-head { display:flex; gap:5px; align-items:center; min-width:0; }
+        .battery-headline { font-size:15px; font-weight:500; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+        .battery-badge { margin-left:auto; font-size:11px; white-space:nowrap; }
+        .battery-row { display:flex; align-items:center; gap:5px; min-width:0; }
+        .battery-name { font-size:12px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:10.5px; max-height:21px; }
+        .battery-row > :first-child { flex-shrink:0; }
+        .battery-state { font-size:10px; margin-left:auto; white-space:nowrap; }
+        .battery-footer { border-top:1px solid var(--f7-list-item-border-color,rgba(128,128,128,.2)); padding-top:3px; font-size:11px; line-height:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.8; }
+        .battery-empty { display:flex; gap:7px; align-items:center; font-size:12px; opacity:.8; grid-row:2 / 5; }
+        .battery-detail { width:100%; box-sizing:border-box; padding:0 8px 20px; max-height:calc(100vh - 225px); overflow-y:auto; color:var(--f7-text-color); }
+        .battery-detail .list { margin:8px 0; --f7-list-bg-color:transparent; }
+        .battery-detail .item-title { white-space:normal; font-size:14px; }
+        .battery-detail .item-footer { white-space:normal; font-size:12px; }
+        .battery-notice { font-size:13px; margin:8px 12px; }
+        @container (max-width:210px) { .battery-headline {font-size:13px;} .battery-badge {font-size:10px;} .battery-name {font-size:11px;line-height:10.5px;max-height:21px;} .battery-state {font-size:10px;} .battery-footer {font-size:10px;} }
+        /* single-fetch-loading */
+        .battery-shell {position:absolute;inset:0;background:var(--f7-card-bg-color);pointer-events:none;}
+        .battery-initial {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--f7-text-color);opacity:.8;}
+        .battery-shell:has(.battery-compact) .battery-initial {display:none;}
+
+        .battery-gauge { position:relative; width:22px; height:11px; flex-shrink:0; color:var(--f7-color-gray); }
+        .battery-gauge-body { position:absolute; left:0; top:0; width:19px; height:100%; border:1px solid currentColor; border-radius:2px; box-sizing:border-box; padding:1px; }
+        .battery-gauge-fill { height:100%; background:currentColor; transition:width .3s ease; }
+        .battery-gauge-terminal { position:absolute; left:19px; top:27%; width:3px; height:46%; background:currentColor; border-radius:0 1px 1px 0; }
+        .battery-state { font-variant-numeric:tabular-nums; font-size:12px; }
+        .battery-detail .battery-gauge { width:28px; height:14px; }
+        .battery-detail .battery-gauge-body { width:25px; }
+        .battery-detail .battery-gauge-terminal { left:25px; }
+        @media (prefers-reduced-motion:reduce) { .battery-gauge-fill {transition:none;} }
+    slots:
+      background:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name ? (items[name].state || '').trim() : ''"
+            value: "=(state) => /^\\d+(?:[.,]\\d+)?\\s*%?$/.test(state) && Number.parseFloat(state.replace(',','.'))
+              >= 0 && Number.parseFloat(state.replace(',','.')) <= 100 ? Number.parseFloat(state.replace(',','.'))
+              : null"
+            rows: "=(list,read,value) => list.filter((s) => s.type === 'Number' ||
+              s.type === 'Number:Dimensionless').map((s) => ({item:s,state:read(s.name)})).map((x)
+              => ({name:x.item.name,label:x.item.label || x.item.name,short:(x.item.label
+              || x.item.name).replace(/\\s*(Batterieladung|Batterieladezustand|Batteriestand|Batterie|Battery)\\s*/gi,'
+              ').trim() || x.item.label || x.item.name,state:x.state,value:value(x.state)}))"
+            sorted: "=(rows) => rows.slice().sort((a,b) => (a.value === null ? 1 :
+              0) - (b.value === null ? 1 : 0) || (a.value === null ? 0 : a.value-b.value)
+              || a.label.localeCompare(b.label,'de'))"
+            summary: "=(rows,sorted) => ({full:rows.length > 0 && rows.every((r) =>
+              r.value === 100),rows:sorted(rows),lowest:sorted(rows.filter((r) =>
+              r.value !== null)).slice(0,3),pending:rows.filter((r) => !r.state ||
+              r.state === '-').length,unknown:rows.filter((r) => r.value === null
+              && r.state && r.state !== '-').length,total:rows.length})"
+            format: "=(value) => value === null ? '— %' : (Math.round(value * 10)
+              / 10).toString().replace('.',',') + ' %'"
+            color: "=(value) => value === null ? 'var(--f7-color-gray)' : value <
+              20 ? 'var(--f7-color-red)' : value < 30 ? 'var(--f7-color-orange)' :
+              'var(--f7-color-green)'"
+            detail: "=(r) => r.value !== null ? 'Batterieladezustand: ' + (Math.round(r.value
+              * 10) / 10).toString().replace('.',',') + ' %' : !r.state || r.state
+              === '-' ? 'Messwert wird geladen …' : 'Kein gültiger Prozentwert verfügbar'"
+        slots:
+          default:
+          - component: div
+            config:
+              class: battery-shell card-opened-fade-out
+            slots:
+              default:
+              - component: div
+                config:
+                  class: battery-initial
+                  role: status
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: Keine Batterien geladen …
+              - component: oh-repeater
+                config:
+                  for: member
+                  sourceType: itemsInGroup
+                  groupItem: "=props.batteryGroup || 'Battery_ALL'"
+                  cacheSource: true
+                  fragment: true
+                slots:
+                  default:
+                  - component: oh-repeater
+                    config:
+                      for: view
+                      sourceType: array
+                      in: "=loop.member_idx === 0 ? [fn.summary(fn.rows(loop.member_source,fn.read,fn.value),fn.sorted)]
+                        : []"
+                      fragment: true
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: battery-compact card-opened-fade-out
+                          role: group
+                          aria-label: "=props.title || 'Batterien'"
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: battery-head
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: battery-gauge
+                                  role: img
+                                  aria-label: "=fn.format((loop.view.lowest.length
+                                    ? loop.view.lowest[0].value : null))"
+                                  style:
+                                    color: "=fn.color((loop.view.lowest.length ? loop.view.lowest[0].value
+                                      : null))"
+                                slots:
+                                  default:
+                                  - component: div
+                                    config:
+                                      class: battery-gauge-body
+                                    slots:
+                                      default:
+                                      - component: div
+                                        config:
+                                          class: battery-gauge-fill
+                                          style:
+                                            width: "=((loop.view.lowest.length ? loop.view.lowest[0].value
+                                              : null) === null ? 0 : (loop.view.lowest.length
+                                              ? loop.view.lowest[0].value : null))
+                                              + '%'"
+                                  - component: div
+                                    config:
+                                      class: battery-gauge-terminal
+                              - component: Label
+                                config:
+                                  text: "=props.title || 'Batterien'"
+                                  class: battery-headline
+                              - component: Label
+                                config:
+                                  text: "=loop.view.total + ' Geräte'"
+                                  class: battery-badge
+                          - component: oh-repeater
+                            config:
+                              for: row
+                              sourceType: array
+                              in: "=loop.view.full ? [] : loop.view.lowest"
+                              fragment: true
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: battery-row
+                                  title: '=loop.row.label + ": " + fn.detail(loop.row)'
+                                slots:
+                                  default:
+                                  - component: div
+                                    config:
+                                      class: battery-gauge
+                                      role: img
+                                      aria-label: "=fn.format((loop.row.value))"
+                                      style:
+                                        color: "=fn.color((loop.row.value))"
+                                    slots:
+                                      default:
+                                      - component: div
+                                        config:
+                                          class: battery-gauge-body
+                                        slots:
+                                          default:
+                                          - component: div
+                                            config:
+                                              class: battery-gauge-fill
+                                              style:
+                                                width: "=((loop.row.value) === null
+                                                  ? 0 : (loop.row.value)) + '%'"
+                                      - component: div
+                                        config:
+                                          class: battery-gauge-terminal
+                                  - component: Label
+                                    config:
+                                      text: "=loop.row.short"
+                                      class: battery-name
+                                  - component: Label
+                                    config:
+                                      text: "=fn.format(loop.row.value)"
+                                      style:
+                                        color: "=fn.color(loop.row.value)"
+                                      class: battery-state
+                          - component: oh-repeater
+                            config:
+                              for: emptyState
+                              sourceType: array
+                              in: "=(loop.view.full || loop.view.lowest.length ===
+                                0) ? [true] : []"
+                              fragment: true
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: battery-empty
+                                  role: status
+                                  aria-live: polite
+                                slots:
+                                  default:
+                                  - component: oh-icon
+                                    config:
+                                      icon: "=loop.view.full ? 'f7:checkmark_shield'
+                                        : loop.view.pending > 0 ? 'f7:ellipsis_circle'
+                                        : 'f7:question_circle'"
+                                      width: 22
+                                      height: 22
+                                  - component: Label
+                                    config:
+                                      text: "=loop.view.full ? 'Alle Batterien voll
+                                        geladen' : loop.view.pending > 0 ? 'Messwerte
+                                        werden geladen …' : loop.view.total === 0
+                                        ? 'Keine Batterie-Items' : 'Keine gültigen
+                                        Prozentwerte'"
+                          - component: Label
+                            config:
+                              text: "=(loop.view.full ? '' : loop.view.pending > 0
+                                || loop.view.unknown > 0 ? (loop.view.pending + loop.view.unknown)
+                                + ' ohne Wert · ' : loop.view.total > 3 ? '+' + (loop.view.total
+                                - 3) + ' weitere · ' : '') + 'Alle Batterien ›'"
+                              style:
+                                grid-row: 5
+                              class: battery-footer
+      default:
+      - component: oh-context
+        config:
+          functions:
+            read: "=(name) => name ? (items[name].state || '').trim() : ''"
+            value: "=(state) => /^\\d+(?:[.,]\\d+)?\\s*%?$/.test(state) && Number.parseFloat(state.replace(',','.'))
+              >= 0 && Number.parseFloat(state.replace(',','.')) <= 100 ? Number.parseFloat(state.replace(',','.'))
+              : null"
+            rows: "=(list,read,value) => list.filter((s) => s.type === 'Number' ||
+              s.type === 'Number:Dimensionless').map((s) => ({item:s,state:read(s.name)})).map((x)
+              => ({name:x.item.name,label:x.item.label || x.item.name,short:(x.item.label
+              || x.item.name).replace(/\\s*(Batterieladung|Batterieladezustand|Batteriestand|Batterie|Battery)\\s*/gi,'
+              ').trim() || x.item.label || x.item.name,state:x.state,value:value(x.state)}))"
+            sorted: "=(rows) => rows.slice().sort((a,b) => (a.value === null ? 1 :
+              0) - (b.value === null ? 1 : 0) || (a.value === null ? 0 : a.value-b.value)
+              || a.label.localeCompare(b.label,'de'))"
+            summary: "=(rows,sorted) => ({full:rows.length > 0 && rows.every((r) =>
+              r.value === 100),rows:sorted(rows),lowest:sorted(rows.filter((r) =>
+              r.value !== null)).slice(0,3),pending:rows.filter((r) => !r.state ||
+              r.state === '-').length,unknown:rows.filter((r) => r.value === null
+              && r.state && r.state !== '-').length,total:rows.length})"
+            format: "=(value) => value === null ? '— %' : (Math.round(value * 10)
+              / 10).toString().replace('.',',') + ' %'"
+            color: "=(value) => value === null ? 'var(--f7-color-gray)' : value <
+              20 ? 'var(--f7-color-red)' : value < 30 ? 'var(--f7-color-orange)' :
+              'var(--f7-color-green)'"
+            detail: "=(r) => r.value !== null ? 'Batterieladezustand: ' + (Math.round(r.value
+              * 10) / 10).toString().replace('.',',') + ' %' : !r.state || r.state
+              === '-' ? 'Messwert wird geladen …' : 'Kein gültiger Prozentwert verfügbar'"
+        slots:
+          default:
+          - component: oh-repeater
+            config:
+              for: member
+              sourceType: itemsInGroup
+              groupItem: "=props.batteryGroup || 'Battery_ALL'"
+              cacheSource: true
+              fragment: true
+            slots:
+              default:
+              - component: oh-repeater
+                config:
+                  for: view
+                  sourceType: array
+                  in: "=loop.member_idx === 0 ? [fn.summary(fn.rows(loop.member_source,fn.read,fn.value),fn.sorted)]
+                    : []"
+                  fragment: true
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      class: battery-detail
+                    slots:
+                      default:
+                      - component: Label
+                        config:
+                          text: Ladestände aufsteigend · fehlende Messwerte am Ende
+                          class: battery-notice
+                      - component: Label
+                        config:
+                          text: "=loop.view.pending + ' Messwerte werden noch geladen
+                            …'"
+                          visible: "=loop.view.pending > 0"
+                          class: battery-notice
+                      - component: f7-list
+                        config:
+                          mediaList: true
+                        slots:
+                          default:
+                          - component: oh-repeater
+                            config:
+                              for: row
+                              sourceType: array
+                              in: "=loop.view.rows"
+                              fragment: true
+                            slots:
+                              default:
+                              - component: f7-list-item
+                                config:
+                                  title: "=loop.row.label"
+                                  footer: "=fn.detail(loop.row)"
+                                  after: "=fn.format(loop.row.value)"
+                                  style:
+                                    "--f7-list-item-after-text-color": "=fn.color(loop.row.value)"
+                                slots:
+                                  media:
+                                  - component: div
+                                    config:
+                                      class: battery-gauge
+                                      role: img
+                                      aria-label: "=fn.format((loop.row.value))"
+                                      style:
+                                        color: "=fn.color((loop.row.value))"
+                                    slots:
+                                      default:
+                                      - component: div
+                                        config:
+                                          class: battery-gauge-body
+                                        slots:
+                                          default:
+                                          - component: div
+                                            config:
+                                              class: battery-gauge-fill
+                                              style:
+                                                width: "=((loop.row.value) === null
+                                                  ? 0 : (loop.row.value)) + '%'"
+                                      - component: div
+                                        config:
+                                          class: battery-gauge-terminal

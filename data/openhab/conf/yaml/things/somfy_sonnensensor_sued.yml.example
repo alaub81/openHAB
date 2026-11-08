@@ -1,0 +1,21 @@
+# Prepared migration example, not active: .example files are not loaded by openHAB.
+# Replace the UI-managed Thing with this definition under the SAME UID only
+# after backing up its full definition and item/channel links.
+# Installing this beside the existing managed Thing does not migrate it.
+# After migration, configuration is edited in this file instead of Main UI.
+version: 1
+
+things:
+  somfytahoma:lightsensor:0968c2c643:io2004362650443444219:
+    bridge: somfytahoma:bridge:0968c2c643
+    label: Sonnensensor Süd
+    location: Somfy Switch
+    config:
+      url: io://2004-3626-5044/3444219
+    channels:
+      luminance:
+        type: luminance
+      sensor_defect:
+        type: sensor_defect
+      rssi:
+        type: rssi

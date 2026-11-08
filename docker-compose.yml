@@ -26,8 +26,15 @@ services:
       #- "EXTRA_JAVA_OPTS=-Xms1024m -Xmx2048m -Duser.timezone=${TZ}"
       - USER_ID=9001
       - GROUP_ID=9001
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    # Optional: uncomment to enable Watchtower label-based selection.
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 20m
+      start_interval: 30s
     network_mode: host
 
   mosquitto:
@@ -42,15 +49,16 @@ services:
       - ${MOSQUITTO_MQTTS_PORT}:8883
     environment:
       - TZ=${TZ}
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    # Optional: uncomment to enable Watchtower label-based selection.
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
-      #test: ["CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t '$SYS/broker/uptime' -C 1 -W 10 > /dev/null 2>&1"]
       test: ["CMD-SHELL", "nc -z localhost 1883"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
-      retries: 6
+      retries: 3
       start_period: 20s
+      start_interval: 5s
     networks:
       app-nw:
         aliases:
@@ -73,14 +81,16 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN}
       - INFLUXD_LOG_LEVEL=${INFLUXD_LOG_LEVEL}
       - TZ=${TZ}
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    # Optional: uncomment to enable Watchtower label-based selection.
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8086/health | grep -q '\"status\":\"pass\"'"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
-      retries: 12
+      retries: 3
       start_period: 60s
+      start_interval: 5s
     networks:
       app-nw:
       backend-nw:
@@ -97,15 +107,17 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
       - TZ=${TZ}
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    # Optional: uncomment to enable Watchtower label-based selection.
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
-      # $$ verhindert Compose-Expansion; Variablen werden erst IM Container ausgewertet
+      # $$ prevents Compose expansion; variables are evaluated inside the container
       test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
-      retries: 12
+      retries: 3
       start_period: 60s
+      start_interval: 5s
     networks:
       backend-nw:
         aliases:
@@ -123,8 +135,16 @@ services:
     environment:
       - ENABLE_METRICS=true
       - TZ=${TZ}
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    # Optional: uncomment to enable Watchtower label-based selection.
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      # Keep the healthcheck command supplied by the renderer image.
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s
     networks:
       - backend-nw
 
@@ -165,14 +185,16 @@ services:
       #- GF_AUTH_ANONYMOUS_ENABLED=true
       #- GF_SECURITY_ALLOW_EMBEDDING=true      
       - TZ=${TZ}
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    # Optional: uncomment to enable Watchtower label-based selection.
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q '\"database\": \"ok\"'"]
-      interval: 10s
+      interval: 5m
       timeout: 5s
-      retries: 12
+      retries: 3
       start_period: 60s
+      start_interval: 5s
     networks:
       - app-nw
       - backend-nw

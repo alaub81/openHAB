@@ -30,7 +30,7 @@ ORG=yourorganisation
 BUCKET=yourbucket
 # InfluxDB2 admin Token (generate one if you do not have one)
 INFLUXDBAUTH="TkrV8yQ8G2Wb1pk4xsacrewfervce9xVTGgtzsb_bfcasdcasdc-ascdD-JlB7AKBZjE>"
-# Measurement, das gelöscht werden soll
+# Measurement to delete
 MEASUREMENT="SMAEnergyMeter_BezogeneLeistung"
 # Define Timerange
 START="2025-06-02T16:10:00.000Z"

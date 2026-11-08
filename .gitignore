@@ -1,4 +1,5 @@
-conf/things/test
 .gitignore
-conf/items/thermostat*.items
-conf/things/bmwi3s.yml
+openhab_api_key
+/archive/
+data/openhab/conf/items/thermostat*.items
+AGENTS.md

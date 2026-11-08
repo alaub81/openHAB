@@ -61,6 +61,49 @@ cd /opt/openHAB
 docker compose exec mosquitto mosquitto_passwd -c /mosquitto/config/mosquitto.passwd mosquitto
 ```
 
+### Container healthchecks
+
+The healthcheck settings were synchronized with the Raspberry Pi on 2026-10-31.
+The root `docker-compose.yml` contains the active timings for its six services.
+Existing probe commands are retained; openHAB and the renderer inherit their
+probe commands from their container images.
+
+The [healthcheck overrides](deploy/healthchecks/) also preserve the timings of
+all 20 configured checks across the Pi's three Compose projects:
+
+| Override | Existing base file on the Pi | Checks |
+| --- | --- | ---: |
+| [openhab.yml](deploy/healthchecks/openhab.yml) | `/opt/openhab5/docker-compose.yml` | 9 |
+| [tools.yml](deploy/healthchecks/tools.yml) | `/opt/tools/docker-compose.yml` | 9 |
+| [portwatcher.yml](deploy/healthchecks/portwatcher.yml) | `/opt/portwatcher/docker-compose.yml` | 2 |
+
+Use each override together with the corresponding **existing Pi base file**.
+The openHAB override includes the SMA bridge and both BMW bridges, whose service
+definitions are present in the Pi's base file but are not part of this
+repository's root Compose file. Smokeping has no configured healthcheck.
+The overrides contain healthcheck timings only and inherit the existing probe
+commands, images, volumes, credentials and startup dependencies from the base file.
+
+For example, with this repository checked out at `/opt/openHAB`, validate the
+combined configuration using:
+
+```bash
+docker compose -f /opt/openhab5/docker-compose.yml \
+  -f /opt/openHAB/deploy/healthchecks/openhab.yml config --quiet
+```
+
+For a future deployment, use the same pair of files with `up -d`; Compose will
+recreate services whose configuration changed. The repository synchronization
+itself does not require recreating the already updated Pi containers.
+
+`interval` controls checks during normal operation. `start_interval: 5s` provides
+fast readiness checks during the configured `start_period`, so dependent services
+can start promptly. A successful check ends the startup phase immediately.
+The MariaDB configuration retains five retries and a 60-second startup period;
+Autoheal's own check runs every 60 seconds and its monitoring loop every 120
+seconds. `unhealthy` alone does not restart a container; Autoheal selects the
+containers carrying its configured label.
+
 ## Scripts / Tools
 
 here you can find some usefull scripts I am using to administrate my openHAB setup. For example there are some scripts to do things in the persistence layer - influxDB. Or to bring more stability into the digitalstrom binding. Just have a look at the descriptions on top of each script.
@@ -73,9 +116,23 @@ chmod +x cleanup-influxdb-integer.sh
 ./cleanup-influxdb-integer.sh
 ```
 
+## Development tools and archived migrations
+
+`scripts/` contains the administrative shell scripts. Reusable widget and rule
+generators, source code and checks are kept in [tools/](tools/README.md).
+One-off migration scripts and deployment exports were moved to
+`archive/scripts-cleanup-20261108/`; see the tools README for the inventory.
+The archive is local and excluded from Git. The tools are eligible for versioning.
+
 ## Links
 
 If you need more Details about the setup:
 
 * <https://www.laub-home.de/wiki/OpenHAB_4_Docker_Installation>
 * <https://www.laub-home.de/wiki/OpenHAB_3_Docker_Installation>
+
+## Historical project material
+
+The [2026-10-30 project import](archive/chatgpt-project-2026-10-30/README.md) preserves
+widget drafts, deployment exports and SMA reference packages from the former
+ChatGPT project folder. See its manifest and private-backup notes before cleanup.

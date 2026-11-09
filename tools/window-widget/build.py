@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Build a single-fetch window cell with explicit loading states and one view model."""
 import copy
 import json

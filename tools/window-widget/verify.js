@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Evaluate actual widget functions/bindings against an isolated MainUI-style
 // Item proxy. No contact, alarm, or backend configuration is changed.
 function verifyWindowWidget(vm, widget, oldWidget, items, metadataPlan) {

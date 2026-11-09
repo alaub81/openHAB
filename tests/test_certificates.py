@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Exercise certificate setup only in a temporary copy of the repository paths."""
 import os
 from pathlib import Path

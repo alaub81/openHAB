@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """
 Shelly Deprecated Channel Link Migrator for openHAB
 ===================================================

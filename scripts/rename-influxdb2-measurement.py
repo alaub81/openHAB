@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Copy/merge an InfluxDB 2 measurement, verify field values, then optionally delete it.
 
 The Flux set/to approach follows the SMA Bridge's influx2_copy_item.py generator.

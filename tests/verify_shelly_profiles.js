@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Run generated Shelly Blockly code with simulated Items, MQTT actions, and time.
 // Usage: node tests/verify_shelly_profiles.js /tmp/thermostat-library.json
 'use strict';

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Extend the canonical alarm YAML and build a normal Blockly kitchen example."""
 import copy
 import json

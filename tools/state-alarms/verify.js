@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Run the real utility against a virtual clock; no openHAB command/message is sent.
 function verifyStateMonitor(vm, source) {
   const assert = (value, message) => { if (!value) throw new Error(message); };

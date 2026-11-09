@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Used by the Blockly utility lhlab_humidity_monitor. No notification is sent here;
 // the calling Blockly rule supplies the alarm and clearance actions.
 function lhlab_humidity_monitor(config, event, onAlarm, onClear, dryRun) {

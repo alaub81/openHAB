@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Opt-in real InfluxDB 2.9 checks in a temporary container with synthetic data.
 
 First pull influxdb:2.9-alpine, then run this file explicitly. No host ports,

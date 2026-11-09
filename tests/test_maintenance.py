@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Offline safety checks: fake curl responses, never a live service."""
 import json
 import os

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 # Run read-only checks in an isolated Python environment without starting containers.
 set -euo pipefail
 

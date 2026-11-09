@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Build the daily heat-pump rule using only standard openHAB Blockly blocks.
 
 Writes Blockly XML only. JavaScript must be generated from it by openHAB's

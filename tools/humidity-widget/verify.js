@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Run with: osascript -l JavaScript tools/humidity-widget/verify.js /tmp/widget.json
 // Export YAML to JSON first. Restrict globals to the values MainUI exposes.
 ObjC.import('Foundation');

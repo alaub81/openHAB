@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Generic delayed Contact/Switch alarm. Delivery stays in the caller's Blockly.
 function lhlab_state_monitor(config, onNotify, onClear) {
   const api = require('openhab');

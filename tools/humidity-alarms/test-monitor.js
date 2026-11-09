@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Evaluate this file in a Node VM and call the resulting function with monitor.js.
 // All Items, timers and notifications are simulated; nothing reaches openHAB.
 (function testHumidityMonitor(source, vm) {

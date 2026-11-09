@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2026 Andreas Laub
 // Evaluates the exact generated JavaScript with isolated Item, cache and DB mocks.
 // The caller supplies node:vm and the generated code. No live Item is touched.
 function verifyDailyRule(vm, code) {

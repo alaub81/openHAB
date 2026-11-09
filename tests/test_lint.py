@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Regression checks for configuration mistakes the repository linter must catch."""
 
 import json

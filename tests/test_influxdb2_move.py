@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 """Offline copy/merge/move checks with a stateful fake InfluxDB, never a live API."""
 from contextlib import redirect_stdout
 import copy

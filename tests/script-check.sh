@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2026 Andreas Laub
 # Run optional script safety tests locally, without live services or containers.
 set -euo pipefail
 

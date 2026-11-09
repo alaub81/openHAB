@@ -14,50 +14,53 @@
 #but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
 #or FITNESS FOR A PARTICULAR PURPOSE.
 #########################################################################
-#Set the language
-export LANG="en_US.UTF-8"
-#Load the Pathes
-export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-# set the variables
 
-# Just change to your belongings
-COMPOSE_PROJECT_DIR="/opt/openHAB"
-IP="FQDN / IP ADRESS"
-SUBJECT_CA="/C=SE/ST=Mannheim/L=Mannheim/O=himinds/OU=CA/CN=$IP"
-SUBJECT_SERVER="/C=SE/ST=Mannheim/L=Mannheim/O=himinds/OU=Server/CN=$IP"
-SUBJECT_CLIENT="/C=SE/ST=Mannheim/L=Mannheim/O=himinds/OU=Client/CN=$IP"
-
-function generate_CA () {
-   echo "$SUBJECT_CA"
-   openssl req -x509 -nodes -sha256 -newkey rsa:2048 -subj "$SUBJECT_CA"  -days 3650 -keyout $COMPOSE_PROJECT_DIR/certs/ca.key -out $COMPOSE_PROJECT_DIR/certs/ca.crt
-}
-
-function generate_server () {
-   echo "$SUBJECT_SERVER"
-   openssl req -nodes -sha256 -new -subj "$SUBJECT_SERVER" -keyout $COMPOSE_PROJECT_DIR/certs/server.key -out $COMPOSE_PROJECT_DIR/certs/server.csr
-   openssl x509 -req -sha256 -in $COMPOSE_PROJECT_DIR/certs/server.csr -CA $COMPOSE_PROJECT_DIR/certs/ca.crt -CAkey $COMPOSE_PROJECT_DIR/certs/ca.key -CAcreateserial -out $COMPOSE_PROJECT_DIR/certs/server.crt -days 3650
-}
-
-function generate_client () {
-   echo "$SUBJECT_CLIENT"
-   openssl req -new -nodes -sha256 -subj "$SUBJECT_CLIENT" -out $COMPOSE_PROJECT_DIR/certs/client.csr -keyout $COMPOSE_PROJECT_DIR/certs/client.key 
-   openssl x509 -req -sha256 -in $COMPOSE_PROJECT_DIR/certs/client.csr -CA $COMPOSE_PROJECT_DIR/certs/ca.crt -CAkey $COMPOSE_PROJECT_DIR/certs/ca.key -CAcreateserial -out $COMPOSE_PROJECT_DIR/certs/client.crt -days 3650
-}
-
-function check_cert_dir () {
-   if [ ! -d $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/ ]; then
-        mkdir -p $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/
-   fi
-}
-
-function copy_keys_to_broker () {
-   cp $COMPOSE_PROJECT_DIR/certs/ca.crt $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/
-   cp $COMPOSE_PROJECT_DIR/certs/server.crt $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/
-   cp $COMPOSE_PROJECT_DIR/certs/server.key $COMPOSE_PROJECT_DIR/data/mosquitto/conf/certs/
-}
-
-generate_CA
-generate_server
-generate_client
-check_cert_dir
-copy_keys_to_broker
+# Optional local CA generator; see docs/mqtt.md for manual certificate setup.
+set -euo pipefail
+umask 077
+execute=false
+case "${1:---dry-run}" in
+    --execute) execute=true ;;
+    --dry-run) ;;
+    -h|--help) echo 'Usage: MQTT_HOST=broker.example.test bash certs/generate-certs.sh [--execute|--dry-run]'; exit 0 ;;
+    *) echo 'Unknown option; use --help.' >&2; exit 1 ;;
+esac
+[[ $# -le 1 ]] || { echo 'Too many arguments.' >&2; exit 1; }
+: "${MQTT_HOST:?Set MQTT_HOST to one DNS name or IPv4 address.}"
+[[ $MQTT_HOST =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] || { echo 'Invalid MQTT_HOST.' >&2; exit 1; }
+project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cert_dir="$project_dir/certs"
+broker_dir="$project_dir/data/mosquitto/conf/certs"
+for name in ca.key ca.crt ca.srl server.key server.csr server.crt server.ext client.key client.csr client.crt; do
+    [[ ! -e $cert_dir/$name && ! -L $cert_dir/$name ]] || { echo "Refusing to overwrite $cert_dir/$name" >&2; exit 1; }
+done
+for name in ca.crt server.crt server.key; do
+    [[ ! -e $broker_dir/$name && ! -L $broker_dir/$name ]] || { echo "Refusing to overwrite $broker_dir/$name" >&2; exit 1; }
+done
+printf 'Generate a local CA, server certificate for %s and a client certificate in %s.\n' "$MQTT_HOST" "$cert_dir"
+printf 'Copy CA/server certificate and server key to %s.\n' "$broker_dir"
+if ! $execute; then echo 'DRY-RUN: no files written. Add --execute to generate.'; exit 0; fi
+command -v openssl >/dev/null
+work=$(mktemp -d)
+trap 'rm -rf -- "$work"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+san="DNS:$MQTT_HOST"
+[[ ! $MQTT_HOST =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || san="IP:$MQTT_HOST"
+printf 'basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nsubjectAltName=%s\nextendedKeyUsage=serverAuth\n' "$san" > "$work/server.ext"
+# Short-lived leaves; the CA key stays outside the broker directory.
+printf '[req]\ndistinguished_name=dn\n[dn]\n[ca]\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,keyCertSign,cRLSign\n' > "$work/ca.conf"
+openssl req -config "$work/ca.conf" -extensions ca -x509 -nodes -sha256 -newkey rsa:2048 -days 3650 -subj '/CN=Local MQTT CA' -keyout "$work/ca.key" -out "$work/ca.crt"
+for name in server client; do
+    cn=$MQTT_HOST
+    [[ $name != client ]] || cn='mqtt-client'
+    openssl req -new -nodes -sha256 -newkey rsa:2048 -subj "/CN=$cn" -keyout "$work/$name.key" -out "$work/$name.csr"
+    if [[ $name == client ]]; then printf 'extendedKeyUsage=clientAuth\n' > "$work/client.ext"; fi
+    openssl x509 -req -sha256 -days 365 -in "$work/$name.csr" -CA "$work/ca.crt" -CAkey "$work/ca.key" -CAserial "$work/ca.srl" -CAcreateserial -extfile "$work/$name.ext" -out "$work/$name.crt"
+done
+mkdir -p -- "$broker_dir"
+for name in ca.key ca.crt ca.srl server.key server.csr server.crt client.key client.csr client.crt; do
+    cp -n "$work/$name" "$cert_dir/"
+done
+cp -n "$work/ca.crt" "$work/server.crt" "$work/server.key" "$broker_dir/"
+echo 'Generated files are owner-only. Set the broker-readable key ownership/mode as described in docs/mqtt.md.'

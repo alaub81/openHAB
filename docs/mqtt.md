@@ -90,10 +90,17 @@ openssl verify -CAfile certs/ca.crt certs/server.crt
 ```
 
 Retain the CA key securely for future certificate renewal and distribute only
-`ca.crt` to clients. Renew the server certificate before expiry. The legacy
-[`generate-certs.sh`](../certs/generate-certs.sh) helper uses a configured fixed
-project path and Common Names without SAN extensions; the procedure above
-explicitly supplies SANs for hostname/IP verification.
+`ca.crt` to clients. Renew the server certificate before expiry.
+
+Alternatively, `MQTT_HOST=mqtt.example.invalid bash certs/generate-certs.sh`
+previews generation for one DNS name or IPv4 address. Add `--execute` to create
+an owner-only local CA, server certificate with SAN, and client certificate.
+The helper derives paths from the repository, refuses existing output files and
+copies only CA/server certificate and server key to the broker directory.
+It is for initial setup, not certificate rotation; use the manual procedure for
+multiple SANs. The broker does not require its optional client certificate.
+The generated CA is valid for 3,650 days; server and client certificates are
+valid for 365 days.
 
 ## Set broker file permissions
 

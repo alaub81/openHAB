@@ -84,8 +84,10 @@ API or Docker daemon is contacted. These tests are not part of `linter-check.sh`
 `test_maintenance.py` uses fake HTTP responses to check dry-run defaults, explicit
 scope, malformed/empty discovery results, changed Item lists, HTTP failures,
 action limits and stop-on-error behavior. It also checks that measurement copy
-retains its source and that binding restart/refresh require `--execute`. These
-checks prove local safeguards, not live API or hardware behavior.
+retains its source. Digitalstrom tests configure a standalone script copy and
+cover direct restart/refresh execution, read-only status actions, healthy
+autorestart behavior and refusal of invalid or disabled Things. These checks
+prove local safeguards, not live API or hardware behavior.
 
 Optional Bash style check (requires ShellCheck):
 

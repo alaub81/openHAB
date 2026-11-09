@@ -1,6 +1,8 @@
 """Offline safety checks: fake curl responses, never a live service."""
 import json
 import os
+import re
+import shlex
 from pathlib import Path
 import subprocess
 import tempfile
@@ -74,8 +76,34 @@ class MaintenanceTests(unittest.TestCase):
                         START='2026-01-01T00:00:00Z', STOP='2026-01-02T00:00:00Z',
                         OPERATOR='>', THRESHOLD='90', BRIDGE_UID='binding:bridge:example')
 
-    def run_script(self, name, *args, fixtures=None, ok=True, **env):
-        result = subprocess.run(['/bin/bash',str(ROOT/'scripts'/name),*args], env={**self.env, **env, 'FAKE_FIXTURES':json.dumps(fixtures or {})}, text=True, capture_output=True, timeout=15)
+    def configured_script(self, name, settings):
+        # Copy one file alone and edit its configuration just as an operator would.
+        source = (ROOT/'scripts'/name).read_text()
+        before, rest = source.split('# Configuration: ', 1)
+        config, after = rest.split('# End configuration', 1)
+        for key, value in settings.items():
+            if not re.fullmatch(r'[A-Z_][A-Z_0-9]*', key):
+                continue
+            if isinstance(value, (list, tuple)):
+                literal = '('+' '.join(shlex.quote(str(item)) for item in value)+')'
+            else:
+                literal = shlex.quote(str(value))
+            config = re.sub(r'^'+key+r'=(?:\([^)]*\)|[^\n]*)', lambda match: key+'='+literal,
+                            config, flags=re.MULTILINE)
+        folder = self.path/'standalone'
+        folder.mkdir(exist_ok=True)
+        script = folder/name
+        script.write_text(before+'# Configuration: '+config+'# End configuration'+after)
+        return script
+
+    def run_script(self, name, *args, fixtures=None, ok=True, **settings):
+        script = ROOT/'scripts'/name
+        if '# Configuration: ' in script.read_text():
+            script = self.configured_script(name, {**self.env, **settings})
+        result = subprocess.run(['/bin/bash',str(script),*args],
+                                env={**self.env, **{k:v for k,v in settings.items() if isinstance(v,str)},
+                                     'FAKE_FIXTURES':json.dumps(fixtures or {})},
+                                text=True, capture_output=True, timeout=15)
         if ok:
             self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
         else:
@@ -90,8 +118,7 @@ class MaintenanceTests(unittest.TestCase):
 
     def test_all_entrypoints_have_offline_help(self):
         for path in sorted((ROOT/'scripts').glob('*.sh')):
-            if path.name != 'maintenance-common.sh':
-                self.run_script(path.name, '--help')
+            self.run_script(path.name, '--help')
         self.assertEqual(self.calls(), [])
 
     def test_v1_cleanup_default_is_preview(self):
@@ -149,6 +176,10 @@ class MaintenanceTests(unittest.TestCase):
         self.assertIn('DRY-RUN',result.stdout)
         self.assertEqual(self.calls(), [])
 
+    def test_configured_binding_refresh_targets(self):
+        self.run_script('digitalstrom_binding_tools.sh','refresh', REFRESH_ITEMS=['MySensors'])
+        self.assertEqual(self.writes()[0]['payload'], 'REFRESH')
+
     def test_v2_execute_encodes_scope(self):
         self.run_script('delete-influxdb2-measurement.sh','Old','--execute')
         call=self.writes()[0]
@@ -204,25 +235,39 @@ class MaintenanceTests(unittest.TestCase):
             self.run_script('delete-wrong-influxdb-measurements.sh','Old','--execute',fixtures={'points':response},ok=False)
         self.assertEqual(self.writes(), [])
 
-    def test_binding_restart_is_preview_then_explicit(self):
+    def test_binding_restart_executes_without_extra_flag(self):
         self.run_script('digitalstrom_binding_tools.sh','restart')
-        self.assertEqual(self.writes(), [])
-        self.run_script('digitalstrom_binding_tools.sh','restart','--execute')
         self.assertEqual([x['payload'] for x in self.writes()],['false','true'])
+
+    def test_binding_status_actions_only_read(self):
+        for action in ('status', 'fullstatus'):
+            self.run_script('digitalstrom_binding_tools.sh',action,
+                            MONITORED_THINGS=['digitalstrom:circuit:examplebridge:exampledevice'])
+        self.assertGreater(len(self.calls()),0)
+        self.assertEqual(self.writes(), [])
+
+    def test_binding_autorestart_leaves_online_things_running(self):
+        self.run_script('digitalstrom_binding_tools.sh','autorestart',
+                        fixtures={'thing':{'status':'ONLINE','statusDetail':'NONE'}})
+        self.assertEqual(self.writes(), [])
+
+    def test_binding_does_not_accept_execution_mode_flags(self):
+        for flag in ('--dry-run', '--execute'):
+            self.run_script('digitalstrom_binding_tools.sh','restart',flag,ok=False)
+        self.assertEqual(self.calls(), [])
 
     def test_binding_invalid_or_disabled_status_never_restarts(self):
         for thing in ({}, {'status':'UNINITIALIZED','statusDetail':'DISABLED'}):
-            self.run_script('digitalstrom_binding_tools.sh','autorestart','--execute',fixtures={'thing':thing},ok=False)
+            self.run_script('digitalstrom_binding_tools.sh','autorestart',fixtures={'thing':thing},ok=False)
         self.assertEqual(self.writes(), [])
 
     def test_interrupted_binding_restart_attempts_reenable(self):
-        self.run_script('digitalstrom_binding_tools.sh','restart','--execute',fixtures={'fail_write':True},ok=False)
+        self.run_script('digitalstrom_binding_tools.sh','restart',fixtures={'fail_write':True},ok=False)
         self.assertEqual([x['payload'] for x in self.writes()],['false','true'])
 
-    def test_binding_refresh_is_explicit(self):
+    def test_binding_refresh_sends_command_without_extra_flag(self):
         self.run_script('digitalstrom_binding_tools.sh','refresh','MyGroup')
-        self.assertEqual(self.calls(), [])
-        self.run_script('digitalstrom_binding_tools.sh','refresh','MyGroup','--execute')
+        self.assertEqual(len(self.writes()),1)
         self.assertEqual(self.writes()[0]['payload'],'REFRESH')
 
 

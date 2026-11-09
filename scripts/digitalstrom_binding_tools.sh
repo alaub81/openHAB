@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #########################################################################
 #Name: digitalstrom_binding_tools.sh
 #Subscription: This Script tries to get the things with the openHAB digitalstrom
@@ -15,128 +15,144 @@
 #but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
 #or FITNESS FOR A PARTICULAR PURPOSE.
 #########################################################################
-#Set the language
-export LANG="en_US.UTF-8"
-#Load the Pathes
-export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-#set the variables:
+# Configuration: adapt these anonymized examples in your local copy.
+# Never commit a real API token. The placeholder is rejected before any request.
+OPENHAB_URL="https://localhost:8443"
+OPENHAB_TOKEN="CHANGE_ME_OPENHAB_API_TOKEN"
+# Optional; example: "/etc/openhab/openhab-api-token". Empty uses OPENHAB_TOKEN.
+OPENHAB_TOKEN_FILE=""
+# Bridge and two representative devices, matching the original monitoring setup.
+BRIDGE_UID="digitalstrom:dssBridge:examplebridge"
+MONITORED_THINGS=(
+    "digitalstrom:GR:examplebridge:000000000000000000000001"
+    "digitalstrom:circuit:examplebridge:000000000000000000000002"
+)
+# Example groups for refreshing shutter and lighting sensor states.
+REFRESH_ITEMS=("Rolladen_ALL" "Lichter_DSS_ALL")
+# Optional; example: "/etc/openhab/certs/ca.crt". Empty uses system CA trust.
+API_CA_FILE=""
+# End configuration
 
-#openHAB URL
-OPENHAB=https://localhost:8443
-#API Authentification Token for openhab3
-AUTH="oh.tokenname.hkkxsacdfVizb8P82bKQUh7exasd3433pQJuzZlQVdj8BJdzwjTznZQkcK1sIysEWtrWQLf2RhTg"
-#digitalSTROM Things UID (%3A is :)
-#digitalSTROM Bridge
-BRIDGE=digitalstrom:dssBridge:eb907aa7
-#digitalSTROM Rolladen
-ROLLO=digitalstrom%3AGR%3Aeb907aa7%3A303505d7f8000f00000fb6e7
-#digitalSTROM Stromverbrauch
-WATT=digitalstrom%3Acircuit%3Aeb907aa7%3A302ed89f43f00e400000cc38
-#digitalSTROM ALL Groups for refresh the Sensor Status
-ALL="Rolladen_ALL Lichter_DSS_ALL"
+set -euo pipefail
+export LC_ALL=C
 
-# IP of the Digitalstrom Server
-DSS=192.168.50.100
+die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
-# logfile options
-# Lines displayed in the output
-NUMBER=30
-# Where is the openhab.log
-LOGFILE=/var/lib/docker/volumes/openhab_data_openhab_userdata/_data/logs/openhab.log
+require() { [[ -n ${!1:-} ]] || die "Set $1 in the configuration block at the top of this script."; }
 
-#do the things
-function getstatus {
-        FULLSTATUSBRIDGE=$(curl -s -k -X GET "$OPENHAB/rest/things/$BRIDGE/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
-        FULLSTATUSROLLO=$(curl -s -k -X GET "$OPENHAB/rest/things/$ROLLO/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
-        FULLSTATUSWATT=$(curl -s -k -X GET "$OPENHAB/rest/things/$WATT/status" -H "accept: application/json" -H "Authorization: Bearer $AUTH")
-        STATUSBRIDGE=$(echo $FULLSTATUSBRIDGE | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
-        STATUSROLLO=$(echo $FULLSTATUSROLLO | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
-        STATUSWATT=$(echo $FULLSTATUSWATT | cut -d":" -f2 | cut -d"," -f1 | cut -d'"' -f2)
-        STATUSBRIDGEDETAIL=$(echo $FULLSTATUSWATT | cut -d":" -f3 | cut -d"," -f1 | cut -d'"' -f2)
+valid_name() { [[ $1 =~ ^[A-Za-z_][A-Za-z0-9_.:-]*$ ]] || die 'Unsupported name; use letters, digits, underscores, dots, colons or hyphens.'; }
+
+initialize() {
+    ARGS=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help) printf '%s\n' "$USAGE"; exit 0 ;;
+            --*) die "Unknown option: $1" ;;
+            *) ARGS+=("$1") ;;
+        esac
+        shift
+    done
+    for dependency in curl jq; do command -v "$dependency" >/dev/null || die "Missing dependency: $dependency"; done
+    umask 077
+    MAINTENANCE_TMP=$(mktemp -d)
+    trap 'rm -rf -- "$MAINTENANCE_TMP"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
 }
 
-function status {
-        echo "Bridge Status: $STATUSBRIDGE"
-        echo "Bridge Status Detail: $STATUSBRIDGEDETAIL"
-        echo "Rolladen Status: $STATUSROLLO"
-        echo "Verbrauch Status: $STATUSWATT"
+api() {
+    local method=$1 path=$2 expected=$3 token status
+    shift 3
+    [[ $OPENHAB_URL =~ ^https?:// ]] && [[ $OPENHAB_URL != *[\?\#\@\ ]* ]] || die 'Use an HTTP(S) base URL without credentials, query or fragment.'
+    token=$OPENHAB_TOKEN
+    [[ -z $OPENHAB_TOKEN_FILE ]] || token=$(cat -- "$OPENHAB_TOKEN_FILE")
+    [[ $token != *$'\n'* && $token != *$'\r'* && $token != CHANGE_ME* && $token != YOUR_* ]] || die 'Invalid credential or placeholder; use a local token file.'
+    local options=(--disable --silent --show-error --fail --connect-timeout 5 --max-time 30 --proto '=http,https')
+    [[ -n $token ]] || die 'Set OPENHAB_TOKEN or OPENHAB_TOKEN_FILE.'
+    printf 'Authorization: Bearer %s\n' "$token" > "$MAINTENANCE_TMP/auth-header"
+    options+=(--header "@$MAINTENANCE_TMP/auth-header")
+    [[ -z ${API_CA_FILE:-} ]] || options+=(--cacert "$API_CA_FILE")
+    RESPONSE="$MAINTENANCE_TMP/response"
+    # No redirects, automatic write retries, disabled TLS verification, or response-body logging.
+    status=$(curl "${options[@]}" --request "$method" "$@" \
+        --output "$RESPONSE" --write-out '%{http_code}' "${OPENHAB_URL%/}$path") || die 'HTTP/TLS request failed; stopping without further actions.'
+    case ",$expected," in *",$status,"*) ;; *) die "Unexpected HTTP status $status; stopping without further actions." ;; esac
 }
 
-function fullstatus {
-        echo "Bridge Fullstatus: $FULLSTATUSBRIDGE"
-        echo "Rolladen Fullstatus: $FULLSTATUSROLLO"
-        echo "Verbrauch Fullstatus: $FULLSTATUSWATT"
-}
+uri() { jq -rn --arg value "$1" '$value | @uri'; }
 
-function refresh {
-        for i in $ALL; do
-                curl -s -k -X POST "$OPENHAB/rest/items/$i" -H "Content-Type: text/plain" -H "accept: */*" -H "Authorization: Bearer $AUTH" -d "REFRESH" 
-                echo "Refresh $i Done!"
+binding_main() {
+    [[ ${#ARGS[@]} -ge 1 ]] || die 'Specify an action; use --help.'
+    local action=${ARGS[0]} target status detail unhealthy=false
+    local targets=()
+    case "$action" in status|fullstatus|restart|autorestart|refresh) ;; *) die 'Unknown binding action.' ;; esac
+    if [[ $action == refresh ]]; then
+        if [[ ${#ARGS[@]} -eq 1 ]]; then ARGS+=( ${REFRESH_ITEMS[@]+"${REFRESH_ITEMS[@]}"} ); fi
+        [[ ${#ARGS[@]} -ge 2 ]] || die 'Set REFRESH_ITEMS or specify Item/group arguments.'
+        for target in "${ARGS[@]:1}"; do
+            [[ $target =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die 'Invalid Item name.'
         done
+        require OPENHAB_URL
+        for target in "${ARGS[@]:1}"; do
+            printf 'REFRESH %s\n' "$target"
+            api POST "/rest/items/$(uri "$target")" 200,201,202,204 \
+                --header 'Content-Type: text/plain' --data-binary REFRESH
+        done
+        return
+    fi
+    require OPENHAB_URL; require BRIDGE_UID
+    targets=("$BRIDGE_UID")
+    if [[ ${#ARGS[@]} -gt 1 ]]; then targets+=("${ARGS[@]:1}")
+    else targets+=(${MONITORED_THINGS[@]+"${MONITORED_THINGS[@]}"}); fi
+    for target in "${targets[@]}"; do valid_name "$target"; done
+    # Read every target before changing anything. Invalid/failed reads abort.
+    for target in "${targets[@]}"; do
+        api GET "/rest/things/$(uri "$target")/status" 200
+        jq -e 'type == "object" and (.status | type == "string") and
+            (.statusDetail | type == "string") and
+            (.status | IN("ONLINE", "OFFLINE", "UNKNOWN", "UNINITIALIZED", "INITIALIZING", "REMOVING", "REMOVED"))' \
+            "$RESPONSE" >/dev/null || die 'Invalid Thing status response.'
+        status=$(jq -r .status "$RESPONSE"); detail=$(jq -r .statusDetail "$RESPONSE")
+        printf '%s: %s (%s)\n' "$target" "$status" "$detail"
+        [[ $action != fullstatus ]] || jq . "$RESPONSE"
+        if [[ $action == restart || $action == autorestart ]]; then
+            [[ $detail != DISABLED ]] || die 'A selected Thing is disabled; automatic restart refused.'
+        fi
+        if [[ $status != ONLINE || $detail != NONE ]]; then unhealthy=true; fi
+    done
+    case "$action" in
+        status|fullstatus) return ;;
+        autorestart) $unhealthy || return 0 ;;
+    esac
+    printf 'Restart bridge %s\n' "$BRIDGE_UID"
+    REENABLE_UID=$BRIDGE_UID
+    trap 'binding_cleanup $?' EXIT
+    api PUT "/rest/things/$(uri "$BRIDGE_UID")/enable" 200,202,204 \
+        --header 'Content-Type: text/plain' --data-binary false
+    sleep 3
+    api PUT "/rest/things/$(uri "$BRIDGE_UID")/enable" 200,202,204 \
+        --header 'Content-Type: text/plain' --data-binary true
+    REENABLE_UID=''
+    printf 'Re-enable accepted; check Thing status after binding initialization.\n'
 }
 
-function restart {
-        echo "Restarting $BRIDGE"
-        curl -s -k -X PUT "$OPENHAB/rest/things/$BRIDGE/enable" -H "Content-Type: text/plain" -H "accept: */*" -H "Authorization: Bearer $AUTH" -d "false" > /dev/null
-        sleep 3
-        curl -s -k -X PUT "$OPENHAB/rest/things/$BRIDGE/enable" -H "Content-Type: text/plain" -H "accept: */*" -H "Authorization: Bearer $AUTH" -d "true" > /dev/null
+binding_cleanup() {
+    local result=$1
+    if [[ -n ${REENABLE_UID:-} ]]; then
+        printf 'Interrupted restart: attempting to re-enable %s.\n' "$REENABLE_UID" >&2
+        (trap - EXIT; api PUT "/rest/things/$(uri "$REENABLE_UID")/enable" 200,202,204 \
+            --header 'Content-Type: text/plain' --data-binary true) ||
+            printf 'Re-enable failed: manually enable %s in MainUI.\n' "$REENABLE_UID" >&2
+    fi
+    rm -rf -- "$MAINTENANCE_TMP"
+    exit "$result"
 }
 
-function autorestart {
-	if [ "$STATUSBRIDGE" != "ONLINE" ] || [ "$STATUSROLLO" != "ONLINE" ] || [ "$STATUSWATT" != "ONLINE" ] || [ "$STATUSBRIDGEDETAIL" != "NONE" ]; then
-		echo "status is not Online!"
-		echo "-------------------------------------"
-		fullstatus
-		echo -e "\nConnection Test"
-		echo "-------------------------------------"
-		ping -q -c 5 $DSS
-		echo -e "\nlast $NUMBER line of $LOGFILE"
-		echo "-------------------------------------"
-		tail -n $NUMBER $LOGFILE
-		echo " "
-		restart
-		echo "-------------------------------------"
-		sleep  10
-		echo -e "\n after restart"
-		echo "last $NUMBER line of $LOGFILE"
-		echo "-------------------------------------"
-		tail -n $NUMBER $LOGFILE
-		getstatus
-		if [ "$STATUSBRIDGE" != "ONLINE" ] || [ "$STATUSROLLO" != "ONLINE" ] || [ "$STATUSWATT" != "ONLINE" ] || [ "$STATUSBRIDGEDETAIL" != "NONE" ]; then
-			echo -e "\nRestart didn't work Bridge Status!"
-			echo "-------------------------------------"
-			fullstatus
-		elif [ "$NEWSTATUS" = "ONLINE" ]; then
-			refresh
-			echo "\n refreshing Item Status "
-			echo "-------------------------------------"
-		fi
-	fi
-}
-
-case "$1" in
-        status)
-		getstatus
-                status
-                ;;
-        fullstatus)
-		getstatus
-                status
-                fullstatus
-                ;;
-        restart)
-                restart
-                ;;
-        autorestart)
-		getstatus
-                autorestart
-                ;;
-        refresh)
-                refresh
-                ;;
-        *)
-                echo "Usage: $0 { status | fullstatus | refresh | restart | autorestart }"
-                exit 1
-                ;;
-esac
+USAGE='Usage: digitalstrom_binding_tools.sh ACTION [TARGET ...]
+Actions: status, fullstatus, restart, autorestart, refresh.
+Configure at the top: OPENHAB_URL, credentials; BRIDGE_UID for status/restart actions.
+Extra TARGETs: Thing UIDs to monitor, or Item/group names for refresh.
+restart, autorestart and refresh act immediately; no dry-run mode.'
+initialize "$@"
+binding_main

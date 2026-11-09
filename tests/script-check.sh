@@ -18,4 +18,4 @@ done
 
 export PYTHONDONTWRITEBYTECODE=1
 cd -- "$PROJECT_DIR/tests"
-exec python3 -m unittest test_maintenance test_certificates test_shelly_migration
+exec python3 -m unittest test_maintenance test_certificates test_shelly_migration test_influxdb2_move

@@ -22,13 +22,17 @@ q = ''
 for i, arg in enumerate(args):
     if arg == '--data-urlencode' and args[i+1].startswith('q='):
         q = args[i+1][2:]
+auth_scheme = ''
+header = option('--header')
+if header.startswith('@'):
+    auth_scheme = Path(header[1:]).read_text().split()[1]
 payload = option('--data-binary')
 if payload.startswith('@'):
     payload = Path(payload[1:]).read_text()
 log = Path(os.environ['FAKE_LOG'])
 previous = [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
 with log.open('a') as f:
-    f.write(json.dumps(dict(method=method,url=url,q=q,payload=payload))+'\n')
+    f.write(json.dumps(dict(method=method,url=url,q=q,payload=payload,auth_scheme=auth_scheme))+'\n')
 fixtures = json.loads(os.environ.get('FAKE_FIXTURES', '{}'))
 status = '200'
 body = {'results':[{'statement_id':0}]}
@@ -41,15 +45,17 @@ elif '/enable' in url:
     status = '204'
 elif q == 'SHOW MEASUREMENTS':
     body = fixtures.get('measurements', {'results':[{'statement_id':0,'series':[{'name':'measurements','columns':['name'],'values':[['Keep'],['Old']]}]}]})
-elif q.startswith('SELECT * INTO'):
-    body = {'results':[{'statement_id':0,'series':[{'name':'result','columns':['time','written'],'values':[['1970-01-01T00:00:00Z',2]]}]}]}
-elif q.startswith('SELECT'):
-    body = fixtures.get('points', {'results':[{'statement_id':0,'series':[{'name':'Old','columns':['time','value'],'values':[['2026-01-01T01:00:00.000000001Z',99]]}]}]})
+elif q.startswith('DROP MEASUREMENT'):
+    body = fixtures.get('write_response', {})
 elif '/api/v2/query?' in url:
-    body = fixtures.get('csv', ',result,table,_value\n,_result,0,Keep\n,_result,0,Old\n')
+    query=json.loads(payload)['query']
+    if 'schema.measurementTagKeys' in query:
+        body=fixtures.get('tag_keys_csv', ',result,table,_value\n,_result,0,_field\n,_result,0,_measurement\n')
+    else:
+        body=fixtures.get('points_csv', ',result,table,_start,_stop,_time,_value,_field,_measurement\n,_result,0,1677-09-21T00:12:43.145224194Z,2262-04-11T23:47:16.854775807Z,2026-01-01T01:00:00.000000001Z,99,value,Old\n')
 elif '/api/v2/delete?' in url:
     status = '204'
-if fixtures.get('fail_write') and method != 'GET' and '/api/v2/query?' not in url:
+if fixtures.get('fail_write') and (q.startswith('DROP MEASUREMENT') or (method != 'GET' and '/api/v2/query?' not in url)):
     sys.exit(22)
 status = fixtures.get('status', status)
 Path(option('--output')).write_text(body if isinstance(body,str) else json.dumps(body))
@@ -73,6 +79,7 @@ class MaintenanceTests(unittest.TestCase):
                         OPENHAB_URL='https://openhab.invalid', INFLUX_URL='https://influx.invalid',
                         INFLUX_DATABASE='example', INFLUX_ORG='example org', INFLUX_BUCKET='example/bucket',
                         OPENHAB_TOKEN='test-openhab-token', INFLUX_TOKEN='test-influx-token',
+                        INFLUX_USERNAME='testuser', INFLUX_PASSWORD='test-influx-password',
                         START='2026-01-01T00:00:00Z', STOP='2026-01-02T00:00:00Z',
                         OPERATOR='>', THRESHOLD='90', BRIDGE_UID='binding:bridge:example')
 
@@ -114,126 +121,141 @@ class MaintenanceTests(unittest.TestCase):
         return [json.loads(x) for x in self.log.read_text().splitlines()] if self.log.exists() else []
 
     def writes(self):
-        return [x for x in self.calls() if x['method'] != 'GET' and '/api/v2/query?' not in x['url']]
+        return [x for x in self.calls() if x['q'].startswith('DROP MEASUREMENT') or (x['method'] != 'GET' and '/api/v2/query?' not in x['url'])]
 
     def test_all_entrypoints_have_offline_help(self):
         for path in sorted((ROOT/'scripts').glob('*.sh')):
             self.run_script(path.name, '--help')
         self.assertEqual(self.calls(), [])
 
-    def test_v1_cleanup_default_is_preview(self):
-        result = self.run_script('cleanup-openhab-influxdb.sh')
+    def test_cleanup_default_is_preview(self):
+        result = self.run_script('cleanup-openhab-influxdb2.sh')
         self.assertIn('DROP MEASUREMENT "Old"',result.stdout)
         self.assertEqual(self.writes(), [])
 
-    def test_v1_cleanup_execute_only_orphans(self):
-        self.run_script('cleanup-openhab-influxdb.sh','--execute')
+    def test_cleanup_drops_whole_orphans_without_time_bounds(self):
+        self.run_script('cleanup-openhab-influxdb2.sh','--execute',START='',STOP='')
         self.assertEqual([x['q'] for x in self.writes()], ['DROP MEASUREMENT "Old"'])
+        self.assertTrue(all(x['auth_scheme']=='Token' for x in self.calls() if '/query' in x['url']))
 
     def test_invalid_item_lists_never_delete(self):
         for items in ([],{},[{'name':'Bad Item'}],[{'name':'Keep'},{'name':'Keep'}]):
-            self.run_script('cleanup-openhab-influxdb.sh','--execute',fixtures={'items':items},ok=False)
+            self.run_script('cleanup-openhab-influxdb2.sh','--execute',fixtures={'items':items},ok=False)
         self.assertEqual(self.writes(), [])
 
     def test_changed_items_never_delete(self):
-        self.run_script('cleanup-openhab-influxdb.sh','--execute',fixtures={'items_after':[{'name':'Keep'},{'name':'Old'}]},ok=False)
+        self.run_script('cleanup-openhab-influxdb2.sh','--execute',fixtures={'items_after':[{'name':'Keep'},{'name':'Old'}]},ok=False)
         self.assertEqual(self.writes(), [])
 
     def test_invalid_influx_response_never_deletes(self):
         for value in ('not json',{}, {'results':[{'statement_id':0,'error':'failure'}]}):
-            self.run_script('cleanup-openhab-influxdb.sh','--execute',fixtures={'measurements':value},ok=False)
+            self.run_script('cleanup-openhab-influxdb2.sh','--execute',fixtures={'measurements':value},ok=False)
         self.assertEqual(self.writes(), [])
 
     def test_invalid_later_candidate_prevents_all_writes(self):
         response={'results':[{'statement_id':0,'series':[{'name':'measurements','columns':['name'],'values':[['AValid'],['Z invalid']]}]}]}
-        self.run_script('cleanup-openhab-influxdb.sh','--execute',fixtures={'measurements':response},ok=False)
+        self.run_script('cleanup-openhab-influxdb2.sh','--execute',fixtures={'measurements':response},ok=False)
         self.assertEqual(self.writes(), [])
 
-    def test_empty_measurement_list_is_a_noop(self):
-        self.run_script('cleanup-openhab-influxdb.sh','--execute',fixtures={'measurements':{'results':[{'statement_id':0}]}})
+    def test_empty_measurement_list_is_noop(self):
+        self.run_script('cleanup-openhab-influxdb2.sh','--execute',fixtures={'measurements':{'results':[{'statement_id':0}]}})
         self.assertEqual(self.writes(), [])
 
-    def test_field_conflicts_are_whole_measurement_deletions(self):
+    def test_log_conflicts_drop_whole_measurements(self):
         log=self.path/'openhab.log'
         log.write_text('field type conflict: input field "value" on measurement "Old" is type integer\n')
-        self.run_script('cleanup-influxdb-integer.sh',OPENHAB_LOG=str(log))
+        self.run_script('cleanup-influxdb2-integer.sh',OPENHAB_LOG=str(log))
         self.assertEqual(self.writes(), [])
-        self.run_script('cleanup-influxdb-integer.sh','--execute',OPENHAB_LOG=str(log))
+        self.run_script('cleanup-influxdb2-integer.sh','--execute',OPENHAB_LOG=str(log))
         self.assertEqual(self.writes()[0]['q'],'DROP MEASUREMENT "Old"')
 
-    def test_malformed_field_conflict_is_refused(self):
-        log=self.path/'openhab.log'; log.write_text('field type conflict: unrecognized message\n')
-        self.run_script('cleanup-influxdb-integer.sh','--execute',OPENHAB_LOG=str(log),ok=False)
+    def test_unknown_log_format_is_refused(self):
+        log=self.path/'openhab.log';log.write_text('field type conflict: unrecognized message\n')
+        self.run_script('cleanup-influxdb2-integer.sh','--execute',OPENHAB_LOG=str(log),ok=False)
         self.assertEqual(self.calls(), [])
 
-    def test_basic_password_file_authentication(self):
-        password=self.path/'local-password'; password.write_text('local-test-password\n')
-        self.run_script('cleanup-openhab-influxdb.sh',INFLUX_USERNAME='testuser',INFLUX_PASSWORD_FILE=str(password),INFLUX_TOKEN='')
-        self.assertEqual(self.writes(), [])
-
-    def test_v2_dry_run_makes_no_requests(self):
-        result=self.run_script('delete-influxdb2-measurement.sh','Old')
-        self.assertIn('DRY-RUN',result.stdout)
+    def test_full_measurement_preview_never_contacts_api(self):
+        self.run_script('delete-influxdb2-measurement.sh','Old')
         self.assertEqual(self.calls(), [])
 
-    def test_configured_binding_refresh_targets(self):
-        self.run_script('digitalstrom_binding_tools.sh','refresh', REFRESH_ITEMS=['MySensors'])
-        self.assertEqual(self.writes()[0]['payload'], 'REFRESH')
+    def test_full_measurement_drop_ignores_time_environment(self):
+        self.run_script('delete-influxdb2-measurement.sh','Old','--execute',START='invalid',STOP='invalid')
+        self.assertEqual(self.writes()[0]['q'],'DROP MEASUREMENT "Old"')
+        self.assertNotIn('time',self.writes()[0]['q'])
+        self.assertEqual(self.writes()[0]['auth_scheme'],'Token')
 
-    def test_v2_execute_encodes_scope(self):
-        self.run_script('delete-influxdb2-measurement.sh','Old','--execute')
+    def test_measurement_array_and_execution_are_configurable(self):
+        self.run_script('delete-influxdb2-measurement.sh',MEASUREMENTS=['Old'],DRY_RUN='false')
+        self.assertEqual([x['q'] for x in self.writes()],['DROP MEASUREMENT "Old"'])
+
+    def test_timerange_execution_encodes_scope(self):
+        self.run_script('delete-influxdb2-measurement-timerange.sh','Old','--execute')
         call=self.writes()[0]
         self.assertIn('org=example%20org&bucket=example%2Fbucket',call['url'])
         self.assertEqual(json.loads(call['payload']),dict(start=self.env['START'],stop=self.env['STOP'],predicate='_measurement="Old"'))
+        self.assertEqual(call['auth_scheme'],'Token')
 
-    def test_v2_requires_valid_range_and_names(self):
-        for env in ({'START':''},{'STOP':'2026-02-30T00:00:00Z'},{'STOP':self.env['START']}):
-            self.run_script('delete-influxdb2-measurement.sh','Old','--execute',ok=False,**env)
+    def test_invalid_ranges_and_names_never_write(self):
+        for settings in ({'START':''},{'STOP':'2026-02-30T00:00:00Z'},{'STOP':self.env['START']}):
+            self.run_script('delete-influxdb2-measurement-timerange.sh','Old','--execute',ok=False,**settings)
         for name in ('*','Bad"name','Good;DROP'):
             self.run_script('delete-influxdb2-measurement.sh',name,'--execute',ok=False)
         self.assertEqual(self.calls(), [])
 
-    def test_bucket_delete_requires_explicit_scope_flag(self):
+    def test_file_configuration_takes_precedence_over_environment(self):
+        script=self.configured_script('delete-influxdb2-measurement.sh',{**self.env,'MEASUREMENTS':['Old'],'DRY_RUN':'false'})
+        result=subprocess.run(['/bin/bash',str(script)],text=True,capture_output=True,
+            env={**self.env,'INFLUX_URL':'https://other.invalid'},timeout=15)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(self.writes()[0]['url'].startswith('https://influx.invalid/'))
+
+    def test_bucket_delete_needs_explicit_scope_flag(self):
         self.run_script('delete-influxdb2-timerange.sh','--execute',ok=False)
         self.assertEqual(self.calls(), [])
         self.run_script('delete-influxdb2-timerange.sh','--all-measurements','--execute')
         self.assertNotIn('predicate',json.loads(self.writes()[0]['payload']))
 
-    def test_v2_cleanup_and_csv_failure(self):
-        self.run_script('cleanup-openhab-influxdb2.sh','--execute',fixtures={'csv':'error,reference\nbroken,42\n'},ok=False)
-        self.assertEqual(self.writes(), [])
-        self.run_script('cleanup-openhab-influxdb2.sh','--execute')
-        self.assertEqual(len(self.writes()),1)
-        self.assertEqual(json.loads(self.writes()[0]['payload'])['predicate'],'_measurement="Old"')
-
-    def test_max_actions_and_failed_write(self):
+    def test_max_actions_and_first_failed_write_stop_execution(self):
         self.run_script('delete-influxdb2-measurement.sh','First','Second','--execute',MAX_ACTIONS='1',ok=False)
         self.assertEqual(self.writes(), [])
         self.run_script('delete-influxdb2-measurement.sh','First','Second','--execute',fixtures={'fail_write':True},ok=False)
         self.assertEqual(len(self.writes()),1)
 
-    def test_credentials_and_http_failure(self):
-        self.run_script('cleanup-openhab-influxdb.sh','--execute',OPENHAB_TOKEN='',ok=False)
-        self.assertEqual(self.calls(), [])
-        self.run_script('cleanup-openhab-influxdb.sh','--execute',fixtures={'status':'401'},ok=False)
+    def test_http_and_logical_errors_stop_deletion(self):
+        self.run_script('cleanup-openhab-influxdb2.sh','--execute',fixtures={'status':'401'},ok=False)
         self.assertEqual(self.writes(), [])
-
-    def test_copy_keeps_source(self):
-        self.run_script('rename-influxdb-measurement.sh','Old','New','--execute')
+        self.run_script('delete-influxdb2-measurement.sh','First','Second','--execute',
+            fixtures={'write_response':{'results':[{'statement_id':0,'error':'database not found'}]}},ok=False)
         self.assertEqual(len(self.writes()),1)
-        self.assertTrue(self.writes()[0]['q'].startswith('SELECT * INTO "New" FROM "Old"'))
 
-    def test_wrong_point_deletion_is_scoped(self):
-        self.run_script('delete-wrong-influxdb-measurements.sh','Old')
+    def test_wrong_point_deletion_preserves_nanosecond_precision(self):
+        self.run_script('delete-wrong-influxdb2-measurements.sh','Old')
         self.assertEqual(self.writes(), [])
-        self.run_script('delete-wrong-influxdb-measurements.sh','Old','--execute')
-        self.assertEqual(self.writes()[0]['q'],'DELETE FROM "Old" WHERE time = \'2026-01-01T01:00:00.000000001Z\'')
+        self.run_script('delete-wrong-influxdb2-measurements.sh','Old','--execute')
+        body=json.loads(self.writes()[0]['payload'])
+        self.assertEqual(body,dict(start='2026-01-01T01:00:00.000000001Z',stop='2026-01-01T01:00:00.000000001Z',predicate='_measurement="Old"'))
 
-    def test_tagged_or_out_of_range_points_are_refused(self):
-        for extra,stamp,value in (({'tags':{'room':'example'}},'2026-01-01T01:00:00Z',99),({},'2025-01-01T00:00:00Z',99),({},'2026-01-01T01:00:00Z',20)):
-            response={'results':[{'statement_id':0,'series':[dict(name='Old',columns=['time','value'],values=[[stamp,value]],**extra)]}]}
-            self.run_script('delete-wrong-influxdb-measurements.sh','Old','--execute',fixtures={'points':response},ok=False)
+    def test_wrong_point_last_nanosecond_does_not_touch_next_second(self):
+        csv=',result,table,_start,_stop,_time,_value,_field,_measurement\n,_result,0,start,stop,2026-01-01T01:00:00.999999999Z,99,value,Old\n'
+        self.run_script('delete-wrong-influxdb2-measurements.sh','Old','--execute',fixtures={'points_csv':csv})
+        self.assertEqual(json.loads(self.writes()[0]['payload'])['stop'],'2026-01-01T01:00:00.999999999Z')
+
+    def test_wrong_points_refuse_tags_and_unexpected_values(self):
+        self.run_script('delete-wrong-influxdb2-measurements.sh','Old','--execute',
+            fixtures={'tag_keys_csv':',result,table,_value\n,_result,0,room\n'},ok=False)
+        for csv in ('error,reference\nbroken,42\n',',result,table,_start,_stop,_time,_value,_field,_measurement\n,_result,0,start,stop,2026-01-01T01:00:00Z,20,value,Old\n'):
+            self.run_script('delete-wrong-influxdb2-measurements.sh','Old','--execute',fixtures={'points_csv':csv},ok=False)
         self.assertEqual(self.writes(), [])
+
+    def test_wrong_point_deletion_includes_complete_tag_predicate(self):
+        tags=',result,table,_value\n,_result,0,item\n,_result,0,room\n'
+        points=',result,table,_start,_stop,_time,_value,_field,_measurement,item,room\n,_result,0,start,stop,2026-01-01T01:00:00Z,99,value,Old,Old,lab\n'
+        self.run_script('delete-wrong-influxdb2-measurements.sh','Old','--execute',fixtures={'tag_keys_csv':tags,'points_csv':points})
+        self.assertEqual(json.loads(self.writes()[0]['payload'])['predicate'],'_measurement="Old" AND "item"="Old" AND "room"="lab"')
+
+    def test_configured_binding_refresh_targets(self):
+        self.run_script('digitalstrom_binding_tools.sh','refresh',REFRESH_ITEMS=['MySensors'])
+        self.assertEqual(self.writes()[0]['payload'],'REFRESH')
 
     def test_binding_restart_executes_without_extra_flag(self):
         self.run_script('digitalstrom_binding_tools.sh','restart')

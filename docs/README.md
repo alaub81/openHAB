@@ -26,16 +26,15 @@ contains cross-cutting deployment and operations guides. Markdown files do not
 need to be copied to openHAB. Existing German file names, Item identifiers and UI
 labels are preserved.
 
-Some detailed guides retain dated deployment records, personal example Item
-names and references to local archives. Those records describe the original
-installation, not prerequisites for a new setup. The ignored `archive/`
-directory is not included in a fresh clone. Run repository-relative command
-examples from the repository root unless a guide says otherwise.
+Private investigation records and original configurations are retained only in
+the ignored local `archive/` directory. They are not required for installation.
+Example Item names and UI labels remain illustrative; select your own Items.
+Run repository-relative commands from the repository root unless stated otherwise.
 
 ## Maintenance and development
 
-- [`scripts/`](../scripts/) contains administrative scripts. Inspect the target,
-  credentials and operation before running one; several scripts delete data.
+- [Maintenance scripts](../scripts/README.md) documents explicit targets, credentials,
+  dry runs and the effect of each administrative operation.
 - [Development tools](../tools/README.md) describes generators and component checks.
 - [Repository checks](../tests/README.md) describes the linter and its prerequisites.
 

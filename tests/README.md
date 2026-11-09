@@ -81,21 +81,51 @@ replaced by test doubles. OpenSSL is optional: certificate generation is skipped
 when it is unavailable. All files are created in temporary directories; no live
 API or Docker daemon is contacted. These tests are not part of `linter-check.sh`.
 
-`test_maintenance.py` uses fake HTTP responses to check dry-run defaults, explicit
-scope, malformed/empty discovery results, changed Item lists, HTTP failures,
-action limits and stop-on-error behavior. It also checks that measurement copy
-retains its source. Digitalstrom tests configure a standalone script copy and
-cover direct restart/refresh execution, read-only status actions, healthy
-autorestart behavior and refusal of invalid or disabled Things. These checks
-prove local safeguards, not live API or hardware behavior.
+`test_maintenance.py` runs single configured Bash script copies with fake API
+responses. It covers full measurement deletion, complete orphan cleanup,
+conflict-log cleanup, timerange scopes, exact timestamp/tag predicates for wrong
+values, response validation, failures and Digitalstrom actions. InfluxDB 1-only
+checks were removed with the retired scripts. Token headers are checked without
+logging token values.
+
+`test_influxdb2_move.py` uses a stateful fake database to verify source-over-target
+merging, preservation of unrelated target data, Item-tag changes, all field types,
+nanoseconds, preflight changes, streamed errors and refusal to delete an
+unverified source. No third-party Python packages are required.
+
+These are offline safeguards, not live installation tests. Separate manual
+checks with an isolated InfluxDB 2.9 container verify real protocol behavior.
+The optional runner itself starts no containers.
 
 Optional Bash style check (requires ShellCheck):
 
 ```bash
-shellcheck -x -P SCRIPTDIR scripts/*.sh certs/generate-certs.sh
+shellcheck scripts/*.sh certs/generate-certs.sh
 ```
 
 The existing Shelly Python migrator is checked with a fake requests module for
 backup protection, preflight failure, create-before-delete ordering and failed
 link creation. Certificate tests use temporary repository paths; when OpenSSL is
 available, they verify certificate signatures/SAN and refusal to overwrite keys.
+
+## Optional real InfluxDB 2.9 checks
+
+This separate opt-in command requires a running local Docker daemon and the
+explicitly downloaded test image:
+
+```bash
+docker pull influxdb:2.9-alpine
+python3 tests/influxdb2-integration-check.py
+```
+
+It starts a unique temporary container with no network, published ports or host
+data volumes. It limits the instance to one CPU and 512 MiB RAM, uses synthetic
+data and removes the container afterward. It exercises merging/moving typed
+field values with nanosecond timestamps, complete measurement deletion,
+timerange boundaries, exact tagged outlier deletion, conflict-log cleanup and
+orphan cleanup. openHAB Item responses are simulated; InfluxDB is real. HTTP
+calls are transported through `docker exec` into the isolated container, so
+this does not test host networking, TLS or deployment credentials.
+
+The image stays in Docker's local cache. This command is separate from both the
+simple linter and offline script runner.

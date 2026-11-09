@@ -130,6 +130,12 @@ One-off migration scripts and deployment exports were moved to
 `archive/scripts-cleanup-20261108/`; see the tools README for the inventory.
 The archive is local and excluded from Git. The tools are eligible for versioning.
 
+## Repository checks
+
+Run `./tests/linter-check.sh` to check configuration and source syntax without
+starting containers. See [tests/README.md](tests/README.md) for prerequisites,
+coverage, and the intentionally excluded Pi 5 comparison file.
+
 ## Links
 
 If you need more Details about the setup:

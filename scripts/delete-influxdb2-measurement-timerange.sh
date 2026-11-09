@@ -37,7 +37,7 @@ START="2025-06-02T16:10:00.000Z"
 STOP="2025-06-07T09:15:00.000Z"
 
 # do the stuff
-curl --request POST "http://$INFLUXHOST:8086/api/v2/delete?org=$ORG&bucket=$BUCKET>
+curl --request POST "http://$INFLUXHOST:8086/api/v2/delete?org=$ORG&bucket=$BUCKET" \
   --header "Authorization: Token $INFLUXDBAUTH" \
   --header 'Content-Type: application/json' \
   --data '{

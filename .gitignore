@@ -4,3 +4,5 @@ openhab_api_key
 data/openhab/conf/items/thermostat*.items
 AGENTS.md
 /backups/
+/.lint-venv/
+__pycache__/

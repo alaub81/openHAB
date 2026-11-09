@@ -1467,6 +1467,31 @@ blocks:
             - - 'OFF'
               - 'off'
             type: field_dropdown
+          - name: PROFILE_WINDOW
+            type: field_number
+            value: -1
+            min: -1
+            precision: 1
+          - name: PROFILE_ABSENCE
+            type: field_number
+            value: -1
+            min: -1
+            precision: 1
+          - name: PROFILE_BOOSTER
+            type: field_number
+            value: -1
+            min: -1
+            precision: 1
+          - name: PROFILE_SGGREEN
+            type: field_number
+            value: -1
+            min: -1
+            precision: 1
+          - name: PROFILE_NIGHT
+            type: field_number
+            value: -1
+            min: -1
+            precision: 1
           colour: 90.0
           helpUrl: ''
           inputsInline: false
@@ -1484,7 +1509,12 @@ blocks:
             Window Open Temperature (temperature item) %18, absence reduction (in
             °C) (Number) %19, green increase (in °C) (Number) %20, night reduction
             (in °C) (Number) %21, (optional) Fensterabsenkung (°C) %22, (optional)
-            Fensterkontakt %23, and set loglevel %24
+            Fensterkontakt %23, and set loglevel %24,
+            Window-open profile %25,
+            Absence profile %26,
+            Booster profile %27,
+            Smart Grid green profile %28,
+            Night profile %29 (-1 = not configured)
 
 '
           nextStatement: ''
@@ -1619,6 +1649,23 @@ blocks:
                 /* ===== Main logic ===== */
 
                 function controlShellyWalldisplay(cfg) {
+                  // Require explicit profile IDs before any Item commands or MQTT calls.
+                  var profileIds = {
+                    window: cfg.profileWindow, absence: cfg.profileAbsence,
+                    booster: cfg.profileBooster, sgGreen: cfg.profileSGGreen, night: cfg.profileNight
+                  };
+                  Object.keys(profileIds).forEach(function(mode) {
+                    var id = profileIds[mode];
+                    if (!Number.isSafeInteger(id) || id < 0) {
+                      throw new Error('Shelly Walldisplay: configure a nonnegative profile ID for ' + mode);
+                    }
+                  });
+                  ['mqttBrokerThing', 'mqttRpcTopic', 'mqttSrc'].forEach(function(key) {
+                    if (typeof cfg[key] !== 'string' || !cfg[key].trim()) {
+                      throw new Error('Shelly Walldisplay: configure ' + key);
+                    }
+                  });
+
                   var zoneItemName          = cfg.zoneName;
                   var setpointNormalItem    = cfg.setpointNormalItem;
                   var mqttBrokerThing       = cfg.mqttBrokerThing;
@@ -1725,19 +1772,19 @@ blocks:
 
                     var absence_temperature, sggreen_temperature, night_temperature;
 
-                    // ===== Booster: when on, set profile 0 and block everything else =====
+                    // ===== Booster: select its configured profile and skip the remaining logic =====
                     if (boosterState === 'ON') {
                       try {
                         scheduleSwitch.sendCommand('ON');  // Enable the wall display schedule
-                        profile.sendCommand('2');         // Use profile ID 0 for the booster
-                        if (__wdThermoLoggingEnabled) log('Thermostat-WD: ' + zoneName + ': Booster ist ON – Profil 2 (Booster) wurde gesetzt.');
+                        profile.sendCommand(String(profileIds.booster));         // Use the configured booster profile
+                        if (__wdThermoLoggingEnabled) log('Thermostat-WD: ' + zoneName + ': Booster ist ON – Profil ' + profileIds.booster + ' (Booster) wurde gesetzt.');
                       } catch (e) {
-                        if (__wdThermoLoggingEnabled) log('Thermostat-WD: ' + zoneName + ': Fehler beim Setzen des Booster-Profils 2: ' + e);
+                        if (__wdThermoLoggingEnabled) log('Thermostat-WD: ' + zoneName + ': Fehler beim Setzen des Booster-Profils ' + profileIds.booster + ': ' + e);
                       }
                       return; // Skip remaining window/absence/night/normal logic
                     }
 
-                    // ===== Window logic without timers: open -> profile 0, closed -> continue normally =====
+                    // ===== Window logic without timers: select its profile while open =====
 
                     var openNow = isAnyWindowOpen(windowContactItem);
 
@@ -1749,14 +1796,14 @@ blocks:
                         setTemp(setpointWindowItem,    window_temperature);
 
                         scheduleSwitch.sendCommand('ON');
-                        profile.sendCommand('0'); // Profile 0 while the window is open
+                        profile.sendCommand(String(profileIds.window)); // Use the configured window-open profile
                       } catch (e) {
                         if (__wdThermoLoggingEnabled) log('Shelly Walldisplay ' + zoneName +
-                            ': Fehler beim Setzen von Profil 0 / Fenster-Temperatur: ' + e);
+                            ': Fehler beim Setzen von Profil ' + profileIds.window + ' / Fenster-Temperatur: ' + e);
                       }
 
                       if (__wdThermoLoggingEnabled) log('Shelly Walldisplay ' + zoneName +
-                          ': Mindestens EIN Fenster ist OFFEN – Profil 0 & Fenster-Temperatur gesetzt, restliche Logik übersprungen.');
+                          ': Mindestens EIN Fenster ist OFFEN – Profil ' + profileIds.window + ' & Fenster-Temperatur gesetzt, restliche Logik übersprungen.');
                       return;
                     }
 
@@ -1764,26 +1811,26 @@ blocks:
 
                     if (presenceState === 'OFF' && sgState === 'red') {
                       scheduleSwitch.sendCommand('ON');
-                      profile.sendCommand('1');
+                      profile.sendCommand(String(profileIds.absence));
                       absence_temperature = baseSetpoint - absenceDecrease;
                       setTemp(setpointEffectiveItem, absence_temperature);
                       setTemp(setpointAbsenceItem,   absence_temperature);
-                      if (__wdThermoLoggingEnabled) log('Thermostat-WD: Abwesenheitsabsenkung aktiv, Profil 1');
+                      if (__wdThermoLoggingEnabled) log('Thermostat-WD: Abwesenheitsabsenkung aktiv, Profil ' + profileIds.absence);
                     } else if (presenceState === 'OFF' && sgState === 'green') {
                       scheduleSwitch.sendCommand('ON');
-                      profile.sendCommand('3');
+                      profile.sendCommand(String(profileIds.sgGreen));
                       sggreen_temperature = baseSetpoint + sgGreenIncrease;
                       setTemp(setpointEffectiveItem, sggreen_temperature);
                       setTemp(setpointSGGreenItem,   sggreen_temperature);
-                      if (__wdThermoLoggingEnabled) log('Thermostat-WD: SG-Green bei Abwesenheit aktiv, Profil 3');
+                      if (__wdThermoLoggingEnabled) log('Thermostat-WD: SG-Green bei Abwesenheit aktiv, Profil ' + profileIds.sgGreen);
                     } else {
                       if (sgState === 'green') {
                         scheduleSwitch.sendCommand('ON');
-                        profile.sendCommand('3');
+                        profile.sendCommand(String(profileIds.sgGreen));
                         sggreen_temperature = baseSetpoint + sgGreenIncrease;
                         setTemp(setpointEffectiveItem, sggreen_temperature);
                         setTemp(setpointSGGreenItem,   sggreen_temperature);
-                        if (__wdThermoLoggingEnabled) log('Thermostat-WD: SG-Green aktiv, Profil 3');
+                        if (__wdThermoLoggingEnabled) log('Thermostat-WD: SG-Green aktiv, Profil ' + profileIds.sgGreen);
                       } else {
                         var nowLT        = time.ZonedDateTime.now().toLocalTime();
                         var nightStartLT = toLocalTimeFlexible(nightStartInput);
@@ -1802,11 +1849,11 @@ blocks:
 
                         if (inNight) {
                           scheduleSwitch.sendCommand('ON');
-                          profile.sendCommand('4');
+                          profile.sendCommand(String(profileIds.night));
                           night_temperature = baseSetpoint - nightDecrease;
                           setTemp(setpointEffectiveItem, night_temperature);
                           setTemp(setpointNightItem,     night_temperature);
-                          if (__wdThermoLoggingEnabled) log('Thermostat-WD: Nachtabsenkung aktiv, Profil 4');
+                          if (__wdThermoLoggingEnabled) log('Thermostat-WD: Nachtabsenkung aktiv, Profil ' + profileIds.night);
                         } else {
                           scheduleSwitch.sendCommand('OFF');
                           var normalSetpoint = items.getItem(String(setpointNormalItem)).state;
@@ -1833,6 +1880,11 @@ blocks:
                   nightStopItem:          {{input:NIGHTSTOP_ITEM}},
                   scheduleSwitchItem:     {{input:SCHEDULE_SWITCH}},
                   profileItem:            {{input:PROFILE_ITEM}},
+                  profileWindow: Number("{{field:PROFILE_WINDOW}}" || NaN),
+                  profileAbsence: Number("{{field:PROFILE_ABSENCE}}" || NaN),
+                  profileBooster: Number("{{field:PROFILE_BOOSTER}}" || NaN),
+                  profileSGGreen: Number("{{field:PROFILE_SGGREEN}}" || NaN),
+                  profileNight: Number("{{field:PROFILE_NIGHT}}" || NaN),
                   setpointBaseItem:       {{input:SETPOINT_BASE}},
                   setpointNormalItem:     {{input:SETPOINT_NORMAL}},
                   setpointEffectiveItem:  {{input:SETPOINT_EFFECTIVE}},
@@ -1861,7 +1913,7 @@ blocks:
           - component: PresetInput
             config:
               fields:
-                TEXT: mqtt:broker:09000f9f
+                TEXT: mqtt:broker:09999f9f
               name: MQTT_BROKER
               shadow: true
               type: oh_thing

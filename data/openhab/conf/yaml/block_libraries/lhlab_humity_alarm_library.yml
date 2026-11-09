@@ -87,17 +87,17 @@ blocks:
           - component: PresetInput
             config:
               name: SENSORS
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: Humidity_Innen_ALL
+                itemName: ''
           - component: PresetInput
             config:
               name: ALARMS
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: Humidity_Alarm
+                itemName: ''
           - component: PresetInput
             config:
               name: OVERRIDES
@@ -136,10 +136,10 @@ blocks:
           - component: PresetInput
             config:
               name: SENSOR
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: ''
+                itemName: ''
       utilities:
       - component: UtilityFunction
         config:

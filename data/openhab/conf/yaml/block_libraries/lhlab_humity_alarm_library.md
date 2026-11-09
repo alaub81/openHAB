@@ -1,5 +1,23 @@
 # lhlab: humidity alarms
 
+## Explicit sensor and alarm groups
+
+The sensor-group and alarm-group inputs start empty. Select your own groups;
+the library no longer preselects `Humidity_Innen_ALL` or `Humidity_Alarm`.
+Thresholds and timing defaults remain, as do semantic room matching and the
+optional override/external-alarm lists. The historical deployment details below
+do not create groups or rules on a new installation.
+
+New monitor blocks use the openHAB Item picker for both groups. Select actual
+Group Items; the picker itself is not restricted to groups. The sensor threshold
+block also uses the Item picker for its sensor. For externally evaluated alarms,
+connect a normal Blockly list containing Item selection blocks. Overrides remain
+a list of sensor threshold blocks, and both lists are optional.
+
+Reload MainUI after installing the YAML to get the new presets when adding
+blocks. Existing saved inputs are preserved; text Item names remain supported
+and can be replaced manually with Item selection blocks.
+
 [lhlab_humity_alarm_library.yml](lhlab_humity_alarm_library.yml) supplies group-based Blockly room alarms. This YAML is the canonical repository definition and contains the blocks and complete evaluation code; no extra JavaScript file is copied to the server.
 
 File name and internal UID are **`lhlab_humity_alarm_library`**. The old library created in Developer Tools uses `lhlab_humidity_library`. The existing rule therefore needs a one-time block-reference migration.
@@ -36,10 +54,10 @@ openHAB loads YAML automatically. The saved rule already includes generated Java
 
 ### Humidity monitor
 
-| Setting | Current configuration |
+| Setting | Historical rule example (not block defaults) |
 | --- | --- |
-| Sensor group | `Humidity_Innen_ALL` |
-| Alarm group | `Humidity_Alarm` |
+| Sensor group | Select your own group |
+| Alarm group | Select your own group |
 | Threshold | 75%; alarm at or above threshold |
 | Overrides | `Badezimmer_Klima_Luftfeuchtigkeit`: 80% |
 | Externally evaluated alarms | `LaubRaspi5_BME280_Humidity_Alarm` |

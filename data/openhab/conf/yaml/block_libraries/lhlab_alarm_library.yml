@@ -35,7 +35,9 @@ blocks:
             check: Number
           - type: input_value
             name: MEMORY
-            check: String
+            check:
+            - String
+            - oh_item
           - type: input_value
             name: DELAY
             check: Number
@@ -84,10 +86,10 @@ blocks:
           - component: PresetInput
             config:
               name: MEMORY
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: ''
+                itemName: ''
           - component: PresetInput
             config:
               name: DELAY
@@ -114,7 +116,9 @@ blocks:
             check: Array
           - type: input_value
             name: MEMORY
-            check: String
+            check:
+            - String
+            - oh_item
           - type: input_statement
             name: NEW
           - type: input_statement
@@ -153,10 +157,10 @@ blocks:
           - component: PresetInput
             config:
               name: MEMORY
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: ''
+                itemName: ''
       - component: BlockType
         config:
           type: lhlab_alarm_entry
@@ -340,17 +344,17 @@ blocks:
           - component: PresetInput
             config:
               name: SOURCE
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: MyContact
+                itemName: MyContact
           - component: PresetInput
             config:
               name: ALARM
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: MyAlarm
+                itemName: MyAlarm
           - component: PresetInput
             config:
               name: TITLE

@@ -77,10 +77,10 @@ blocks:
           - component: PresetInput
             config:
               name: GROUP
-              type: text
+              type: oh_item
               shadow: true
               fields:
-                TEXT: Battery_ALL
+                itemName: ''
       utilities:
       - component: UtilityFunction
         config:

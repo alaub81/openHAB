@@ -1,5 +1,24 @@
 # lhlab: battery alarms
 
+## Select the battery group as an Item
+
+New monitor blocks use the standard openHAB Item selection block for the battery
+group. Select your existing Group Item from the Item picker instead of typing its
+name into a text block. The selection starts empty; choose your battery group.
+The picker is
+not restricted to Group Items, so select an actual group containing batteries.
+The library does not create this group or its members.
+
+Existing rules with a text block remain supported: the group input still accepts
+both text and the openHAB Item block. Generated monitoring code and alarm behavior
+are unchanged. For a later deployment, reload MainUI after updating the library.
+Newly placed blocks receive the Item selector; existing text inputs are not
+replaced automatically. You can manually replace their text block with an Item
+selection block and select the same group.
+
+The rule-specific deployment record below describes the previous installation;
+its archived activation script is not a setup step for a different installation.
+
 [lhlab_battery_alarm_library.yml](lhlab_battery_alarm_library.yml) contains the **Batterien überwachen** Blockly block and its complete JavaScript implementation. Internal UID: `lhlab_battery_alarm_library`.
 
 ## Installation
@@ -26,7 +45,7 @@ The existing [lhlab_alarm_library.yml](lhlab_alarm_library.yml) is also required
 
 | Setting | Prepared value |
 | --- | --- |
-| Battery group | `Battery_ALL` |
+| Battery group | Empty; select your battery Group Item |
 | Warning threshold | At most 15% |
 | Minimum repeat interval | 12 hours |
 | Notification batching | 2 seconds |

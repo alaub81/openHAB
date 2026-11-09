@@ -1,5 +1,57 @@
 # lhlab: thermostat control
 
+## Block presets
+
+The two standard thermostat blocks retain text presets of `19:00` for night
+start and `08:15` for night stop. They also accept Item selection blocks referring
+to DateTime Items. The Shelly block already uses Item selection blocks for both
+night-time inputs. Literal times supplied by text blocks remain supported there.
+
+The Shelly block retains example MQTT broker, RPC-topic, and source values;
+adapt them to your installation. The broker uses a Thing selection block, and
+the MQTT topics use text blocks. General numeric control defaults such as
+hysteresis, offsets, and window delays are unchanged. Updating the library does
+not overwrite inputs already saved in existing rules.
+
+## Configurable Shelly schedule profiles
+
+The **Shelly Walldisplay Thermostat Control** block provides five number fields:
+
+| Field | Meaning | Previous setup mapping, for migration reference only |
+| --- | --- | ---: |
+| `PROFILE_WINDOW` | Open-window profile | 0 |
+| `PROFILE_ABSENCE` | Absence profile | 1 |
+| `PROFILE_BOOSTER` | Booster profile | 2 |
+| `PROFILE_SGGREEN` | Smart Grid green profile | 3 |
+| `PROFILE_NIGHT` | Night setback profile | 4 |
+
+Every field initially shows `-1` (not configured). Enter the nonnegative integer
+profile ID actually configured on your device. Zero is valid. Multiple modes
+may intentionally share an ID. Invalid, missing, or fractional IDs abort the
+execution before MQTT calls, delays, or Item commands. Empty MQTT broker/topic/
+source settings also abort before any external action. No fallback to the old
+profile numbers is applied.
+
+Normal operation continues to disable the device schedule and use the normal
+setpoint; it does not require a sixth profile. Priority remains booster, open
+window, absence/Smart Grid, night, then normal operation. Setpoint calculations
+and MQTT request contents are otherwise unchanged. Different devices can use
+different profile mappings in their respective rules. Schedule rule IDs inside
+Thing configuration are separate from these profile IDs.
+
+### Applying the update to an existing installation later
+
+Updating the library file does not rewrite JavaScript already saved in a rule.
+For a later deployment, copy the YAML, reload MainUI, open each affected Shelly
+Blockly rule, set the five profile fields and MQTT inputs, then regenerate/save.
+Check the device's actual profile IDs before enabling the rule. Old block XML
+without the new fields must be completed; regenerated code does not silently
+retain the previous mapping. Do not use the historical library-split migration
+script for this behavior update.
+
+The change is prepared and verified locally with simulated Items, MQTT actions,
+and time. It has not been installed or tested against a live thermostat.
+
 [lhlab_thermostat_library.yml](lhlab_thermostat_library.yml) adds an **OFF** option to the log-level selection in all three heating blocks:
 
 - Thermostat Control (HEAT / COOL)

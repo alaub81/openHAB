@@ -1,5 +1,31 @@
 # lhlab: alarm management
 
+## Example block presets
+
+New blocks include editable example values: DWD Item prefix
+`DWDUnwetterWarnungen_`, alarm-group key `hausalarme`, example identity
+`fenster-kueche`, a kitchen-window message, and source/alarm placeholders
+`MyContact` and `MyAlarm`. Adapt them to your own Items and rules. The DWD
+prefix is functional: it determines the Item names read by the monitor and
+must match the documented suffix pattern. These presets do not create Items
+or notification rules.
+
+## Item selection
+
+New blocks use the openHAB Item picker for source Items, alarm Items, and optional
+memory Items. The source/alarm examples remain `MyContact` and `MyAlarm`; choose
+existing Items in your installation. A memory Item must be a String Item. Leave
+it empty when memory should last only until the script reloads.
+
+The DWD prefix remains a text input because it describes multiple Item names.
+The alarm-group key, such as `hausalarme`, is an internal identifier rather than
+an openHAB Group Item. Identities, titles, messages, and comparison values also
+remain text inputs. The active input expects a state or Boolean, not an Item name.
+
+Existing saved blocks keep their connected inputs. Reload MainUI after installing
+the YAML to use the new presets when adding blocks. Existing text inputs remain
+supported and can be replaced manually with Item selection blocks.
+
 Generic Blockly alarm handling for openHAB 5.2. The library detects new, changed and cleared alarms. Notification delivery belongs to the caller's Blockly statements; the library never sends push messages, speaks on Echo devices or runs other rules itself.
 
 ## Install from a file (openHAB 5.2.3)

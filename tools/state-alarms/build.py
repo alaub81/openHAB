@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
-LIBRARY = ROOT / 'conf/yaml/block_libraries/lhlab_alarm_library.yml'
+LIBRARY = ROOT / 'data/openhab/conf/yaml/block_libraries/lhlab_alarm_library.yml'
 UID = 'lhlab_alarm_library'
 NS = 'https://developers.google.com/blockly/xml'
 ET.register_namespace('', NS)
@@ -46,8 +46,10 @@ def definitions():
 });
 '''}}], 'toolbox': []}}
     for name, value in [('SOURCE', 'MyContact'), ('ALARM', 'MyAlarm'), ('TITLE', 'Fensteralarm')]:
+        is_item = name in ('SOURCE', 'ALARM')
         block['slots']['toolbox'].append({'component': 'PresetInput', 'config': {
-            'name': name, 'type': 'text', 'shadow': True, 'fields': {'TEXT': value}}})
+            'name': name, 'type': 'oh_item' if is_item else 'text', 'shadow': True,
+            'fields': {'itemName' if is_item else 'TEXT': value}}})
     utility = {'component': 'UtilityFunction', 'config': {'name': 'lhlab_state_monitor',
         'code': (HERE / 'monitor.js').read_text().replace('function lhlab_state_monitor(', 'function {{name}}(', 1)}}
     return block, utility

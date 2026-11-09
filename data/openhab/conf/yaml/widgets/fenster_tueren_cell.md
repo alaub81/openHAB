@@ -20,7 +20,7 @@ File-based MainUI definition `fenster_tueren_cell.yml`, `version: 1`. Copy it to
 
 This removes a separate REST query for equipment groups. Technical group `Fenster_Uebersicht_Equipment` remains. The old `equipmentGroup` parameter is still accepted for compatibility but is no longer queried. Semantic parent relationships, alarm assignments, and rules were unchanged by this optimization.
 
-Add new contacts to the contact group and set their alarm assignment and semantic icon type in `contactOverview`. Assignments are documented in `tools/window-widget/contact-metadata.json`. Reload after changing members or display metadata. Live states continue to follow MainUI's Item store.
+Add new contacts to the contact group and set their alarm assignment and semantic icon type in `contactOverview`. The historical assignment snapshot is archived locally at `archive/scripts-cleanup-20261108/window-widget/contact-metadata.json`; current assignments are maintained in the Contact Items' `contactOverview` metadata. Reload after changing members or display metadata. Live states continue to follow MainUI's Item store.
 
 ## Alarm assignment
 

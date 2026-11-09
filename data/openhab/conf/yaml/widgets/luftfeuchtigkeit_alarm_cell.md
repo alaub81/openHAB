@@ -1,5 +1,13 @@
 # Humidity alarms as a grid cell
 
+## Explicit group selection
+
+`alarmGroup`, `sensorGroup`, and `modelGroup` all require explicit selections.
+There are no implicit groups named `Humidity_Alarm`, `Humidity_Innen_ALL`, or
+`Home`. Existing explicit instance settings remain valid. Semantic room
+assignments and optional `humidityOverview` overrides are still required as
+described below; this change does not create model Items or alarm rules.
+
 File-based MainUI definition, `version: 1`. Copy `luftfeuchtigkeit_alarm_cell.yml` to `$OPENHAB_CONF/yaml/widgets/`. The cell uses the window widget's 120-pixel height, compact three-row summary, and native detail view. Active alarms appear first and red. Unknown states and sensor assignment problems appear gray.
 
 ## Configuration
@@ -8,12 +16,12 @@ File-based MainUI definition, `version: 1`. Copy `luftfeuchtigkeit_alarm_cell.ym
 component: widget:luftfeuchtigkeit_alarm_cell
 config:
   title: Luftfeuchtigkeit
-  alarmGroup: Humidity_Alarm
-  sensorGroup: Humidity_Innen_ALL
-  modelGroup: Home
+  alarmGroup: MyHumidityAlarms
+  sensorGroup: MyHumiditySensors
+  modelGroup: MySemanticModel
 ```
 
-Add this configuration to an existing `oh-grid-cells` group. All three groups are configurable. Defaults are group names; no alarm/sensor pairs are hardcoded.
+Add this configuration to an existing `oh-grid-cells` group. All three groups are configurable. All group selections are explicit; no alarm/sensor pairs are hardcoded.
 
 - **Alarm group:** Switch members supply alarm states.
 - **Humidity sensor group:** Numeric members are candidates for automatic assignment and must be present in the loaded model.

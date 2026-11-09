@@ -8,7 +8,7 @@ documentation, are maintained under `data/openhab/conf/yaml/`.
 | --- | --- |
 | `battery-widget/` | Battery widget regression test |
 | `humidity-widget/` | Humidity widget regression test |
-| `window-widget/` | Widget generator, regression test, and contact assignments |
+| `window-widget/` | Widget generator and regression test |
 | `state-alarms/` | JavaScript source, library generator, and simulated alarm test |
 | `humidity-alarms/` | JavaScript source and simulated test for the original humidity monitor |
 | `heatpump-daily/` | Blockly generator and simulated test for daily heat-pump consumption |
@@ -33,6 +33,8 @@ The following were moved to `archive/scripts-cleanup-20261108/` without deletion
 - `state-alarms/`: exported example, window, and bathroom rules.
 - `humidity-alarms/`: old REST generator, exports, status, and UID migration.
 - `heatpump-daily/`: activation script, prepared rule, and original checksum.
+- `window-widget/contact-metadata.json`: historical contact/alarm assignment snapshot;
+  current assignments live in the Contact Items' `contactOverview` metadata.
 
 Repository paths in the archived scripts were adjusted for their new location.
 Running these historical scripts can change the live configuration. They were

@@ -17,7 +17,6 @@ widgets:
         type: TEXT
         context: item
         required: true
-        default: Battery_ALL
       parameterGroups: []
     component: oh-cell
     config:
@@ -107,7 +106,7 @@ widgets:
                 config:
                   for: member
                   sourceType: itemsInGroup
-                  groupItem: "=props.batteryGroup || 'Battery_ALL'"
+                  groupItem: "=props.batteryGroup || ''"
                   cacheSource: true
                   fragment: true
                 slots:
@@ -289,7 +288,7 @@ widgets:
             config:
               for: member
               sourceType: itemsInGroup
-              groupItem: "=props.batteryGroup || 'Battery_ALL'"
+              groupItem: "=props.batteryGroup || ''"
               cacheSource: true
               fragment: true
             slots:

@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
-TARGET = ROOT / 'conf/yaml/widgets/fenster_tueren_cell.yml'
+TARGET = ROOT / 'data/openhab/conf/yaml/widgets/fenster_tueren_cell.yml'
 
 
 def component(kind, config=None, children=None, slots=None):

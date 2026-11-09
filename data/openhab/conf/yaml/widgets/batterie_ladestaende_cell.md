@@ -1,5 +1,12 @@
 # Battery levels as a grid cell
 
+## Explicit group selection
+
+`batteryGroup` has no default and no fallback to an installation-specific group.
+Select your own numeric battery group in every widget instance. A missing group
+is a configuration to complete, not evidence that all batteries are charged.
+Existing instances with an explicit group selection keep that selection.
+
 File-based MainUI definition, `version: 1`. Copy `batterie_ladestaende_cell.yml` to `$OPENHAB_CONF/yaml/widgets/`. The cell uses the same 120-pixel height and compact style as the window, light, and humidity summaries.
 
 ## Configuration
@@ -8,7 +15,7 @@ File-based MainUI definition, `version: 1`. Copy `batterie_ladestaende_cell.yml`
 component: widget:batterie_ladestaende_cell
 config:
   title: Batterien
-  batteryGroup: Battery_ALL
+  batteryGroup: MyBatteryGroup
 ```
 
 Place it inside `oh-grid-cells`. The dialog lets you select a title and battery group. There are no hardcoded sensor Item names and no dependency on alarm Items or rules. New batteries are included through group membership. Reload the page after changing members or labels.

@@ -18,21 +18,18 @@ widgets:
         type: TEXT
         context: item
         required: true
-        default: Humidity_Alarm
       - name: sensorGroup
         label: Feuchtesensor-Gruppe
         description: Gruppe mit den Feuchtesensoren im semantischen Modell.
         type: TEXT
         context: item
         required: true
-        default: Humidity_Innen_ALL
       - name: modelGroup
         label: Semantische Hauptgruppe
         description: Oberste Gruppe des Modells mit Räumen, Geräten und Sensoren.
         type: TEXT
         context: item
         required: true
-        default: Home
       parameterGroups: []
     component: oh-cell
     config:
@@ -141,7 +138,7 @@ widgets:
                 config:
                   for: model
                   sourceType: itemsInGroup
-                  groupItem: "=props.modelGroup || 'Home'"
+                  groupItem: "=props.modelGroup || ''"
                   fetchMetadata: semantics
                   cacheSource: true
                   fragment: true
@@ -160,7 +157,7 @@ widgets:
                         config:
                           for: sensorIndex
                           sourceType: array
-                          in: "=[fn.sensors(loop.modelIndex,props.sensorGroup || 'Humidity_Innen_ALL',fn.room,fn.semantics)]"
+                          in: "=[fn.sensors(loop.modelIndex,props.sensorGroup || '',fn.room,fn.semantics)]"
                           fragment: true
                         slots:
                           default:
@@ -168,7 +165,7 @@ widgets:
                             config:
                               for: member
                               sourceType: itemsInGroup
-                              groupItem: "=props.alarmGroup || 'Humidity_Alarm'"
+                              groupItem: "=props.alarmGroup || ''"
                               fetchMetadata: semantics,humidityOverview
                               cacheSource: true
                               fragment: true
@@ -345,7 +342,7 @@ widgets:
             config:
               for: model
               sourceType: itemsInGroup
-              groupItem: "=props.modelGroup || 'Home'"
+              groupItem: "=props.modelGroup || ''"
               fetchMetadata: semantics
               cacheSource: true
               fragment: true
@@ -364,7 +361,7 @@ widgets:
                     config:
                       for: sensorIndex
                       sourceType: array
-                      in: "=[fn.sensors(loop.modelIndex,props.sensorGroup || 'Humidity_Innen_ALL',fn.room,fn.semantics)]"
+                      in: "=[fn.sensors(loop.modelIndex,props.sensorGroup || '',fn.room,fn.semantics)]"
                       fragment: true
                     slots:
                       default:
@@ -372,7 +369,7 @@ widgets:
                         config:
                           for: member
                           sourceType: itemsInGroup
-                          groupItem: "=props.alarmGroup || 'Humidity_Alarm'"
+                          groupItem: "=props.alarmGroup || ''"
                           fetchMetadata: semantics,humidityOverview
                           cacheSource: true
                           fragment: true

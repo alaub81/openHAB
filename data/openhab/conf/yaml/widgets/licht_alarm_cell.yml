@@ -18,7 +18,6 @@ widgets:
         type: TEXT
         context: item
         required: true
-        default: Licht_Alarm_ALL
       parameterGroups: []
     component: oh-cell
     config:

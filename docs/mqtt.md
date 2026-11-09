@@ -2,25 +2,43 @@
 
 Run these steps from the repository root **before first enabling the `mqtt` profile**.
 The supplied broker rejects anonymous clients and expects a password file plus
-TLS certificates. The empty tracked password file is not a working account.
-Existing installations should retain their working accounts and certificates.
+TLS certificates. Existing installations should retain their working accounts
+and certificates.
 
-## Create the first broker account
+## Example broker account
+
+The repository includes `data/mosquitto/conf/mosquitto.passwd` with this public
+example account:
+
+- Username: `mosquitto`
+- Password: `mosquitto-mqtt`
+
+The password file contains a salted PBKDF2-SHA512 hash generated with
+`mosquitto_passwd`, not the plaintext password. **These credentials are public;
+replace the example password before using the broker in your own installation.**
+The hash does not make a publicly documented password private.
+
+## Replace the example password
 
 This one-off container runs only the password utility, without starting the
-broker or its dependencies. Replace `mqttuser` with your desired username; the
-utility prompts for a password without putting it in the command line.
+broker or its dependencies. It prompts for the new password without putting it
+in the command line and preserves other accounts:
 
 ```bash
 docker compose run --rm --no-deps --user 0 \
   --entrypoint mosquitto_passwd mosquitto \
-  -c /mosquitto/config/mosquitto.passwd mqttuser
+  /mosquitto/config/mosquitto.passwd mosquitto
 ```
 
-Use `-c` only for a new password file: it replaces existing accounts. To add or
-update an account later, run the same command without `-c`, then restart the
-broker during a suitable maintenance window. Keep the resulting password file
-local; its password hashes are deployment data, not repository examples.
+To add another account, replace the final `mosquitto` with your desired username.
+Remove the public example account with `mosquitto_passwd -D` if you do not use it.
+Use `-c` only when deliberately replacing the entire password file: it overwrites
+all existing accounts. Restart a running broker after account changes during a
+suitable maintenance window.
+
+The example password file is tracked by Git. Keep your deployment password file
+on the host and do not commit real account hashes or overwrite it when updating
+from the repository.
 
 ## Provide certificates
 
@@ -93,8 +111,9 @@ docker compose run --rm --no-deps --user 0 --entrypoint sh mosquitto -ec '
 '
 ```
 
-Generated certificate files and the local `.env` are ignored by Git. The empty
-password file remains a tracked template; do not commit deployment password hashes.
+Generated certificate files and the local `.env` are ignored by Git. Only the
+public example password hash belongs in the tracked `mosquitto.passwd`; do not
+commit deployment password hashes.
 
 ## Start and connect
 

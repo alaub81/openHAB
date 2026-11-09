@@ -59,7 +59,8 @@ Only `.env.example` is versioned; `.env` is ignored by Git. Keep an existing
 ### 2. Prepare MQTT and permissions
 
 If enabling `mqtt`, complete the [MQTT setup](docs/mqtt.md) **before starting the
-broker**: it requires a password file and TLS certificates. Skip this step when
+broker**: replace the public example login (`mosquitto` / `mosquitto-mqtt`)
+and provide TLS certificates. Skip this step when
 using openHAB alone or an external broker.
 
 For a new checkout, allow openHAB's configured UID/GID `9001:9001` to write its

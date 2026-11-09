@@ -3,6 +3,7 @@
 
 import ast
 import copy
+from itertools import combinations
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,11 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML_ROOT = Path("data/openhab/conf/yaml")
+PROFILE_SERVICES = {
+    "mqtt": {"mosquitto"},
+    "influxdb": {"influxdb"},
+    "grafana": {"grafana", "postgres", "renderer"},
+}
 
 
 class ConfigLoader(yaml.SafeLoader):
@@ -93,7 +99,7 @@ def dotenv(text):
         values[key] = value
         if re.search(r"PASSWORD|PASSWD|TOKEN|SECRET|API_KEY", key, re.IGNORECASE):
             if not re.fullmatch(r"CHANGE_ME_[A-Z0-9_]+", value):
-                raise ValueError(f"{key}: use a CHANGE_ME_ placeholder in the tracked .env")
+                raise ValueError(f"{key}: use a CHANGE_ME_ placeholder in .env.example")
     return values
 
 
@@ -103,7 +109,7 @@ def project_files():
     )
     return sorted({
         name for name in result.decode().split("\0")
-        if name and (ROOT / name).is_file()
+        if name and name != ".env" and (ROOT / name).is_file()
     })
 
 
@@ -123,7 +129,7 @@ def main():
         path = ROOT / name
         suffix = path.suffix
         yaml_file = name.endswith((".yml", ".yaml", ".yml.example", ".yaml.example"))
-        text_file = yaml_file or suffix in {".md", ".py", ".sh", ".js", ".json", ".conf", ".persist", ".influx"} or path.name == ".env"
+        text_file = yaml_file or suffix in {".md", ".py", ".sh", ".js", ".json", ".conf", ".persist", ".influx"} or path.name == ".env.example"
         if not text_file:
             continue
         try:
@@ -156,7 +162,7 @@ def main():
                 if result.returncode:
                     raise ValueError("bash -n failed")
                 label = "Bash syntax"
-            elif path.name == ".env":
+            elif path.name == ".env.example":
                 env_values = dotenv(text)
                 label = "Dotenv / credential placeholders"
             else:
@@ -171,24 +177,44 @@ def main():
             fail(name, message)
 
     if env_values is None:
-        fail(".env", "missing or invalid repository configuration template")
+        fail(".env.example", "missing or invalid repository configuration template")
     elif not shutil.which("docker"):
         fail("Compose", "Docker CLI with the Compose plugin is required")
     else:
         # Do not inherit shell credentials or COMPOSE_* settings when validating
         # the repository template. The Docker daemon is not contacted by config.
         environment = {k: v for k, v in os.environ.items() if k not in env_values and not k.startswith("COMPOSE_")}
-        result = subprocess.run(
-            ["docker", "compose", "--env-file", str(ROOT / ".env"), "-f", str(ROOT / "docker-compose.yml"), "config", "--quiet"],
-            cwd=ROOT, env=environment, capture_output=True,
-        )
-        if result.returncode or result.stderr:
-            fail("Compose", "validation failed or reported warnings; run docker compose config --quiet locally")
-        else:
-            counts["Docker Compose"] = 1
+        # Test each selection independently of the template's default profiles.
+        environment["COMPOSE_PROFILES"] = ""
+        for size in range(len(PROFILE_SERVICES) + 1):
+            for profiles in combinations(PROFILE_SERVICES, size):
+                command = ["docker", "compose", "--env-file", str(ROOT / ".env.example"), "-f", str(ROOT / "docker-compose.yml")]
+                for profile in profiles:
+                    command.extend(["--profile", profile])
+                result = subprocess.run(
+                    command + ["config", "--format", "json"],
+                    cwd=ROOT, env=environment, capture_output=True,
+                )
+                selection = ",".join(profiles) or "openhab-only"
+                if result.returncode or result.stderr:
+                    fail("Compose", f"profile selection {selection}: validation failed or reported warnings")
+                    continue
+                expected = {"openhab"}
+                for profile in profiles:
+                    expected.update(PROFILE_SERVICES[profile])
+                try:
+                    actual = set(json.loads(result.stdout)["services"])
+                except (ValueError, KeyError, TypeError):
+                    fail("Compose", f"profile selection {selection}: invalid configuration output")
+                    continue
+                if actual != expected:
+                    fail("Compose", f"profile selection {selection}: unexpected service selection")
+                else:
+                    counts["Docker Compose profiles"] = counts.get("Docker Compose profiles", 0) + 1
 
     for label, count in counts.items():
-        print(f"PASS  {label} ({count} files)")
+        unit = "checks" if label == "Docker Compose profiles" else "files"
+        print(f"PASS  {label} ({count} {unit})")
     for failure in failures:
         print("FAIL  " + failure)
     print(f"\n{'FAIL' if failures else 'PASS'}: {len(failures)} issue(s).")

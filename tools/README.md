@@ -1,8 +1,10 @@
 # Development tools
 
 These tools run locally to prepare and verify changes. openHAB does not need them
-at runtime. The current widgets and Blockly libraries, together with their
-documentation, are maintained under `data/openhab/conf/yaml/`.
+at runtime. Current widget and Blockly library sources are maintained under
+`data/openhab/conf/yaml/`, together with their documentation. Start with the
+[widget catalog](../data/openhab/conf/yaml/widgets/README.md) or
+[library catalog](../data/openhab/conf/yaml/block_libraries/README.md).
 
 | Directory | Contents |
 | --- | --- |
@@ -42,5 +44,5 @@ not executed during cleanup, and their prepared state has not been compared
 with the current server.
 
 `archive/` remains excluded by `.gitignore`, so Git does not back it up. `tools/`
-is not excluded; include the new files in the next commit. Administrative shell
+is versioned. Administrative shell
 scripts remain unchanged under `scripts/`.

@@ -1,4 +1,5 @@
 .gitignore
+/.env
 openhab_api_key
 /archive/
 data/openhab/conf/items/thermostat*.items
@@ -6,3 +7,10 @@ AGENTS.md
 /backups/
 /.lint-venv/
 __pycache__/
+/certs/*.key
+/certs/*.crt
+/certs/*.csr
+/certs/*.srl
+/certs/*.ext
+/data/mosquitto/conf/certs/*
+!/data/mosquitto/conf/certs/.placeholder

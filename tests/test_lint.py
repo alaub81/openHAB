@@ -3,11 +3,17 @@
 import json
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from lint import dotenv, load_yaml, openhab_entities, unique_json
+from lint import dotenv, load_yaml, openhab_entities, project_files, unique_json
 
 
 class LintRegressionTests(unittest.TestCase):
+    def test_local_environment_is_excluded_even_if_it_exists(self):
+        with patch("lint.subprocess.check_output", return_value=b".env\0.env.example\0"):
+            with patch("lint.Path.is_file", return_value=True):
+                self.assertEqual(project_files(), [".env.example"])
+
     def test_widget_item_parameters_have_no_implicit_items(self):
         root = Path(__file__).resolve().parents[1] / "data/openhab/conf/yaml/widgets"
         for path in root.glob("*.yml"):

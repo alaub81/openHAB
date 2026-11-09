@@ -4,8 +4,10 @@ services:
     depends_on:
       influxdb:
         condition: service_healthy
+        required: false
       mosquitto:
         condition: service_healthy
+        required: false
     restart: unless-stopped
     stop_grace_period: 2m
     # if you do not need persistent log files
@@ -39,6 +41,7 @@ services:
     network_mode: host
 
   mosquitto:
+    profiles: [mqtt]
     image: eclipse-mosquitto:${MOSQUITTO_VERSION}
     restart: unless-stopped
     volumes:
@@ -66,6 +69,7 @@ services:
           - mqtt
 
   influxdb:
+    profiles: [influxdb]
     image: influxdb:${INFLUXDB_VERSION}
     restart: unless-stopped
     stop_grace_period: 1m
@@ -125,6 +129,7 @@ services:
           - db
 
   postgres:
+    profiles: [grafana]
     image: postgres:${POSTGRES_VERSION}
     restart: unless-stopped
     stop_grace_period: 1m
@@ -152,6 +157,7 @@ services:
           - postgresdb
 
   renderer:
+    profiles: [grafana]
     # official image
     image: grafana/grafana-image-renderer:latest
     # inofficial ones working on Raspberry Pi's
@@ -178,10 +184,12 @@ services:
       - backend-nw
 
   grafana:
+    profiles: [grafana]
     image: grafana/grafana:${GRAFANA_VERSION}
     depends_on:
       influxdb:
         condition: service_healthy
+        required: false
       renderer:
         condition: service_healthy
       postgres:

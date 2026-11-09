@@ -1,150 +1,147 @@
-# openHAB Setup and Tools
+# openHAB Docker setup, widgets and Blockly libraries
 
-In this repsoitory I collect everything needed to have a good running openHAB Setup. This Setup is based on a docker compose deployment. Included you can find the following toolset:
+Run openHAB with MQTT, time-series storage and Grafana dashboards using Docker
+Compose. Add reusable MainUI widgets and Blockly blocks for climate control,
+weather, batteries, windows, doors and alarms to your own openHAB installation.
 
-* openHAB - Smart Home Hub
-* InfluxDB2 - for persistence
-* grafana inclusive renderer - for the visualization of data
-* postgres - for grafana configuration
-* Mosquitto MQTT - MQTT Broker for IoT Devices
+## Features
 
-## Docker compose project
+- **Optional infrastructure:** openHAB runs on its own; Compose profiles add
+  Mosquitto, InfluxDB 2, or Grafana with PostgreSQL and the Image Renderer.
+- **Twelve MainUI widgets:** compact overview cells, DWD warning and pollen
+  strips, and thermostat list controls with configurable Item selections.
+- **Five Blockly libraries:** shared alarm handling, battery and humidity
+  monitoring, thermostat control, and Thing enable/disable actions.
+- **File-based configuration:** versioned YAML sources loaded directly by
+  openHAB, with inactive Thing and Item examples for optional integrations.
+- **Operational defaults:** healthchecks, graceful shutdown periods, non-root
+  Grafana, shared renderer authentication, and optional InfluxDB tuning.
+- **Maintenance tools and checks:** administrative scripts, widget/rule
+  generators, regression checks, and a read-only repository linter.
 
-Just clone that complete repository (e.g. under `/opt/`):
+## Quick start: Docker stack
+
+Use a Linux Docker host with Git, Docker Engine 25+ and Compose 2.20.2+.
+The supplied configuration targets openHAB 5.2.3 and uses host networking for
+openHAB. Existing installations can use the widgets and libraries independently;
+skip to the [openHAB quick start](#quick-start-widgets-and-blockly-libraries).
+
+### 1. Prepare a new installation
 
 ```bash
 git clone https://github.com/alaub81/openHAB.git
+cd openHAB
+cp .env.example .env
+chmod 600 .env
 ```
 
-And configure the `.env`file.
+Edit your local `.env` using [`.env.example`](.env.example) as the reference.
+Set the timezone, ports and desired image versions. Choose optional services:
 
-* Change the passwords!
-* If you like to have grafana configured for mailing, change `GF_SMTP_ENABLED=true` and configure you mail setup.
+| `COMPOSE_PROFILES` | Services started with openHAB |
+| --- | --- |
+| `mqtt,influxdb,grafana` (default) | All bundled services |
+| Empty | None; openHAB only |
+| `mqtt` | Mosquitto |
+| `influxdb` | InfluxDB 2 |
+| `grafana` | Grafana, PostgreSQL and the Image Renderer |
 
-Then you can create an openhab user and group on the host system if you like to map them.
+Combine any profiles with commas. Configure credentials for the services you
+enable; generate each password/token separately with `openssl rand -hex 32`.
+For Grafana, set its server URL and replace the shared
+`GRAFANA_RENDERING_RENDERER_TOKEN`. Configure SMTP only if you need email.
+Keep unused service declarations from the template; Compose also resolves
+variables belonging to inactive profiles.
+
+Only `.env.example` is versioned; `.env` is ignored by Git. Keep an existing
+`.env` when updating, and preserve its credentials, project identity and volumes.
+
+### 2. Prepare MQTT and permissions
+
+If enabling `mqtt`, complete the [MQTT setup](docs/mqtt.md) **before starting the
+broker**: it requires a password file and TLS certificates. Skip this step when
+using openHAB alone or an external broker.
+
+For a new checkout, allow openHAB's configured UID/GID `9001:9001` to write its
+bind-mounted configuration and add-ons directories:
 
 ```bash
-groupadd -g 9001 openhab
-useradd -u 9001 -g openhab -r -s /sbin/nologin openhab
+sudo chown -R 9001:9001 data/openhab
 ```
 
-Now we need the certificates for the secure mqtt connection of Mosquitto. For the generation of the certs we will use the `generate-certs.sh`. Just configure the script upfront:
+For different IDs or an existing installation, follow the
+[deployment guide](docs/deployment.md) instead of changing ownership blindly.
 
-* Configure at least the `IP` Variable, use the FQDN
-* Change all other variables to your needs!
-
-```bash
-cd /opt/openHAB/certs
-chmod +x generate-certs.sh
-./generate-certs.sh
-```
-
-After that you schould be able to start the whole setup with:
+### 3. Validate and start
 
 ```bash
-cd /opt/openHAB
+docker compose config --quiet
 docker compose up -d
+docker compose ps
+docker compose logs --tail=100 openhab
 ```
 
-Now the Setup should be reachable:
+Allow openHAB to finish its first startup. Enabled services use these default ports:
 
-* openHAB: <http://YOURSERVERNAME:8080> und <https://YOURSERVERNAME:8433>
-* Grafana: <http://YOURSERVERNAME:3000>
-* InfluxDB: <http://YOURSERVERNAME:8086>
+| Service | URL |
+| --- | --- |
+| openHAB | `http://YOURSERVERNAME:8080` or `https://YOURSERVERNAME:8443` |
+| Grafana | `http://YOURSERVERNAME:3000` |
+| InfluxDB | `http://YOURSERVERNAME:8086` |
 
-### Configure Mosquitto User
+Complete openHAB's setup and add the bindings you need. Configure MQTT, persistence
+and Grafana data sources for the local profiles or external services you use.
+These application connections and dashboards are not provisioned by Compose; see
+[connecting the services](docs/deployment.md#connect-the-applications).
 
-to connect to the secure MQTT Broker, you need at minimum one configured user. Just create the first one:
+## Quick start: widgets and Blockly libraries
 
-```bash
-cd /opt/openHAB
-docker compose exec mosquitto mosquitto_passwd -c /mosquitto/config/mosquitto.passwd mosquitto
+The Docker setup already mounts the bundled YAML into openHAB. On another
+installation, copy only the desired `.yml` files from:
+
+- [`data/openhab/conf/yaml/widgets/`](data/openhab/conf/yaml/widgets/) to
+  `$OPENHAB_CONF/yaml/widgets/`.
+- [`data/openhab/conf/yaml/block_libraries/`](data/openhab/conf/yaml/block_libraries/)
+  to `$OPENHAB_CONF/yaml/block_libraries/`.
+
+Keep the `version: 1` wrapper intact. Reload MainUI after loading the files.
+Widgets and libraries appear file-managed; no manual MainUI import is required.
+Files ending in `.example` remain inactive until deliberately adapted and renamed.
+
+**Widgets:** add a personal widget to a page and select your own Items/groups.
+For example, place this component inside an `oh-grid-cells` container:
+
+```yaml
+component: widget:batterie_ladestaende_cell
+config:
+  title: Batteries
+  batteryGroup: MyBatteryGroup
 ```
 
-### Container healthchecks
+The [widget catalog](data/openhab/conf/yaml/widgets/README.md) lists all widgets, their requirements,
+and Page YAML examples for the battery, humidity, light, and window cells.
+Widgets display or control existing Items; they do not create your semantic
+model or alarm rules. Existing widget IDs and UI labels are retained.
 
-The healthcheck settings were synchronized with the Raspberry Pi on 2026-10-31.
-The root `docker-compose.yml` contains the active timings for its six services.
-Existing probe commands are retained; openHAB and the renderer inherit their
-probe commands from their container images.
+**Blockly libraries:** install the **JavaScript Scripting** automation add-on,
+create a rule with suitable triggers and a Blockly script action, then choose
+the blocks from the library toolbox. Select your Items, configure thresholds or
+device profile IDs, and add notification actions where required. Loading a
+library does not create or run a rule. Start with the
+[library catalog and rule setup](data/openhab/conf/yaml/block_libraries/README.md).
 
-The [healthcheck overrides](deploy/healthchecks/) also preserve the timings of
-all 20 configured checks across the Pi's three Compose projects:
+## Guides and development
 
-| Override | Existing base file on the Pi | Checks |
-| --- | --- | ---: |
-| [openhab.yml](deploy/healthchecks/openhab.yml) | `/opt/openhab5/docker-compose.yml` | 9 |
-| [tools.yml](deploy/healthchecks/tools.yml) | `/opt/tools/docker-compose.yml` | 9 |
-| [portwatcher.yml](deploy/healthchecks/portwatcher.yml) | `/opt/portwatcher/docker-compose.yml` | 2 |
+- [Documentation index](docs/README.md)
+- [Deployment, service connections, healthchecks and updates](docs/deployment.md)
+- [MQTT passwords and TLS](docs/mqtt.md)
+- [InfluxDB tuning and backups](docs/influxdb.md)
+- [Grafana migration from root to its image-default user](docs/grafana-non-root-migration.md)
+- [Thing templates and Somfy sun sensors](data/openhab/conf/yaml/things/README.md)
+- [Development tools](tools/README.md) and [repository checks](tests/README.md)
 
-Use each override together with the corresponding **existing Pi base file**.
-The openHAB override includes the SMA bridge and both BMW bridges, whose service
-definitions are present in the Pi's base file but are not part of this
-repository's root Compose file. Smokeping has no configured healthcheck.
-The overrides contain healthcheck timings only and inherit the existing probe
-commands, images, volumes, credentials and startup dependencies from the base file.
+Run `./tests/linter-check.sh` to validate the repository without starting containers.
 
-For example, with this repository checked out at `/opt/openHAB`, validate the
-combined configuration using:
-
-```bash
-docker compose -f /opt/openhab5/docker-compose.yml \
-  -f /opt/openHAB/deploy/healthchecks/openhab.yml config --quiet
-```
-
-For a future deployment, use the same pair of files with `up -d`; Compose will
-recreate services whose configuration changed. The repository synchronization
-itself does not require recreating the already updated Pi containers.
-
-`interval` controls checks during normal operation. `start_interval: 5s` provides
-fast readiness checks during the configured `start_period`, so dependent services
-can start promptly. A successful check ends the startup phase immediately.
-The MariaDB configuration retains five retries and a 60-second startup period;
-Autoheal's own check runs every 60 seconds and its monitoring loop every 120
-seconds. `unhealthy` alone does not restart a container; Autoheal selects the
-containers carrying its configured label.
-
-## Grafana process user
-
-Grafana uses the image default non-root user. For an existing installation that
-previously ran as root, follow the [migration and verification guide](docs/grafana-non-root-migration.md)
-to back up data, adjust volume permissions, and verify the running service.
-
-## Scripts / Tools
-
-here you can find some usefull scripts I am using to administrate my openHAB setup. For example there are some scripts to do things in the persistence layer - influxDB. Or to bring more stability into the digitalstrom binding. Just have a look at the descriptions on top of each script.
-
-To make the scripts running, please add the execute right to them and then just start it, e.g.:
-
-```bash
-cd scripts
-chmod +x cleanup-influxdb-integer.sh
-./cleanup-influxdb-integer.sh
-```
-
-## Development tools and archived migrations
-
-`scripts/` contains the administrative shell scripts. Reusable widget and rule
-generators, source code and checks are kept in [tools/](tools/README.md).
-One-off migration scripts and deployment exports were moved to
-`archive/scripts-cleanup-20261108/`; see the tools README for the inventory.
-The archive is local and excluded from Git. The tools are eligible for versioning.
-
-## Repository checks
-
-Run `./tests/linter-check.sh` to check configuration and source syntax without
-starting containers. See [tests/README.md](tests/README.md) for prerequisites
-and coverage.
-
-## Links
-
-If you need more Details about the setup:
-
-* <https://www.laub-home.de/wiki/OpenHAB_4_Docker_Installation>
-* <https://www.laub-home.de/wiki/OpenHAB_3_Docker_Installation>
-
-## Historical project material
-
-The [2026-10-30 project import](archive/chatgpt-project-2026-10-30/README.md) preserves
-widget drafts, deployment exports and SMA reference packages from the former
-ChatGPT project folder. See its manifest and private-backup notes before cleanup.
+Related projects: [SMA MQTT Bridge](https://github.com/alaub81/sma-mqtt-bridge)
+and [BMW MQTT Bridge](https://github.com/alaub81/bmw-mqtt-bridge). Their services
+are configured separately; this Compose file does not deploy either bridge.

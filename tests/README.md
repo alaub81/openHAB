@@ -28,13 +28,14 @@ read-only: there is no automatic formatting or application-script execution.
 - Python syntax using `ast.parse`, without importing or running project scripts.
 - Bash syntax using `bash -n`, without running shell commands in those scripts.
 - Unresolved merge markers in recognized text/source files.
-- Unique `.env` assignments and `CHANGE_ME_...` placeholders for credential keys.
-  This repository intentionally tracks a sanitized `.env`; use your real
-  credentials only in the server's local deployment configuration.
-- `docker compose config --quiet` against the main Compose file and repository
-  `.env`. Validation fails on warnings as well as errors. Values from the shell
-  cannot override keys defined in this template. Diagnostic output never dumps
-  the resolved Compose configuration or credential values.
+- Unique `.env.example` assignments and `CHANGE_ME_...` credential placeholders.
+  Local `.env` files are ignored and never read by the checker, even if present.
+- Compose configuration validation against `.env.example` for all eight
+  combinations of the `mqtt`, `influxdb` and `grafana` profiles. It checks the
+  exact service selection, including openHAB-only and the complete stack.
+  Validation fails on warnings as well as errors. Shell values and a local
+  `.env` cannot override the template. Diagnostic output never dumps resolved
+  configuration or credential values. A local `.env` is not required to run checks.
 
 Ignored archives, backups, virtual environments, and local thermostat Item files
 are excluded. The checker does not validate JavaScript expressions, Item DSL,

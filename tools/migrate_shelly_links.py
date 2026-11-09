@@ -23,8 +23,8 @@ It then uses the openHAB REST API to:
 4. Load all existing Item-Channel links from /rest/links
 5. Find Items currently linked to deprecated Shelly channels
 6. Check whether the Item type matches the expected type of the new channel
-7. Delete the old Item-Channel link
-8. Create a new Item-Channel link to the replacement channel
+7. Create a new Item-Channel link to the replacement channel
+8. Delete the old link only after successful creation
 
 Safety Features
 ---------------
@@ -45,61 +45,20 @@ edge cases, for example:
 - meterN#reactiveWatts -> meterN#reactivePower
   This is allowed but logged with a note because the unit was corrected to VAR.
 
-Recommended Usage
------------------
-1. Save this script as:
-
-       migrate_shelly_links.py
-
-2. Adjust the configuration variables below:
-
-       OPENHAB_URL
-       API_TOKEN
-       LOGFILE
-
-3. Run the script in dry-run mode first:
-
-       python3 migrate_shelly_links.py | tee dryrun-shelly-links.txt
-
-4. Review the output carefully, especially lines starting with:
-
-       SKIP
-       WARN
-       NOTE
-       MIGRATE
-
-5. If the dry run looks correct, set:
-
-       DRY_RUN = False
-
-6. Run the script again:
-
-       python3 migrate_shelly_links.py | tee migrate-shelly-links-run.txt
-
-Strong Recommendation
----------------------
-Before running with DRY_RUN = False, export a backup of all links:
-
-    curl -u 'YOUR_API_TOKEN:' \
-      -H "Accept: application/json" \
-      "http://openhab.laub.loc:8080/rest/links" \
-      > openhab-links-before-shelly-migration.json
-
-Requirements
-------------
-Python 3 with the requests module:
-
-    python3 -m pip install requests
-
-Authentication
---------------
-The script uses basic authentication with an openHAB API token:
-
-    session.auth = (API_TOKEN, "")
-
-Create an API token in openHAB and paste it into API_TOKEN below.
+Usage
+-----
+Set OPENHAB_URL, OPENHAB_TOKEN_FILE and OPENHAB_LOG in the environment.
+Run with no arguments for a dry run. Add --execute --backup-file PATH only
+when ready to apply. The backup file must not already exist. See tools/README.md.
+Requires Python 3 and requests. TLS verification stays enabled; REQUESTS_CA_BUNDLE
+can select a local CA. This tool changes links only; it does not send Item commands.
 """
 
+import argparse
+import json
+import os
+from pathlib import Path
+from urllib.parse import urlsplit
 import re
 import sys
 import requests
@@ -110,10 +69,9 @@ from urllib.parse import quote
 # Configuration
 # ============================================================================
 
-OPENHAB_URL = "http://openhab.local:8080"
-API_TOKEN = "YOUR_API_TOKEN"
-
-LOGFILE = "openhab.log"
+OPENHAB_URL = ""
+LOGFILE = ""
+BACKUP_FILE = None
 
 # True  = do not change anything, only print planned actions
 # False = actually delete old links and create new links
@@ -133,7 +91,7 @@ ALLOW_GENERIC_NUMBER_ITEM = True
 # ============================================================================
 
 # Example:
-# shellypstripg4-d885ace3ef0c: Channel meter1#currentWatts is deprecated
+# shellypstripg4-000000000001: Channel meter1#currentWatts is deprecated
 # and will be removed in a future release; use meter1#currentPower instead.
 DEPRECATED_RE = re.compile(
     r"-\s+(?P<shelly_id>[^:]+):\s+Channel\s+"
@@ -147,7 +105,6 @@ DEPRECATED_RE = re.compile(
 # ============================================================================
 
 session = requests.Session()
-session.auth = (API_TOKEN, "")
 session.headers.update({
     "Accept": "application/json",
     "Content-Type": "application/json"
@@ -158,10 +115,16 @@ def enc(value: str) -> str:
     return quote(value, safe="")
 
 
+def request(method, path, **kwargs):
+    response = session.request(method, f"{OPENHAB_URL}{path}", timeout=(5, 30),
+                               allow_redirects=False, **kwargs)
+    if not 200 <= response.status_code < 300:
+        raise RuntimeError(f"{method} failed with HTTP {response.status_code}; stopping")
+    return response
+
+
 def get_json(path: str):
-    r = session.get(f"{OPENHAB_URL}{path}")
-    r.raise_for_status()
-    return r.json()
+    return request("GET", path).json()
 
 
 # ============================================================================
@@ -211,7 +174,7 @@ def get_channel_id_from_uid(channel_uid: str):
     """
     Full channel UID example:
 
-        shelly:shellyplusplug:9afaf216e5:meter#currentPower
+        shelly:shellyplusplug:exampledevice:meter#currentPower
 
     Result:
 
@@ -224,7 +187,7 @@ def build_shelly_lookup(things):
     """
     Build a lookup table:
 
-        shellypstripg4-d885ace3ef0c -> real openHAB Thing UID
+        shellypstripg4-000000000001 -> real openHAB Thing UID
 
     The lookup intentionally searches broadly in:
 
@@ -322,12 +285,7 @@ def get_item(item_name):
     if item_name in _item_cache:
         return _item_cache[item_name]
 
-    r = session.get(f"{OPENHAB_URL}/rest/items/{enc(item_name)}")
-    if r.status_code != 200:
-        _item_cache[item_name] = None
-        return None
-
-    data = r.json()
+    data = get_json(f"/rest/items/{enc(item_name)}")
     _item_cache[item_name] = data
     return data
 
@@ -455,19 +413,17 @@ def classify_known_shelly_risk(old_channel_uid, new_channel_uid, item_type):
 # ============================================================================
 
 def delete_link(item_name, channel_uid):
-    url = f"{OPENHAB_URL}/rest/links/{enc(item_name)}/{enc(channel_uid)}"
+    path = f"/rest/links/{enc(item_name)}/{enc(channel_uid)}"
 
     if DRY_RUN:
         print(f"[DRY] DELETE {item_name} -> {channel_uid}")
         return
 
-    r = session.delete(url)
-    if r.status_code not in (200, 204):
-        print(f"[WARN] DELETE failed: {item_name} -> {channel_uid}: {r.status_code} {r.text}")
+    request("DELETE", path)
 
 
 def create_link(item_name, channel_uid, configuration=None):
-    url = f"{OPENHAB_URL}/rest/links/{enc(item_name)}/{enc(channel_uid)}"
+    path = f"/rest/links/{enc(item_name)}/{enc(channel_uid)}"
 
     payload = {
         "itemName": item_name,
@@ -479,9 +435,7 @@ def create_link(item_name, channel_uid, configuration=None):
         print(f"[DRY] PUT    {item_name} -> {channel_uid} config={configuration or {}}")
         return
 
-    r = session.put(url, json=payload)
-    if r.status_code not in (200, 201, 204):
-        print(f"[WARN] PUT failed: {item_name} -> {channel_uid}: {r.status_code} {r.text}")
+    request("PUT", path, json=payload)
 
 
 # ============================================================================
@@ -542,6 +496,13 @@ def main():
     things = get_json("/rest/things")
     links = get_json("/rest/links")
 
+    if not isinstance(things, list) or not isinstance(links, list):
+        raise RuntimeError("Invalid Things/links response; no changes sent")
+    if any(not isinstance(link, dict) or not link.get("itemName") or
+           not link.get("channelUID") for link in links):
+        raise RuntimeError("Invalid link record; no changes sent")
+    plan = []
+    existing = {(link["itemName"], link["channelUID"]) for link in links}
     things_by_uid = {
         get_thing_uid(t): t
         for t in things
@@ -685,19 +646,34 @@ def main():
         print(f" Channel type: {new_channel_type}")
         print(f"        Check: {reason}")
 
-        delete_link(item_name, old_channel_uid)
-        create_link(item_name, new_channel_uid, config)
-
+        # Preserve existing target link configuration; do not overwrite it.
+        if (item_name, new_channel_uid) in existing:
+            print("[SKIP] Target link already exists; review manually")
+            skipped += 1
+            continue
+        plan.append((item_name, old_channel_uid, new_channel_uid, config))
         migrated += 1
         print()
 
     warn_powerfactor_links(links)
+    if len(plan) > 50:
+        raise RuntimeError("More than 50 migrations; narrow the log input first")
+    if not DRY_RUN and plan:
+        if get_json("/rest/links") != links:
+            raise RuntimeError("Links changed during planning; run a new preview")
+        # Exclusive creation and owner-only permissions; no extra config file.
+        fd = os.open(BACKUP_FILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as backup:
+            json.dump(links, backup, indent=2)
+    for item_name, old_uid, new_uid, config in plan:
+        create_link(item_name, new_uid, config)
+        delete_link(item_name, old_uid)
 
     print()
     print("Summary")
     print("=======")
     print(f"Candidates with existing link: {candidates}")
-    print(f"Migrated:                      {migrated}")
+    print(f"Planned/applied migrations:     {migrated}")
     print(f"Skipped:                       {skipped}")
     print(f"Warnings:                      {warnings}")
     print(f"Notes:                         {notes}")
@@ -705,20 +681,44 @@ def main():
     if DRY_RUN:
         print()
         print("DRY_RUN is enabled. No changes were made.")
-        print("If everything looks correct, set DRY_RUN = False and run the script again.")
+        print("Review the plan, then rerun with --execute --backup-file PATH to apply.")
+
+
+def configure():
+    global OPENHAB_URL, LOGFILE, DRY_RUN, BACKUP_FILE
+    parser = argparse.ArgumentParser(description="Preview Shelly link migrations; no changes by default.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--execute", action="store_true")
+    mode.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--backup-file", type=Path)
+    args = parser.parse_args()
+    OPENHAB_URL = os.environ.get("OPENHAB_URL", "").rstrip("/")
+    parsed = urlsplit(OPENHAB_URL)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path:
+        parser.error("Set OPENHAB_URL to an HTTP(S) base URL without credentials or path")
+    LOGFILE = os.environ.get("OPENHAB_LOG", "")
+    if not Path(LOGFILE).is_file():
+        parser.error("Set OPENHAB_LOG to a readable log file")
+    token = os.environ.get("OPENHAB_TOKEN", "")
+    if os.environ.get("OPENHAB_TOKEN_FILE"):
+        token = Path(os.environ["OPENHAB_TOKEN_FILE"]).read_text().strip()
+    if not token or any(c in token for c in "\r\n") or token.startswith(("CHANGE_ME", "YOUR_")):
+        parser.error("Supply OPENHAB_TOKEN_FILE or OPENHAB_TOKEN")
+    session.auth = (token, "")
+    DRY_RUN = not args.execute
+    BACKUP_FILE = args.backup_file
+    if args.execute and not BACKUP_FILE:
+        parser.error("--execute requires --backup-file PATH (a new local file)")
 
 
 if __name__ == "__main__":
     try:
+        configure()
         main()
-    except requests.HTTPError as e:
-        print(f"HTTP error: {e}")
-        if e.response is not None:
-            print(e.response.text)
-        sys.exit(1)
-    except FileNotFoundError:
-        print(f"Log file not found: {LOGFILE}")
+    except (requests.RequestException, OSError, ValueError, RuntimeError) as error:
+        detail = str(error) if isinstance(error, RuntimeError) else type(error).__name__
+        print(f"Migration stopped: {detail}. Check inputs/connectivity and backup; completed actions are not rolled back.", file=sys.stderr)
         sys.exit(1)
     except KeyboardInterrupt:
-        print("Aborted.")
+        print("Aborted. Check links and backup before retrying.", file=sys.stderr)
         sys.exit(130)

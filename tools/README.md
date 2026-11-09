@@ -26,23 +26,34 @@ documentation contains the commands and YAML-to-JSON conversion instructions.
 The other JavaScript tests expose functions that take a Node VM and the required
 source data; they are not standalone CLI programs.
 
-## Local archive dated 2026-11-08
+## Shelly link migration
 
-The following were moved to `archive/scripts-cleanup-20261108/` without deletion:
+`migrate_shelly_links.py` is an existing Python tool, independent of the Bash
+maintenance scripts. Install `requests` in your own virtual environment.
+Set `OPENHAB_URL`, `OPENHAB_LOG` and `OPENHAB_TOKEN_FILE` (or `OPENHAB_TOKEN`).
+There are no built-in server addresses or credentials.
 
-- `heating-library/`, `battery-alarms/`: one-time migration/activation scripts.
-- `window-alarms/`, `bedroom-window-alarms/`: rule exports and migration helpers.
-- `state-alarms/`: exported example, window, and bathroom rules.
-- `humidity-alarms/`: old REST generator, exports, status, and UID migration.
-- `heatpump-daily/`: activation script, prepared rule, and original checksum.
-- `window-widget/contact-metadata.json`: historical contact/alarm assignment snapshot;
-  current assignments live in the Contact Items' `contactOverview` metadata.
+```bash
+export OPENHAB_URL=https://openhab.example.invalid:8443
+export OPENHAB_LOG=/path/to/openhab.log
+export OPENHAB_TOKEN_FILE=/path/to/local-token
+python3 tools/migrate_shelly_links.py
+# After reviewing the preview; choose a new backup filename:
+python3 tools/migrate_shelly_links.py --execute --backup-file backups/shelly-links.json
+```
 
-Repository paths in the archived scripts were adjusted for their new location.
-Running these historical scripts can change the live configuration. They were
-not executed during cleanup, and their prepared state has not been compared
-with the current server.
+Create the `backups/` directory first. Execution saves all original links to an
+owner-only file, refuses changed links or existing backup files, and stops at the
+first failed request. New links are created before old links are removed; existing
+target links are skipped. An interrupted run can leave both links present, and
+completed migrations are not rolled back automatically. Check the backup before
+retrying. Type/dimension checks and known-risk exclusions remain enabled; a
+preview is not proof that a device's new channel works. Requests have timeouts,
+verify TLS and refuse redirects. `REQUESTS_CA_BUNDLE` selects a local CA.
 
-`archive/` remains excluded by `.gitignore`, so Git does not back it up. `tools/`
-is versioned. Administrative shell
-scripts remain unchanged under `scripts/`.
+## Local originals
+
+Original private configurations and historical experiments remain in the ignored
+local `archive/` directory. They are not required to build or use public YAML.
+Git does not back up this directory. Administrative Bash scripts are kept under
+[`scripts/`](../scripts/).

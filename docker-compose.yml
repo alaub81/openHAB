@@ -22,7 +22,7 @@ services:
       - OPENHAB_HTTP_PORT=${OPENHAB_HTTP_PORT}
       - OPENHAB_HTTPS_PORT=${OPENHAB_HTTPS_PORT}
       - "CRYPTO_POLICY=unlimited"
-      - "EXTRA_JAVA_OPTS=-Duser.timezone=${TZ}"
+      - "EXTRA_JAVA_OPTS=-Duser.timezone=${TZ} -Djava.net.preferIPv4Stack=true"
       # If you need more memory
       #- "EXTRA_JAVA_OPTS=-Xms1024m -Xmx2048m -Duser.timezone=${TZ}"
       - USER_ID=9001
@@ -72,6 +72,10 @@ services:
     volumes:
       - "./data/influxdb/conf:/etc/influxdb2"
       - data_influxdb:/var/lib/influxdb2
+      # Optional destination for manually executed InfluxDB backups.
+      # Create the host directory with suitable permissions before enabling.
+      # This mount does not create or schedule backups.
+      # - "/backup/influxdb:/backup"
     ports:
       - ${INFLUXDB_HTTP_PORT}:8086
     environment:
@@ -82,6 +86,27 @@ services:
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_INIT_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN}
       - INFLUXD_LOG_LEVEL=${INFLUXD_LOG_LEVEL}
+
+      # Optional Flux query tuning example for an 8 GiB Raspberry Pi 5.
+      # Adjust to your workload and enable these five settings together.
+      # Query memory budgets do not limit total process or container memory.
+      # - INFLUXD_QUERY_CONCURRENCY=4
+      # - INFLUXD_QUERY_QUEUE_SIZE=10
+      # Initial allocation: 64 MiB per query; maximum: 1 GiB per query.
+      # - INFLUXD_QUERY_INITIAL_MEMORY_BYTES=67108864
+      # - INFLUXD_QUERY_MEMORY_BYTES=1073741824
+      # Maximum memory for all queries combined: 2 GiB.
+      # - INFLUXD_QUERY_MAX_MEMORY_BYTES=2147483648
+
+      # Optional storage tuning; assess CPU, disk, and memory usage first.
+      # Limit full/level compactions to one; this does not limit cache snapshots.
+      # - INFLUXD_STORAGE_MAX_CONCURRENT_COMPACTIONS=1
+      # Batch fsync calls with a 100 ms delay; this adds write latency.
+      # - INFLUXD_STORAGE_WAL_FSYNC_DELAY=100ms
+      # Per-shard cache limit: 2 GiB; snapshot threshold: 512 MiB.
+      # These are generous example values, not a total InfluxDB memory limit.
+      # - INFLUXD_STORAGE_CACHE_MAX_MEMORY_SIZE=2147483648
+      # - INFLUXD_STORAGE_CACHE_SNAPSHOT_MEMORY_SIZE=536870912
       - TZ=${TZ}
     # Optional: uncomment to enable Watchtower label-based selection.
     # labels:
@@ -137,6 +162,7 @@ services:
     restart: unless-stopped
     environment:
       - ENABLE_METRICS=true
+      - AUTH_TOKEN=${GRAFANA_RENDERING_RENDERER_TOKEN:?Set GRAFANA_RENDERING_RENDERER_TOKEN in .env}
       - TZ=${TZ}
     # Optional: uncomment to enable Watchtower label-based selection.
     # labels:
@@ -181,6 +207,7 @@ services:
       - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE=true
       - GF_RENDERING_SERVER_URL=http://renderer:8081/render
       - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      - GF_RENDERING_RENDERER_TOKEN=${GRAFANA_RENDERING_RENDERER_TOKEN:?Set GRAFANA_RENDERING_RENDERER_TOKEN in .env}
       # Optional: enable rendering debug logs for troubleshooting.
       # - GF_LOG_FILTERS=rendering:debug
       # for anonymous access to embedding graphs

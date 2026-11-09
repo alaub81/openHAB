@@ -133,8 +133,8 @@ The archive is local and excluded from Git. The tools are eligible for versionin
 ## Repository checks
 
 Run `./tests/linter-check.sh` to check configuration and source syntax without
-starting containers. See [tests/README.md](tests/README.md) for prerequisites,
-coverage, and the intentionally excluded Pi 5 comparison file.
+starting containers. See [tests/README.md](tests/README.md) for prerequisites
+and coverage.
 
 ## Links
 

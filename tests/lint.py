@@ -14,8 +14,6 @@ import sys
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-# This is an intentionally retained comparison snapshot, not a deployment target.
-EXCLUDED = {"docker-compose.yml.pi5"}
 YAML_ROOT = Path("data/openhab/conf/yaml")
 
 
@@ -105,7 +103,7 @@ def project_files():
     )
     return sorted({
         name for name in result.decode().split("\0")
-        if name and name not in EXCLUDED and (ROOT / name).is_file()
+        if name and (ROOT / name).is_file()
     })
 
 
@@ -193,7 +191,7 @@ def main():
         print(f"PASS  {label} ({count} files)")
     for failure in failures:
         print("FAIL  " + failure)
-    print(f"\n{'FAIL' if failures else 'PASS'}: {len(failures)} issue(s). Pi 5 comparison snapshot excluded.")
+    print(f"\n{'FAIL' if failures else 'PASS'}: {len(failures)} issue(s).")
     return 1 if failures else 0
 
 

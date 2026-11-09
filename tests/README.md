@@ -36,9 +36,8 @@ read-only: there is no automatic formatting or application-script execution.
   cannot override keys defined in this template. Diagnostic output never dumps
   the resolved Compose configuration or credential values.
 
-`docker-compose.yml.pi5` is deliberately excluded: it is a comparison snapshot.
 Ignored archives, backups, virtual environments, and local thermostat Item files
-are also excluded. The checker does not validate JavaScript expressions, Item DSL,
+are excluded. The checker does not validate JavaScript expressions, Item DSL,
 Flux queries, binding-specific settings, Markdown links, external services,
 image availability, or runtime behavior. Existing widget tests in `tools/`
 remain separate. Passing lint is not a deployment or integration test.

@@ -21,6 +21,15 @@ own regression tests and checks application-script syntax without executing thos
 scripts. There is no automatic formatting. Optional script safety tests are
 run separately with `./tests/script-check.sh`.
 
+## GitHub Actions
+
+[Repository lint](../.github/workflows/lint.yml) runs the same basic linter for
+pull requests, pushes to `master` and manual workflow dispatches. It uses a hosted
+Ubuntu runner with Python and Docker Compose, read-only repository permissions
+and pinned action revisions. It requires no deployment credentials, starts no
+services and runs neither the optional script tests nor the database integration
+tests. No images, tags or releases are built or published.
+
 ## Coverage
 
 - YAML syntax and duplicate mapping keys, including `.yml.example` templates.

@@ -1,12 +1,12 @@
 version: 1
 
 things:
-  somfytahoma:lightsensor:0968c2c643:io20043626504414384853:
-    bridge: somfytahoma:bridge:0968c2c643
+  somfytahoma:lightsensor:examplebridge:io00000000000000000001:
+    bridge: somfytahoma:bridge:examplebridge
     label: "Sonnensensor Ost"
     location: "Somfy Switch"
     config:
-      url: "io://2004-3626-5044/14384853"
+      url: "io://0000-0000-0000/00000001"
     channels:
       luminance:
         type: luminance

@@ -6,12 +6,12 @@
 version: 1
 
 things:
-  somfytahoma:lightsensor:0968c2c643:io2004362650443444219:
-    bridge: somfytahoma:bridge:0968c2c643
+  somfytahoma:lightsensor:examplebridge:io00000000000000000002:
+    bridge: somfytahoma:bridge:examplebridge
     label: Sonnensensor Süd
     location: Somfy Switch
     config:
-      url: io://2004-3626-5044/3444219
+      url: io://0000-0000-0000/00000002
     channels:
       luminance:
         type: luminance

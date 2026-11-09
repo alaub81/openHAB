@@ -20,6 +20,7 @@ must preserve existing Thing UIDs, bridge assignments, and Item links. The same
 Thing UID must not be defined through the UI and YAML simultaneously. After the
 migration, configuration is maintained in the YAML file.
 
-Evidence: local investigation reports in
-`archive/somfy-storage-review-20261031/bericht.txt` and
-`archive/sdcard-review-20261031-1100/bericht.txt`.
+The original investigation records are retained only in the local ignored
+archive. Their device identifiers are replaced with synthetic identifiers in the
+public templates. Replace those values with your own; a fresh clone does not
+contain or require the private investigation files.

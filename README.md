@@ -137,12 +137,21 @@ library does not create or run a rule. Start with the
 - [Deployment, service connections, healthchecks and updates](docs/deployment.md)
 - [MQTT passwords and TLS](docs/mqtt.md)
 - [InfluxDB tuning and backups](docs/influxdb.md)
+- [Docker backup scripts](https://github.com/alaub81/backup_docker_scripts) for Compose files, volumes and database backups
 - [Grafana migration from root to its image-default user](docs/grafana-non-root-migration.md)
 - [Thing templates and Somfy sun sensors](data/openhab/conf/yaml/things/README.md)
 - [Development tools](tools/README.md) and [repository checks](tests/README.md)
 
 Run `./tests/linter-check.sh` to validate the repository without starting containers.
+The same check runs in GitHub Actions for pull requests and pushes to `master`;
+optional maintenance and integration tests are separate.
 
 Related projects: [SMA MQTT Bridge](https://github.com/alaub81/sma-mqtt-bridge)
 and [BMW MQTT Bridge](https://github.com/alaub81/bmw-mqtt-bridge). Their services
 are configured separately; this Compose file does not deploy either bridge.
+
+## License and security
+
+The repository's original code and documentation are available under the
+[MIT License](LICENSE). Bundled service images and other external projects retain
+their own licenses. See the [security policy](SECURITY.md) for private reports.

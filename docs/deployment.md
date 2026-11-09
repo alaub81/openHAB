@@ -183,7 +183,13 @@ running Compose commands. This repository-local migration leaves an existing
 local `.env` in place while removing it from Git tracking.
 
 Back up the deployment configuration, openHAB userdata, databases and other
-persistent volumes before an upgrade. See [InfluxDB backups](influxdb.md#manual-backups)
+persistent volumes before an upgrade. The separate
+[Docker backup scripts repository](https://github.com/alaub81/backup_docker_scripts)
+provides Compose-directory, Docker-volume, PostgreSQL and InfluxDB backup tools.
+Use the Compose backup for bind-mounted configuration and the volume backup for
+`data_openhab_userdata`; database backups need the database-specific tool or a
+consistent stopped snapshot. Adapt its examples to this project's names and
+backup destinations. See [InfluxDB backups](influxdb.md#manual-backups)
 and the database/volume backup procedure in the
 [Grafana guide](grafana-non-root-migration.md). Keep copies off the Docker host.
 

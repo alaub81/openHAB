@@ -1,15 +1,16 @@
 # Inactive file-based template: .example files are not loaded by openHAB.
-# Keep the Thing UID and channel IDs when migrating existing Item links.
+# All broker/device UIDs, MQTT topics and schedule rule IDs are synthetic.
+# Replace them with your own; preserve your real UID when migrating existing links.
 # Configuration is maintained in this file after migration.
 version: 1
 things:
-  mqtt:topic:09000f9f:1479c8706b:
-    bridge: mqtt:broker:09000f9f
+  mqtt:topic:examplebroker:exampledevice:
+    bridge: mqtt:broker:examplebroker
     label: Walldisplay Badezimmer MQTT
     location: Shelly MQTT
     config:
       payloadNotAvailable: 'false'
-      availabilityTopic: shelly/shelly-wd-bz/online
+      availabilityTopic: shelly/example-wall-display/online
       payloadAvailable: 'true'
     channels:
       relay#output:
@@ -17,7 +18,7 @@ things:
         label: Betrieb
         description: Betrieb (on/off)
         config:
-          stateTopic: shelly/shelly-wd-bz/status/switch:0
+          stateTopic: shelly/example-wall-display/status/switch:0
           transformationPattern:
           - JSONPATH:$.output
           'off': 'false'
@@ -27,9 +28,9 @@ things:
         label: Thermostat Betrieb
         description: Thermostat Betrieb (on/off)
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
-          formatBeforePublish: '{"id":1,"src":"shelly/shelly-wd-bz/oh","method":"Thermostat.SetConfig","params":{"id":0,"config":{"enable":%s}}}'
-          stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+          commandTopic: shelly/example-wall-display/rpc
+          formatBeforePublish: '{"id":1,"src":"shelly/example-wall-display/oh","method":"Thermostat.SetConfig","params":{"id":0,"config":{"enable":%s}}}'
+          stateTopic: shelly/example-wall-display/status/thermostat:0
           transformationPattern:
           - JSONPATH:$.enable
           'off': 'false'
@@ -41,12 +42,12 @@ things:
         config:
           unit: "°C"
           min: 18
-          formatBeforePublish: '{"id": 1,"src": "shelly/shelly-wd-bz/oh","method":
+          formatBeforePublish: '{"id": 1,"src": "shelly/example-wall-display/oh","method":
             "Thermostat.SetConfig","params": {"id": 0,"config": {"target_C": %f}}}'
           max: 30
-          commandTopic: shelly/shelly-wd-bz/rpc
+          commandTopic: shelly/example-wall-display/rpc
           step: 0.1
-          stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+          stateTopic: shelly/example-wall-display/status/thermostat:0
           transformationPattern:
           - JSONPATH:$.target_C
       thermostat#hysterese:
@@ -54,11 +55,11 @@ things:
         label: Hysterese
         description: Solltemperatur in °C
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
+          commandTopic: shelly/example-wall-display/rpc
           unit: "°C"
           step: 0.1
           min: 0
-          formatBeforePublish: '{"id": 1,"src": "shelly/shelly-wd-bz/oh","method":
+          formatBeforePublish: '{"id": 1,"src": "shelly/example-wall-display/oh","method":
             "Thermostat.SetConfig","params": {"id": 0,"config": {"hysteresis": %f}}}'
           max: 2
       thermostat#schedule:
@@ -66,9 +67,9 @@ things:
         label: Zeitplan
         description: Zeitplan (on/off)
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
-          formatBeforePublish: '{"id":1,"src":"shelly/shelly-wd-bz/oh","method":"Thermostat.Schedule.SetConfig","params":{"id":0,"config":{"enable":%s}}}'
-          stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+          commandTopic: shelly/example-wall-display/rpc
+          formatBeforePublish: '{"id":1,"src":"shelly/example-wall-display/oh","method":"Thermostat.Schedule.SetConfig","params":{"id":0,"config":{"enable":%s}}}'
+          stateTopic: shelly/example-wall-display/status/thermostat:0
           transformationPattern:
           - JSONPATH:$.schedules.enable
           'off': 'false'
@@ -78,9 +79,9 @@ things:
         label: Zeitplan Profil
         description: Zeitplan Profil
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
-          formatBeforePublish: '{"id":1,"src":"shelly/shelly-wd-bz/oh","method":"Thermostat.Schedule.SetConfig","params":{"id":0,"config":{"profile_id":%.0f}}}'
-          stateTopic: shelly/shelly-wd-bz/status/thermostat:0
+          commandTopic: shelly/example-wall-display/rpc
+          formatBeforePublish: '{"id":1,"src":"shelly/example-wall-display/oh","method":"Thermostat.Schedule.SetConfig","params":{"id":0,"config":{"profile_id":%.0f}}}'
+          stateTopic: shelly/example-wall-display/status/thermostat:0
           transformationPattern:
           - JSONPATH:$.schedules.profile_id
       thermostat#night_temperature:
@@ -88,72 +89,72 @@ things:
         label: Nacht Temperatur
         description: Nachttemperatur in °C
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
+          commandTopic: shelly/example-wall-display/rpc
           unit: "°C"
           step: 0.5
           min: 18
-          formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+          formatBeforePublish: '{"id": 10,"src": "shelly/example-wall-display/oh","method":
             "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config": {"rule_id":
-            1759776161044,"target_C": %f}}}'
+            1001,"target_C": %f}}}'
           max: 30
       thermostat#booster_temperature:
         type: number
         label: Booster Temperatur
         description: Booster Temperatur in °C
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
+          commandTopic: shelly/example-wall-display/rpc
           unit: "°C"
           step: 0.5
           min: 18
-          formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+          formatBeforePublish: '{"id": 10,"src": "shelly/example-wall-display/oh","method":
             "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config": {"rule_id":
-            1759776123067,"target_C": %f}}}'
+            1002,"target_C": %f}}}'
           max: 30
       thermostat#sggreen_temperature:
         type: number
         label: SG Green Temperatur
         description: SG-Green Temperatur in °C
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
+          commandTopic: shelly/example-wall-display/rpc
           unit: "°C"
           step: 0.5
           min: 18
-          formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+          formatBeforePublish: '{"id": 10,"src": "shelly/example-wall-display/oh","method":
             "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config": {"rule_id":
-            1763576825406,"target_C": %f}}}'
+            1003,"target_C": %f}}}'
           max: 30
       thermostat#absence_temperature:
         type: number
         label: Abwesenheit Temperatur
         description: Abwesenheit Temperatur in °C
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
+          commandTopic: shelly/example-wall-display/rpc
           unit: "°C"
           step: 0.5
           min: 18
-          formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+          formatBeforePublish: '{"id": 10,"src": "shelly/example-wall-display/oh","method":
             "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config": {"rule_id":
-            1759776096557,"target_C": %f}}}'
+            1004,"target_C": %f}}}'
           max: 30
       thermostat#windowopen_temperature:
         type: number
         label: Fenster offen Temperatur
         description: Fenster offen Temperatur in °C
         config:
-          commandTopic: shelly/shelly-wd-bz/rpc
+          commandTopic: shelly/example-wall-display/rpc
           unit: "°C"
           step: 0.5
           min: 18
-          formatBeforePublish: '{"id": 10,"src": "shelly/shelly-wd-bz/oh","method":
+          formatBeforePublish: '{"id": 10,"src": "shelly/example-wall-display/oh","method":
             "Thermostat.Schedule.ChangeRule","params": {"id": 0, "config": {"rule_id":
-            1763576806251,"target_C": %f}}}'
+            1005,"target_C": %f}}}'
           max: 30
       thermostat#basistemp:
         type: number
         label: Basis-Solltemperatur
         description: Manuelle Temperatur ohne Profil
         config:
-          stateTopic: shelly/shelly-wd-bz/oh/rpc
+          stateTopic: shelly/example-wall-display/oh/rpc
           transformationPattern:
           - JSONPATH:$.result.target_C
       sensor#temperature:
@@ -161,7 +162,7 @@ things:
         label: Temperatur
         description: Temperatur in °C
         config:
-          stateTopic: shelly/shelly-wd-bz/status/temperature:0
+          stateTopic: shelly/example-wall-display/status/temperature:0
           transformationPattern:
           - JSONPATH:$.tC
           unit: "°C"
@@ -170,7 +171,7 @@ things:
         label: Luftfeuchtigkeit
         description: Luftfeuchtigkeit in %
         config:
-          stateTopic: shelly/shelly-wd-bz/status/humidity:0
+          stateTopic: shelly/example-wall-display/status/humidity:0
           transformationPattern:
           - JSONPATH:$.rh
           unit: "%"
@@ -179,7 +180,7 @@ things:
         label: Beleuchtungsstärke
         description: Beleuchtungsstärke in Lux
         config:
-          stateTopic: shelly/shelly-wd-bz/status/illuminance:0
+          stateTopic: shelly/example-wall-display/status/illuminance:0
           transformationPattern:
           - JSONPATH:$.lux
           unit: lx
@@ -188,7 +189,7 @@ things:
         label: Batterieladung
         description: Batterieladung in %
         config:
-          stateTopic: shelly/shelly-wd-bz/status/devicepower:1
+          stateTopic: shelly/example-wall-display/status/devicepower:1
           transformationPattern:
           - JSONPATH:$.battery.percent
           unit: "%"

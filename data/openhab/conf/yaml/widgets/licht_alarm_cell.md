@@ -19,7 +19,7 @@ config:
 
 Add this configuration to an existing `oh-grid-cells` group. Select your own alarm group; `MyLightAlarms` is an example name. Its Switch members are displayed. The compact view removes the words Licht, Light, Beleuchtung, and Alarm from Item labels.
 
-The display reflects the alarm Item's current ON/OFF state, rather than the lamp's switching state. A light being on therefore does not automatically mean an alarm. Delays and reminders remain the responsibility of the existing rule, for example for `BadOG_Licht_Alarm`. The widget changes no Items, lights, or rules and sends no messages.
+The display reflects the alarm Item's current ON/OFF state, rather than the lamp's switching state. A light being on therefore does not automatically mean an alarm. Delays and reminders remain the responsibility of the existing rule, for example for `MyLightAlarm`. The widget changes no Items, lights, or rules and sends no messages.
 
 MainUI's temporary `-` state produces a loading indicator. `NULL` and `UNDEF` appear as unknown. A neutral no-room-alarms-loaded hint remains until group members load. Reload after group membership changes; alarm states are tracked live.
 

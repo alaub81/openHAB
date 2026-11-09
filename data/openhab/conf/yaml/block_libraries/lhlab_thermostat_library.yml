@@ -1913,21 +1913,21 @@ blocks:
           - component: PresetInput
             config:
               fields:
-                TEXT: mqtt:broker:09999f9f
+                TEXT: mqtt:broker:examplebroker
               name: MQTT_BROKER
               shadow: true
               type: oh_thing
           - component: PresetInput
             config:
               fields:
-                TEXT: shelly/shelly-wd-bz/rpc
+                TEXT: shelly/example-wall-display/rpc
               name: MQTT_RPC_TOPIC
               shadow: true
               type: text
           - component: PresetInput
             config:
               fields:
-                TEXT: shelly/shelly-wd-bz/oh
+                TEXT: shelly/example-wall-display/oh
               name: MQTT_SRC
               shadow: true
               type: text

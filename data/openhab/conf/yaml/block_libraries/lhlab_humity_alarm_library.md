@@ -5,8 +5,7 @@
 The sensor-group and alarm-group inputs start empty. Select your own groups;
 the library no longer preselects `Humidity_Innen_ALL` or `Humidity_Alarm`.
 Thresholds and timing defaults remain, as do semantic room matching and the
-optional override/external-alarm lists. The historical deployment details below
-do not create groups or rules on a new installation.
+optional override/external-alarm lists. The library does not create groups or rules.
 
 New monitor blocks use the openHAB Item picker for both groups. Select actual
 Group Items; the picker itself is not restricted to groups. The sensor threshold
@@ -20,7 +19,7 @@ and can be replaced manually with Item selection blocks.
 
 [lhlab_humity_alarm_library.yml](lhlab_humity_alarm_library.yml) supplies group-based Blockly room alarms. This YAML is the canonical repository definition and contains the blocks and complete evaluation code; no extra JavaScript file is copied to the server.
 
-File name and internal UID are **`lhlab_humity_alarm_library`**. The old library created in Developer Tools uses `lhlab_humidity_library`. The existing rule therefore needs a one-time block-reference migration.
+File name and internal UID are **`lhlab_humity_alarm_library`**. The old library created in Developer Tools uses `lhlab_humidity_library`. Rules using that old UID need their block references updated when migrating.
 
 ## Installation and migration from the UI library
 
@@ -32,41 +31,33 @@ Container destination:
 
 On the Docker host, use the corresponding mounted configuration directory. Markdown is documentation only and is not required by openHAB.
 
-1. Copy the YAML file. Old/new libraries can coexist during migration because their UIDs differ.
-2. Reload MainUI and verify UID `lhlab_humity_alarm_library` is file-managed/read-only. Both libraries have the same display name; check UID and read-only status.
-3. Run the one-time migration from the local repository working directory.
-4. Open rule **Luftfeuchtigkeit – Raumalarme und Benachrichtigungen** (`e53dfb734c`) in Blockly and verify all blocks appear.
-5. Only then delete the old editable `lhlab_humidity_library` in Developer Tools → Blockly libraries. Keep the rule itself.
+1. Copy the YAML file and reload MainUI.
+2. Verify UID `lhlab_humity_alarm_library` is file-managed/read-only.
+3. Create a Blockly rule, select your sensor/alarm groups, and add group-member
+   state-change triggers for both groups.
+4. Configure notification actions. The optional current-alarm message value is
+   supplied by [lhlab_alarm_library.yml](lhlab_alarm_library.yml).
 
-```sh
-python3 archive/scripts-cleanup-20261108/humidity-alarms/migrate-library-uid.py
-```
-
-The script uses local `openhab_api_key`, `http://openhab.laub.loc:8080`, `curl`, and Python 3. It checks the new file-managed library and backs up the current rule locally. It replaces only Blockly references `lhlab_humidity_library_monitor` and `lhlab_humidity_library_threshold` with prefix `lhlab_humity_alarm_library_`. Triggers, thresholds, notification actions, and generated JavaScript stay unchanged. The old library is not deleted automatically. Resaving may reset the private script cache.
-
-Override connection settings with `--url` and `--token-file`. A second successful migration run makes no changes.
-
-openHAB loads YAML automatically. The saved rule already includes generated JavaScript, so no new rule or recreated triggers are needed. The previous configuration is backed up in `archive/humidity-alarms-20261030/before.json`.
-
-[lhlab_alarm_library.yml](lhlab_alarm_library.yml) is also needed: both notification areas use its current-alarm message block. JavaScript Scripting must be installed.
+For an existing UI library, back up the affected rules first and replace their
+old monitor/threshold blocks with this library's blocks, preserving inputs and
+actions. Verify the saved rules before removing the old library. Resaving resets
+private script caches. JavaScript Scripting must be installed.
 
 ## Blocks
 
 ### Humidity monitor
 
-| Setting | Historical rule example (not block defaults) |
+| Setting | Example configuration (adapt to your Items) |
 | --- | --- |
 | Sensor group | Select your own group |
 | Alarm group | Select your own group |
 | Threshold | 75%; alarm at or above threshold |
-| Overrides | `Badezimmer_Klima_Luftfeuchtigkeit`: 80% |
-| Externally evaluated alarms | `LaubRaspi5_BME280_Humidity_Alarm` |
+| Overrides | `MyBathroomHumidity`: 80% |
+| Externally evaluated alarms | `MyExternalHumidityAlarm` |
 | Minimum repeat interval | 12 hours |
 | Batching delay | 2 seconds |
 
 The alarm/clearance action areas choose notification behavior, using normal push blocks and the alarm library's current-alarm message value. The library selects no recipients or channels.
-
-The installed rule retains its push recipients, `oh:humidity` icon, and `Luftfeuchtigkeit` tag. Alexa actions are disabled.
 
 ### Sensor threshold override
 
@@ -74,7 +65,7 @@ This value block describes a sensor Item and percentage threshold. Put it in a n
 
 ## Groups and semantic rooms
 
-The rule has two group-member-state-change triggers:
+Configure two group-member-state-change triggers, for example:
 
 - `Humidity_Innen_ALL`: a sensor reading changes.
 - `Humidity_Alarm`: a room alarm changes, including the externally supplied utility-room alarm.
@@ -83,9 +74,9 @@ Repeated updates with unchanged values do not trigger the rule. A virtual room a
 
 Sensors and alarms are paired by semantic room, using direct `hasLocation` or `isPointOf` via equipment. Each room requires exactly one sensor and alarm Item. Ambiguity is rejected. Unmapped sensors are skipped with at most one warning log per hour.
 
-New rooms need a sensor in the sensor group and an alarm Item in the alarm group, both correctly located. No Items are created automatically. `GF_Humidity_Alarm` is not needed.
+New rooms need a sensor in the sensor group and an alarm Item in the alarm group, both correctly located. No Items are created automatically.
 
-For the utility room, MQTT remains responsible for evaluation. The rule does not overwrite that alarm but handles its warnings, reminders, and clearance. The block's percentage threshold does not apply to this external alarm.
+For an externally evaluated room alarm, its existing rule or MQTT source remains responsible for evaluation. The rule does not overwrite that alarm but handles its warnings, reminders, and clearance. The block's percentage threshold does not apply to this external alarm.
 
 ## Behavior and resources
 
@@ -102,8 +93,7 @@ Assignments and notification timestamps live in the rule's nonpersistent private
 
 Edit the YAML, copy it to the server, reload MainUI, and resave affected Blockly rules to regenerate embedded code. Updating a library does not automatically replace code already saved in a rule.
 
-Files under `archive/scripts-cleanup-20261108/humidity-alarms/` belong to the original REST deployment. They are not automatically synchronized with this YAML and are not a second installation step.
-
-File conversion was checked against the complete previous JSON library. The requested UID changed; both block definitions and function code remained identical. Reference migration was checked locally for completeness and repeatability. The underlying version passed 42 behavior tests, official openHAB Blockly generation, and rule saving/reopening. Native checks mapped 17 internally evaluated sensors and one external sensor completely.
-
-The file migration was verified on openHAB on 2026-10-30: `lhlab_humity_alarm_library` is file-managed and matches the repository, including function code. The old UI library was removed. The existing rule uses both new block types and matching generated code. Both group triggers, 75/80% thresholds, 12-hour cooldown, two-second batching, and existing recipients are retained. `GF_Humidity_Alarm`, the former notification rule, and temporary test objects are gone.
+Local simulations cover humidity evaluation, threshold overrides, room matching,
+cooldowns, batching and recovery. They do not prove notification delivery or the
+configuration of a live installation. The older source in `tools/humidity-alarms/`
+is not automatically synchronized with the canonical YAML library.

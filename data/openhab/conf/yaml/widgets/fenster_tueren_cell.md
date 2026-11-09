@@ -16,18 +16,18 @@ File-based MainUI definition `fenster_tueren_cell.yml`, `version: 1`. Copy it to
 
 ## Semantic icon selection
 
-`metadata.contactOverview.config.kind` on each Contact Item specifies `window`, `door`, or `contact`. The current 14 windows and two doors were derived from their actual semantic equipment groups: `Window` maps to `window`; `Door`, `FrontDoor`, and `BackDoor` map to `door`. No Item-name patterns are used. Missing/invalid assignments use a neutral icon.
+`metadata.contactOverview.config.kind` on each Contact Item specifies `window`, `door`, or `contact`. Choose a kind based on your semantic equipment: `Window` maps to `window`; `Door`, `FrontDoor`, and `BackDoor` map to `door`. No Item-name patterns are used. Missing/invalid assignments use a neutral icon.
 
-This removes a separate REST query for equipment groups. Technical group `Fenster_Uebersicht_Equipment` remains. The old `equipmentGroup` parameter is still accepted for compatibility but is no longer queried. Semantic parent relationships, alarm assignments, and rules were unchanged by this optimization.
+This removes a separate REST query for equipment groups. The old `equipmentGroup` parameter is still accepted for compatibility but is no longer queried. Semantic parent relationships, alarm assignments, and rules were unchanged by this optimization.
 
-Add new contacts to the contact group and set their alarm assignment and semantic icon type in `contactOverview`. The historical assignment snapshot is archived locally at `archive/scripts-cleanup-20261108/window-widget/contact-metadata.json`; current assignments are maintained in the Contact Items' `contactOverview` metadata. Reload after changing members or display metadata. Live states continue to follow MainUI's Item store.
+Add new contacts to the contact group and set their alarm assignment and semantic icon type in `contactOverview`.; current assignments are maintained in the Contact Items' `contactOverview` metadata. Reload after changing members or display metadata. Live states continue to follow MainUI's Item store.
 
 ## Alarm assignment
 
 Each Contact Item uses the `contactOverview` namespace:
 
 ```yaml
-value: BadOG_Fenster_Alarm
+value: MyContactAlarm
 config:
   shared: false
   kind: window
@@ -35,28 +35,9 @@ config:
 
 `value` names the alarm Item. `shared: true` marks a shared room alarm. `kind` controls only the icon. Optional `config.label` supplies a shorter label. Without metadata, no individual alarm is assumed.
 
-| Contact | Alarm Item | Dedicated rule |
-| --- | --- | --- |
-| Bathroom | `BadOG_Fenster_Alarm` | Active |
-| Attic bathroom | `BadDG_Fenster_Alarm` | Active |
-| Hobby room | `Hobbyraum_Fenster_Alarm` | Active |
-| Utility room | `Technikraum_Fenster_Alarm` | Active |
-| Entrance door | `Eingang_Tuer_Alarm` | Active |
-| Bedroom left | `Schlafzimmer_Fenster_links_Alarm` | Active |
-| Bedroom right | `Schlafzimmer_Fenster_rechts_Alarm` | Active |
-| Children's room left | `Kinderzimmer_Fenster_links_Alarm` | Active |
-| Children's room right | `Kinderzimmer_Fenster_rechts_Alarm` | Active |
-| Kitchen | `Kueche_Fenster_Alarm` | Active, state monitor block |
-| Office left | `Buero_Fenster_links_Alarm` | Active, state monitor block |
-| Office right | `Buero_Fenster_rechts_Alarm` | Active, state monitor block |
-| Linus's room left | `Linuszimmer_Fenster_links_Alarm` | Active, state monitor block |
-| Linus's room right | `Linuszimmer_Fenster_rechts_Alarm` | Active, state monitor block |
-| Dining room | `Esszimmer_Fenster_Alarm` | Active, state monitor block |
-| Patio door | `Terrasse_Tuer_Alarm` | Active, state monitor block |
-
-All 16 contacts have separate alarm Items and `shared: false`. Left/right bedroom and children's-room rules use separate Items, timer keys, and notification references. Children's-room warnings occur after 15 minutes, followed by two reminders five minutes apart.
-
-All 16 contacts now have active dedicated rules. The six newly configured office-left/right, Linus-left/right, dining-room, and patio-door rules warn after 30 minutes, then 10 and 20 minutes later if still open. Closing cancels that contact's timer and active alarm. Other existing rules and timings were unchanged. The general close-windows advisory operates independently.
+Assign the alarm Item that belongs to each contact. Multiple contacts may refer
+to a shared alarm; the widget counts that alarm once. These metadata assignments
+must be configured in your own installation.
 
 ## Overview configuration
 
@@ -64,19 +45,17 @@ All 16 contacts now have active dedicated rules. The six newly configured office
 component: widget:fenster_tueren_cell
 config:
   title: Fenster & Türen
-  contactGroup: Fenster_ALL
-  alarmGroupItem: Fenster_Alarm_ALL
-  closeAlarmItem: Fenster_Schliessen_Alarm
+  contactGroup: MyContacts
+  alarmGroupItem: MyContactAlarms
+  closeAlarmItem: MyCloseWindowsAlarm
   testMode: live
 ```
-
-At the user's request, the new cell is inserted directly after the existing `oh-label-cell` for `Fenster_ALL`. The old cell remains.
 
 ## Tests
 
 `testMode` accepts `live`, `mixed`, `closed`, `unknown`, and `loading`. Only the four explicitly selected sample modes generate demo data. Missing, invalid, or temporarily unavailable parameters never activate a demo. Samples are marked `TEST` and change no contacts or alarm Items.
 
-Checks cover all 16 real contacts, both semantic doors, targeted assignments, shared-alarm counting, real unknowns, and closed contacts with active alarms. Isolated expression tests distinguish cold start, loaded contacts with pending alarm states, complete state, and actual alarms. Five browser previews showed live, closed, open/alarmed, unknown, and deliberate loading states. Checks also used a 390-pixel screen with roughly 175-pixel cards: height remained 120 pixels and long names wrapped to two lines.
+Checks cover a 16-contact fixture, both semantic doors, targeted assignments, shared-alarm counting, real unknowns, and closed contacts with active alarms. Isolated expression tests distinguish cold start, loaded contacts with pending alarm states, complete state, and actual alarms. Five browser previews showed live, closed, open/alarmed, unknown, and deliberate loading states. Checks also used a 390-pixel screen with roughly 175-pixel cards: height remained 120 pixels and long names wrapped to two lines.
 
 ## Loading and performance
 

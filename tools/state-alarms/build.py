@@ -111,15 +111,11 @@ def notification():
 def kitchen_xml():
     root = ET.Element('{' + NS + '}xml')
     monitor = block(UID + '_lhlab_state_monitor', {'ACTIVE': 'OPEN', 'DELAY': 15, 'REPEATS': 2, 'INTERVAL': 5}, {
-        'SOURCE': item('Fenster_Kuche_Zustand', 'Küche Fenster'),
-        'ALARM': item('Kueche_Fenster_Alarm', 'Küche Fenster Alarm'), 'TITLE': text('Fensteralarm')})
+        'SOURCE': item('MyContact', 'Example contact'),
+        'ALARM': item('MyContactAlarm', 'Example contact alarm'), 'TITLE': text('Fensteralarm')})
     monitor.set('x', '30')
     monitor.set('y', '30')
     notify = notification()
-    parameters = block('dicts_create_with', {'KEY0': 'Message'}, {'ADD0': alarm_field('message')},
-                       ET.Element('{' + NS + '}mutation', {'items': '1'}))
-    echo = block('oh_runrule', values={'ruleUID': text('9cacbaff96'), 'parameters': parameters})
-    ET.SubElement(notify, '{' + NS + '}next').append(echo)
     ET.SubElement(monitor, '{' + NS + '}statement', {'name': 'NOTIFY'}).append(notify)
     ET.SubElement(monitor, '{' + NS + '}statement', {'name': 'CLEAR'}).append(notification())
     root.append(monitor)

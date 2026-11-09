@@ -96,30 +96,14 @@ Copy both YAML files to the server. Container paths:
 Markdown files are documentation and need not be deployed. Old/new libraries can coexist during migration because their UIDs differ.
 
 1. Copy both YAML files and reload MainUI.
-2. Verify **lhlab – Thermostatsteuerung** and **lhlab – Thing-Steuerung** appear file-managed/read-only.
-3. Optionally check from the local repository first:
+2. Verify both libraries appear file-managed/read-only.
+3. Create rules and explicitly select your Items, Thing UIDs and MQTT settings.
+4. If migrating from a UI library, back up affected rules and replace the old
+   blocks while preserving inputs, triggers, actions and enabled state. Verify
+   each rule before removing the old UI library.
 
-```sh
-   python3 archive/scripts-cleanup-20261108/heating-library/migrate.py --check
-   ```
-
-4. Migrate existing rule references:
-
-```sh
-   python3 archive/scripts-cleanup-20261108/heating-library/migrate.py
-   ```
-
-5. Only after successful verification, delete the old editable **Blocklibraries lhlab.wiki**, UID `Blocklibraries_lhlab.wiki`, in Developer Tools.
-
-The script uses local `openhab_api_key` and `http://openhab.laub.loc:8080`, overridable with `--url`/`--token-file`. It checks both new libraries and matching block definitions, backs up affected rules, replaces only Blockly type references, then verifies saved contents and enabled status. On failure it attempts restoration; failed restores are logged in the backup directory.
-
-No rules are created/deleted, and generated JavaScript, setpoints, triggers, and log levels are unchanged by this migration. Disabled rules are migrated and remain disabled. Repeating a successful migration does nothing. The old library is not deleted automatically.
-
-**Migration timing:** Saving reloads rule scripts and can reset private caches and active window/delay timers. Migrate when those timers are not needed. The script does not automatically change heating states to bypass this consideration.
-
-At preparation, 41 block references in 22 rules were affected, including five disabled rules. Backups are in `archive/heating-library-split-20261030/`. The previous MainUI export `lhlab_block_libraries.yml` was replaced by two valid file libraries.
-
-For later function changes, reload MainUI and resave affected Blockly rules after updating YAML. For this split alone, the generated rule code was already identical and is preserved by the migration.
+Saving reloads rule scripts and may reset private caches and active delay timers.
+For future function changes, update YAML and resave affected Blockly rules.
 
 ## Validation
 
@@ -129,6 +113,3 @@ For later function changes, reload MainUI and resave affected Blockly rules afte
 - OFF produces no block-owned logs; enabled info/debug/warn/error output remains.
 - In a representative HEAT test, Quantity calls fall from six to three because diagnostic-only constructions disappear. This is a behavior test, not a measurement of total CPU savings.
 - The saved original library was read before splitting. All block definitions, level choices, full functions, and toolbox defaults were transferred unchanged.
-- Both file libraries are loaded on the server. On 2026-10-30, 41 references in 22 rules were migrated and all 19 thermostat blocks set to OFF. Fifteen thermostat rules remain active and four disabled. Other rule/heating instructions remain unchanged; existing scripts received targeted logging guards without regenerating divergent older rule flows.
-- The old UI library was removed. Reread rules showed no old references, all thermostat levels OFF, and unchanged enabled states. Backups and verification are in `archive/thermostats-off-20261030/`.
-- REST comparison normalizes empty module input maps and rule-tag ordering. Changed tags, nonempty input connections, and rule-code changes remain detectable.

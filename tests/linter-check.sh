@@ -20,5 +20,5 @@ if ! "$LINT_PYTHON" -c 'from importlib.metadata import version; assert version("
   "$LINT_PYTHON" -m pip install --no-cache-dir --requirement tests/requirements-lint.txt
 fi
 
-"$LINT_PYTHON" -m unittest discover -s tests -p 'test_*.py'
+"$LINT_PYTHON" -m unittest discover -s tests -p 'test_lint.py'
 exec "$LINT_PYTHON" tests/lint.py

@@ -15,8 +15,11 @@ The environment is ignored by Git and does not change system Python packages.
 
 The command runs small regression tests for the checker, then checks tracked
 files and non-ignored untracked files that exist in the working tree. It exits
-with status 1 for failures and status 2 for unsupported arguments. Checks are
-read-only: there is no automatic formatting or application-script execution.
+with status 1 for failures and status 2 for unsupported arguments.
+Checks do not contact live services or start containers. The linter runs only its
+own regression tests and checks application-script syntax without executing those
+scripts. There is no automatic formatting. Optional script safety tests are
+run separately with `./tests/script-check.sh`.
 
 ## Coverage
 
@@ -61,3 +64,36 @@ profile zero, and a disabled thermostat. The basic lint runner also checks that
 widget Item defaults remain empty and that all five profile fields start unset.
 Native MainUI/Blockly generation and device integration still require a later
 server-side verification.
+
+## Optional script safety tests
+
+Run these separately when changing maintenance scripts, the certificate helper
+or the Shelly link migrator:
+
+```bash
+./tests/script-check.sh
+```
+
+The runner works from any directory and requires Python 3.9+, Bash and jq.
+It uses only Python's standard library, creates no virtual environment and
+installs no packages. The real curl executable and the requests package are
+replaced by test doubles. OpenSSL is optional: certificate generation is skipped
+when it is unavailable. All files are created in temporary directories; no live
+API or Docker daemon is contacted. These tests are not part of `linter-check.sh`.
+
+`test_maintenance.py` uses fake HTTP responses to check dry-run defaults, explicit
+scope, malformed/empty discovery results, changed Item lists, HTTP failures,
+action limits and stop-on-error behavior. It also checks that measurement copy
+retains its source and that binding restart/refresh require `--execute`. These
+checks prove local safeguards, not live API or hardware behavior.
+
+Optional Bash style check (requires ShellCheck):
+
+```bash
+shellcheck -x -P SCRIPTDIR scripts/*.sh certs/generate-certs.sh
+```
+
+The existing Shelly Python migrator is checked with a fake requests module for
+backup protection, preflight failure, create-before-delete ordering and failed
+link creation. Certificate tests use temporary repository paths; when OpenSSL is
+available, they verify certificate signatures/SAN and refusal to overwrite keys.

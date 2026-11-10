@@ -1,5 +1,9 @@
 .gitignore
 /.env
+/docker-compose.local.yml
+/docker-compose.yml.pi5
+/smab.env
+/data/sma-mqtt-bridge/
 openhab_api_key
 /archive/
 data/openhab/conf/items/thermostat*.items

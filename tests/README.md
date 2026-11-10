@@ -33,6 +33,8 @@ tests. No images, tags or releases are built or published.
 ## Coverage
 
 - YAML syntax and duplicate mapping keys, including `.yml.example` templates.
+  This includes the local Compose example and Dependabot configuration; lint does
+  not query registries, run Dependabot or verify available image tags.
 - openHAB file-provider wrappers: integer `version: 1`, the appropriate entity
   map, component declarations, and unique UIDs among active files of each type.
 - MQTT `on`/`off` keys remain strings rather than YAML 1.1 booleans.

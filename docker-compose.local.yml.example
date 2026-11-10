@@ -1,0 +1,41 @@
+# Optional personal override: copy to docker-compose.local.yml only for a new file.
+# Merge selected entries into an existing local file instead of overwriting it.
+# Load last through COMPOSE_FILE. The local copy is ignored by Git.
+# Set all five version variables in .env before loading this complete example.
+# See the commented version examples in .env.example and docs/deployment.md.
+services:
+  openhab:
+    image: openhab/openhab:${OPENHAB_VERSION:?Set OPENHAB_VERSION in .env}
+
+  mosquitto:
+    image: eclipse-mosquitto:${MOSQUITTO_VERSION:?Set MOSQUITTO_VERSION in .env}
+
+  influxdb:
+    image: influxdb:${INFLUXDB_VERSION:?Set INFLUXDB_VERSION in .env}
+
+    # Optional destination for manually executed backups; this does not schedule them.
+    # Create the host directory with suitable permissions before enabling.
+    volumes:
+      - "/backup/influxdb:/backup"
+
+    # Optional InfluxDB 2 tuning examples for an 8 GiB Raspberry Pi 5.
+    # Adapt to the workload; these settings do not cap total container memory.
+    # Enable the five query settings together. Budgets: 64 MiB initial,
+    # 1 GiB per query, 2 GiB combined. Storage cache limits apply per shard.
+    environment:
+      INFLUXD_QUERY_CONCURRENCY: "4"
+      INFLUXD_QUERY_QUEUE_SIZE: "10"
+      INFLUXD_QUERY_INITIAL_MEMORY_BYTES: "67108864"
+      INFLUXD_QUERY_MEMORY_BYTES: "1073741824"
+      INFLUXD_QUERY_MAX_MEMORY_BYTES: "2147483648"
+      INFLUXD_STORAGE_MAX_CONCURRENT_COMPACTIONS: "1"
+      INFLUXD_STORAGE_WAL_FSYNC_DELAY: "100ms"
+      INFLUXD_STORAGE_CACHE_MAX_MEMORY_SIZE: "2147483648"
+      INFLUXD_STORAGE_CACHE_SNAPSHOT_MEMORY_SIZE: "536870912"
+      INFLUXD_STORAGE_CACHE_SNAPSHOT_WRITE_COLD_DURATION: "10m"
+
+  postgres:
+    image: postgres:${POSTGRES_VERSION:?Set POSTGRES_VERSION in .env}
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION:?Set GRAFANA_VERSION in .env}

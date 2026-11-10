@@ -172,6 +172,94 @@ mean the HTTP listener is not ready yet. A successful Grafana check reports
 `database: ok`. If a dependency remains unhealthy, inspect its logs before
 recreating dependent services.
 
+## Image versions and local overrides
+
+The five versioned standard-stack images have literal tags in
+[`docker-compose.yml`](../docker-compose.yml). That file is the canonical source
+for recommended default image versions. `.env.example` contains deployment
+settings and credential placeholders, without active version assignments.
+Its commented version choices are examples for optional local overrides.
+The renderer and optional bridge images keep their existing `latest` selection.
+
+A new clone receives the current defaults. After an update is merged, `git pull`
+updates the Compose files; it does not download images or change running
+containers. The deployment owner reviews and applies the update explicitly.
+Tags such as `18-alpine`, `13.2` and `latest` can also receive new image contents
+without changing their names. A more precise version tag exposes more version
+changes in Git, while only a digest fixes the exact image content. This project
+keeps its existing tag precision and does not introduce digest pins.
+
+For host-specific versions, use the prepared
+[`docker-compose.local.yml.example`](../docker-compose.local.yml.example).
+It selects all five standard image versions through `.env` and includes optional,
+commented InfluxDB tuning and a backup mount. These resource settings are examples,
+not required defaults; enabling the backup mount alone does not create backups.
+
+For a **new** local override:
+
+```bash
+cp docker-compose.local.yml.example docker-compose.local.yml
+```
+
+If the local file already exists, merge the desired entries instead of replacing
+it. Choose and uncomment the five version examples at the bottom of `.env.example`
+in your **existing `.env`**; preserve all other settings and credentials. Update
+existing version assignments instead of adding duplicates. Every
+version variable referenced by the local file must be set, including services
+whose profiles are disabled, because Compose interpolates before profile filtering.
+Remove individual service overrides if those services should follow repository
+defaults instead. For example, selecting only openHAB through `.env` needs:
+
+```yaml
+services:
+  openhab:
+    image: openhab/openhab:${OPENHAB_VERSION:?Set OPENHAB_VERSION in .env}
+```
+
+Add the desired tag to your existing `.env`, for example
+`OPENHAB_VERSION=5.2.3`. This is a local selection, not a second repository
+default. Apply the same pattern to another service when needed. Load the local
+file last, and retain the existing profile selection and Compose project name:
+
+```dotenv
+COMPOSE_FILE=docker-compose.yml:docker-compose.local.yml
+```
+
+When using the optional bridges, include Advanced before Local instead:
+
+```dotenv
+COMPOSE_FILE=docker-compose.yml:docker-compose.advanced.yml:docker-compose.local.yml
+```
+
+All referenced files must exist. Git leaves the ignored `.env` and
+local file unchanged. A locally selected version continues to override later
+repository defaults until you change or remove that override.
+
+**Existing deployment migration:** the old `OPENHAB_VERSION`, `MOSQUITTO_VERSION`,
+`INFLUXDB_VERSION`, `POSTGRES_VERSION` and `GRAFANA_VERSION` assignments in `.env`
+no longer select standard-service images on their own. Before applying the new
+Compose file, review `docker compose config --images`. Add local `image`
+overrides if the host must retain different versions. The ignored personal
+files are not rewritten by this repository change. Bridge image variables
+`SMAB_BRIDGE_VERSION` and `BMB_VERSION` continue to work in Advanced.
+
+### Weekly Dependabot proposals
+
+[`.github/dependabot.yml`](../.github/dependabot.yml) checks the five versioned
+standard images weekly on Monday at 09:00 Europe/Berlin and allows up to five
+open version-update PRs. The renderer and both bridge images are outside the
+allowlist and keep their `latest` behavior. InfluxDB major upgrades are ignored:
+this repository's persistence examples and tools require InfluxDB 2 and Flux.
+Other major upgrades need manual compatibility and database-migration review.
+
+The configuration takes effect after it reaches the repository's default branch
+on GitHub; it does not run from a local working tree. Dependabot proposes changes
+to the public defaults. It does not edit deployment `.env` files, merge its own
+PRs, update running containers or prove application compatibility. The existing
+linter runs on PRs and validates syntax and configuration, not live upgrades.
+Review the first run under GitHub's **Insights → Dependency graph → Dependabot**.
+See [GitHub's version-update guide](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-version-updates).
+
 ## Updates and backups
 
 When first updating from the older revision that tracked `.env`, save a copy
@@ -193,10 +281,28 @@ backup destinations. See [InfluxDB backups](influxdb.md#manual-backups)
 and the database/volume backup procedure in the
 [Grafana guide](grafana-non-root-migration.md). Keep copies off the Docker host.
 
-Review `.env` changes while preserving real credentials, image versions, project
-identity and host-specific mounts. Check database release and major-version
-migration requirements before changing image tags. The PostgreSQL 18 mount in
+Review the Git changes and resolved image tags while preserving real credentials,
+any local version overrides, project identity and host-specific mounts. Check
+database release and major-version migration requirements before changing image
+tags. The PostgreSQL 18 mount in
 this repository must not be applied blindly to older PostgreSQL installations.
+
+After taking appropriate backups and reviewing the release/migration requirements:
+
+```bash
+git pull --ff-only
+docker compose config --quiet
+docker compose config --images
+docker compose pull
+docker compose up -d
+docker compose ps
+```
+
+Review the image list before continuing with `pull` and `up`. Keep the existing
+`.env`, `smab.env`, local overrides and Compose project identity. No fresh copy of
+the ENV example is needed for ordinary updates; add genuinely new settings to
+the existing file. A Compose `pull` downloads images but does not start them;
+`up -d` applies changed images/configuration and can restart affected services.
 
 Validate with `docker compose config --quiet`. `docker compose up -d` recreates
 services with changed configuration, retaining their mounted volumes. An ordinary

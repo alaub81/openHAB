@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    # Only versioned standard-stack images; latest images remain outside scope.
+    allow:
+      - dependency-name: "openhab/openhab"
+      - dependency-name: "eclipse-mosquitto"
+      - dependency-name: "influxdb"
+      - dependency-name: "postgres"
+      - dependency-name: "grafana/grafana"
+    ignore:
+      # Persistence and maintenance tools require InfluxDB 2 / Flux.
+      - dependency-name: "influxdb"
+        update-types: ["version-update:semver-major"]

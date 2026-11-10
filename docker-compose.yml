@@ -1,6 +1,6 @@
 services:
   openhab:
-    image: openhab/openhab:${OPENHAB_VERSION}
+    image: openhab/openhab:5.2.3
     depends_on:
       influxdb:
         condition: service_healthy
@@ -42,7 +42,7 @@ services:
 
   mosquitto:
     profiles: [mqtt]
-    image: eclipse-mosquitto:${MOSQUITTO_VERSION}
+    image: eclipse-mosquitto:2
     restart: unless-stopped
     volumes:
       - "./data/mosquitto/conf:/mosquitto/config"
@@ -70,7 +70,7 @@ services:
 
   influxdb:
     profiles: [influxdb]
-    image: influxdb:${INFLUXDB_VERSION}
+    image: influxdb:2.9-alpine
     restart: unless-stopped
     stop_grace_period: 1m
     volumes:
@@ -130,7 +130,7 @@ services:
 
   postgres:
     profiles: [grafana]
-    image: postgres:${POSTGRES_VERSION}
+    image: postgres:18-alpine
     restart: unless-stopped
     stop_grace_period: 1m
     volumes:
@@ -185,7 +185,7 @@ services:
 
   grafana:
     profiles: [grafana]
-    image: grafana/grafana:${GRAFANA_VERSION}
+    image: grafana/grafana:13.2
     depends_on:
       influxdb:
         condition: service_healthy

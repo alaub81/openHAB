@@ -22,8 +22,9 @@ weather, batteries, windows, doors and alarms to your own openHAB installation.
 ## Quick start: Docker stack
 
 Use a Linux Docker host with Git, Docker Engine 25+ and Compose 2.20.2+.
-The supplied configuration targets openHAB 5.2.3 and uses host networking for
-openHAB. Existing installations can use the widgets and libraries independently;
+The supplied configuration targets openHAB 5 and uses host networking for
+openHAB. Default image tags are defined in [`docker-compose.yml`](docker-compose.yml).
+Existing installations can use the widgets and libraries independently;
 skip to the [openHAB quick start](#quick-start-widgets-and-blockly-libraries).
 
 ### 1. Prepare a new installation
@@ -36,7 +37,9 @@ chmod 600 .env
 ```
 
 Edit your local `.env` using [`.env.example`](.env.example) as the reference.
-Set the timezone, ports and desired image versions. Choose optional services:
+Set the timezone and ports. For a different image version, use an optional
+[local override](docs/deployment.md#image-versions-and-local-overrides).
+Choose optional services:
 
 | `COMPOSE_PROFILES` | Services started with openHAB |
 | --- | --- |

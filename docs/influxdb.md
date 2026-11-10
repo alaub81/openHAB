@@ -1,9 +1,15 @@
 # InfluxDB tuning and backups
 
 The root Compose file provides InfluxDB 2 through the optional `influxdb` profile,
-using versions and initialization settings from the local `.env`. Its query/storage
-tuning and backup mount are commented out by
-default. They are examples, not requirements for the widgets or Blockly libraries.
+using the image tag from `docker-compose.yml` and initialization settings from
+the local `.env`. Query/storage tuning and the backup mount are commented out
+in the standard file. They are examples, not requirements for the widgets or
+Blockly libraries.
+
+The optional [`docker-compose.local.yml.example`](../docker-compose.local.yml.example)
+instead contains active tuning settings and the backup mount. If you copy and
+load that complete example, adapt or remove those settings before starting.
+See [local overrides](deployment.md#image-versions-and-local-overrides).
 
 ## Optional query tuning
 
@@ -37,7 +43,8 @@ active shards and disk behavior before enabling them. They are ceilings or
 thresholds, not a fixed reservation of the full configured memory.
 
 `INFLUXD_NATS_PORT` is omitted because it has had no effect since InfluxDB 2.2.
-The cold-cache snapshot duration is omitted because `10m` is already the default.
+The standard file omits the cold-cache snapshot duration because `10m` is already
+the default; the Local example explicitly retains that value.
 Long fsync-delay alternatives such as 15 or 30 seconds are not included: write
 acknowledgements follow fsync and can be delayed significantly.
 
@@ -59,6 +66,9 @@ Create `/backup/influxdb` on the **Docker host**, ensure the InfluxDB container'
 user can write to it, and uncomment that line under the service's `volumes`.
 Recreate InfluxDB to apply the mount. The mount only provides a destination;
 it does not create a backup or a schedule.
+
+The Local example already enables this mount. Create and check the destination's
+permissions before loading it; remove the mount if no backup destination is wanted.
 
 The following example uses the existing operator token from the container's
 initialization environment. It must still be a valid operator token for the

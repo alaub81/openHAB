@@ -191,9 +191,12 @@ keeps its existing tag precision and does not introduce digest pins.
 
 For host-specific versions, use the prepared
 [`docker-compose.local.yml.example`](../docker-compose.local.yml.example).
-It selects all five standard image versions through `.env` and includes optional,
-commented InfluxDB tuning and a backup mount. These resource settings are examples,
-not required defaults; enabling the backup mount alone does not create backups.
+It selects all five standard image versions through `.env` and includes active
+InfluxDB tuning and the `/backup/influxdb:/backup` mount. Copying and loading the
+complete example enables these settings whenever the InfluxDB profile is active.
+Before using it, adapt or remove the 8 GiB Raspberry Pi tuning examples and create
+the backup directory on the Docker host with suitable write permissions.
+The mount provides a destination; it does not create or schedule backups.
 
 For a **new** local override:
 

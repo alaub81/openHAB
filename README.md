@@ -8,6 +8,8 @@ weather, batteries, windows, doors and alarms to your own openHAB installation.
 
 - **Optional infrastructure:** openHAB runs on its own; Compose profiles add
   Mosquitto, InfluxDB 2, or Grafana with PostgreSQL and the Image Renderer.
+- **Optional MQTT bridges:** the separate [Advanced setup](docs/bridges.advanced.md)
+  adds SMA and BMW bridge images through profiles that are disabled by default.
 - **Twelve MainUI widgets:** compact overview cells, DWD warning and pollen
   strips, and thermostat list controls with configurable Item selections.
 - **Five Blockly libraries:** shared alarm handling, battery and humidity
@@ -56,7 +58,7 @@ For Grafana, set its server URL and replace the shared
 Keep unused service declarations from the template; Compose also resolves
 variables belonging to inactive profiles.
 
-Only `.env.example` is versioned; `.env` is ignored by Git. Keep an existing
+Environment templates are versioned; `.env` is ignored by Git. Keep an existing
 `.env` when updating, and preserve its credentials, project identity and volumes.
 
 ### 2. Prepare MQTT and permissions
@@ -138,6 +140,7 @@ library does not create or run a rule. Start with the
 
 - [Documentation index](docs/README.md)
 - [Deployment, service connections, healthchecks and updates](docs/deployment.md)
+- [Optional SMA and BMW MQTT bridges](docs/bridges.advanced.md)
 - [MQTT passwords and TLS](docs/mqtt.md)
 - [InfluxDB tuning and backups](docs/influxdb.md)
 - [Docker backup scripts](https://github.com/alaub81/backup_docker_scripts) for Compose files, volumes and database backups
@@ -149,9 +152,10 @@ Run `./tests/linter-check.sh` to validate the repository without starting contai
 The same check runs in GitHub Actions for pull requests and pushes to `master`;
 optional maintenance and integration tests are separate.
 
-Related projects: [SMA MQTT Bridge](https://github.com/alaub81/sma-mqtt-bridge)
-and [BMW MQTT Bridge](https://github.com/alaub81/bmw-mqtt-bridge). Their services
-are configured separately; this Compose file does not deploy either bridge.
+Bridge-specific features and widgets are maintained in
+[SMA MQTT Bridge](https://github.com/alaub81/sma-mqtt-bridge) and
+[BMW MQTT Bridge](https://github.com/alaub81/bmw-mqtt-bridge). The Advanced setup
+uses their published images; the base Compose file runs independently.
 
 ## License and security
 

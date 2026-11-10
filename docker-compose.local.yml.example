@@ -14,13 +14,13 @@ services:
     image: influxdb:${INFLUXDB_VERSION:?Set INFLUXDB_VERSION in .env}
 
     # Optional destination for manually executed backups; this does not schedule them.
-    # Create the host directory with suitable permissions before enabling.
+    # This mount is active: create the host directory with suitable permissions.
     volumes:
       - "/backup/influxdb:/backup"
 
     # Optional InfluxDB 2 tuning examples for an 8 GiB Raspberry Pi 5.
     # Adapt to the workload; these settings do not cap total container memory.
-    # Enable the five query settings together. Budgets: 64 MiB initial,
+    # The five query settings are enabled together. Budgets: 64 MiB initial,
     # 1 GiB per query, 2 GiB combined. Storage cache limits apply per shard.
     environment:
       INFLUXD_QUERY_CONCURRENCY: "4"

@@ -46,6 +46,11 @@ def main():
                 "The extension may add only the two bridge services")
         require("environment" not in overlay["services"]["sma-mqtt-bridge"],
                 "SMA runtime settings must come from smab.env without environment overrides")
+        sma_example = dotenv((ROOT / "smab.env.example").read_text(),
+                             public_credentials={"SMAB_MQTT_PASSWORD": "mosquitto-mqtt"})
+        require(sma_example["SMAB_HOME_MANAGER_TRANSPORT"] == "modbus-tcp" and
+                sma_example["SMAB_HOME_MANAGER_UDP_PHASES_ENABLED"] == "false",
+                "The SMA example must use Home Manager Modbus without supplemental UDP")
         require({key for key in values if key.startswith("SMAB_")} ==
                 {"SMAB_BRIDGE_VERSION", "SMAB_ENV_FILE", "SMAB_UID", "SMAB_GID"},
                 "The stack template may contain only SMA Compose settings")
@@ -83,7 +88,8 @@ def main():
             smab_path = Path(directory) / "synthetic-smab.env"
             smab_values = {
                 "SMAB_MQTT_HOST": "mqtt.example.invalid", "SMAB_MQTT_PORT": "8883",
-                "SMAB_MQTT_TLS": "true", "SMAB_MQTT_USERNAME": "sma-example",
+                "SMAB_MQTT_TLS": "true", "SMAB_MQTT_TLS_VERIFY": "false",
+                "SMAB_MQTT_USERNAME": "sma-example",
                 "SMAB_MQTT_PASSWORD": "CHANGE_ME_SYNTHETIC_MQTT_PASSWORD",
                 "SMAB_INVERTER1_ENABLED": "true", "SMAB_INVERTER1_HOST": "inverter.example.invalid",
                 "SMAB_INVERTER2_ENABLED": "false", "SMAB_COMMANDS_ENABLED": "false",
@@ -123,7 +129,9 @@ def main():
                         require(any(mount["type"] == "volume" and mount["target"] == state_path
                                     for mount in service["volumes"]), "Persistent bridge state volume missing")
                         if profile == "sma":
-                            require(service.get("network_mode") == "host", "SMA UDP requires host networking here")
+                            require("network_mode" not in service and
+                                    set(service["networks"]) == {"app-nw", "backend-nw"},
+                                    "SMA must use the shared Compose networks")
                             require(service["environment"] == smab_values,
                                     "Every SMA setting must come from the separate ENV file")
                         else:

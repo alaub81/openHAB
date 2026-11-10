@@ -51,7 +51,8 @@ The broker expects these files under `data/mosquitto/conf/certs/`:
 | `server.key` | Broker private key |
 
 You may install certificates from your existing CA at those paths. The server
-certificate must match the broker address used by clients. Clients trust the CA;
+certificate must match the broker address used by clients that verify it. Clients
+with certificate verification enabled trust the CA;
 the supplied configuration does not require client certificates. Alternatively,
 use the following local-CA example for a new installation.
 
@@ -132,10 +133,16 @@ docker compose exec -T mosquitto tail -n 50 /mosquitto/log/mosquitto.log
 ```
 
 The default published ports are 1883 for plaintext and 8883 for TLS. Both require
-the configured username/password. Set the client to use TLS and trust `ca.crt`
-when connecting to 8883. The TCP healthcheck proves listener availability, not
+the configured username/password. Clients using certificate verification must
+trust the issuing CA when connecting to 8883. The TCP healthcheck proves listener availability, not
 successful authentication or certificate validation; verify a publish/subscribe
 exchange using a real client.
+
+The SMA and BMW bridge examples use TLS on 8883 with certificate verification
+disabled. They encrypt traffic but do not authenticate the broker certificate or
+hostname and do not require a client CA file. The broker's own server certificate
+and key are still required. Keep the bridge TLS flags enabled when applying
+those examples; the [Advanced guide](bridges.advanced.md) describes their settings.
 
 References: [Mosquitto password utility](https://mosquitto.org/man/mosquitto_passwd-1.html),
 [broker configuration](https://mosquitto.org/man/mosquitto-conf-5.html),

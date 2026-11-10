@@ -5,8 +5,6 @@ services:
     profiles: [sma]
     image: ghcr.io/alaub81/sma-mqtt-bridge:${SMAB_BRIDGE_VERSION:-latest}
     user: "${SMAB_UID:-10001}:${SMAB_GID:-10001}"
-    # Linux host networking also supports Home Manager UDP multicast.
-    network_mode: host
     depends_on:
       mosquitto:
         condition: service_healthy
@@ -37,6 +35,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    # Shared broker DNS and outbound device access; Home Manager uses Modbus TCP.
+    networks:
+      - app-nw
+      - backend-nw
 
   bmw-mqtt-bridge:
     profiles: [bmw]
@@ -52,13 +54,12 @@ services:
       BMB_BMW_CLIENT_ID: "${BMB_BMW_CLIENT_ID:?Set BMB_BMW_CLIENT_ID in .env}"
       BMB_BMW_GCID: "${BMB_BMW_GCID:?Set BMB_BMW_GCID in .env}"
       BMB_MQTT_LOCAL_HOST: "${BMB_MQTT_LOCAL_HOST:-host.docker.internal}"
-      BMB_MQTT_LOCAL_PORT: "${BMB_MQTT_LOCAL_PORT:-1883}"
+      BMB_MQTT_LOCAL_PORT: "${BMB_MQTT_LOCAL_PORT:-8883}"
       BMB_MQTT_LOCAL_USER: "${BMB_MQTT_LOCAL_USER:-}"
       BMB_MQTT_LOCAL_PASSWORD: "${BMB_MQTT_LOCAL_PASSWORD:-}"
       BMB_MQTT_LOCAL_PREFIX: "${BMB_MQTT_LOCAL_PREFIX:-bmw/}"
-      BMB_MQTT_LOCAL_TLS: "${BMB_MQTT_LOCAL_TLS:-false}"
-      BMB_MQTT_LOCAL_TLS_VERIFY: "${BMB_MQTT_LOCAL_TLS_VERIFY:-true}"
-      BMB_MQTT_LOCAL_TLS_CA_FILE: "${BMB_MQTT_LOCAL_TLS_CA_FILE:-/etc/ssl/certs/ca-certificates.crt}"
+      BMB_MQTT_LOCAL_TLS: "${BMB_MQTT_LOCAL_TLS:-true}"
+      BMB_MQTT_LOCAL_TLS_VERIFY: "${BMB_MQTT_LOCAL_TLS_VERIFY:-false}"
       BMB_MQTT_HOMIE: "${BMB_MQTT_HOMIE:-0}"
       BMB_MQTT_RAW_TOPICS: "${BMB_MQTT_RAW_TOPICS:-1}"
       BMB_MQTT_SPLIT_TOPICS: "${BMB_MQTT_SPLIT_TOPICS:-0}"
@@ -70,8 +71,6 @@ services:
       BMB_MQTT_RETAIN: "${BMB_MQTT_RETAIN:-0}"
     volumes:
       - "data_bmb_token:/app/token"
-      # Optional private MQTT CA; enable only when the host file exists.
-      # - "./data/mosquitto/conf/certs/ca.crt:/etc/bridge-mqtt-ca.crt:ro"
     tmpfs:
       - "/tmp:rw,noexec,nosuid,size=16m,mode=1777"
     read_only: true

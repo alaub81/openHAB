@@ -44,6 +44,9 @@ tests. No images, tags or releases are built or published.
 - Unresolved merge markers in recognized text/source files.
 - Unique `.env.example` assignments and `CHANGE_ME_...` credential placeholders.
   Local `.env` files are ignored and never read by the checker, even if present.
+- The public `smab.env.example` receives the same checks, with one explicit
+  exception for the documented public MQTT example password. Other passwords
+  must remain placeholders; the private runtime `smab.env` is ignored.
 - Compose configuration validation against `.env.example` for all eight
   combinations of the `mqtt`, `influxdb` and `grafana` profiles. It checks the
   exact service selection, including openHAB-only and the complete stack.

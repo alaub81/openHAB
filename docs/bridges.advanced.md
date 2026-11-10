@@ -14,7 +14,10 @@ Both profiles are **disabled by default**. The ordinary
 remain unchanged. Loading the extension does not enable either profile.
 SMA sources and command gates are configured in the private `smab.env`; upstream
 defaults disable sources and writes. An existing file keeps its own settings.
-The BMW bridge forwards telemetry and has no vehicle commands.
+The BMW bridge forwards telemetry and has no vehicle commands. The public
+[`smab.env.example`](../smab.env.example) keeps all illustrated SMA devices enabled;
+adapt their synthetic settings or disable absent devices before starting. Its
+device-write gates are enabled; set them to `false` for read-only operation.
 
 ## 1. Prepare the existing stack
 
@@ -90,21 +93,25 @@ credentials, image tags or physical devices work.
 
 Create bridge accounts in your broker, or select accounts you already manage.
 Set SMA MQTT credentials in `smab.env` and BMW MQTT credentials in `.env`. The
-template placeholders are not working credentials. Editing either ENV file does
-not create broker users. Follow the [MQTT guide](mqtt.md) for the bundled broker.
+SMA example uses the public broker login `mosquitto` / `mosquitto-mqtt`; replace
+that password in both the broker and `smab.env`. Other credential placeholders
+are not working credentials. Editing either ENV file does not create broker users. Follow the [MQTT guide](mqtt.md) for the bundled broker.
 
 The network addresses intentionally differ:
 
 | Bridge | Network | Local broker address | Port |
 | --- | --- | --- | --- |
-| SMA | Linux host | `127.0.0.1` | Published host port, normally `1883`; update `SMAB_MQTT_PORT` if `MOSQUITTO_MQTT_PORT` differs |
-| BMW | `app-nw` and `backend-nw` | `mosquitto` on `app-nw` | Container port `1883`, even if its published host port differs |
+| SMA | `app-nw` and `backend-nw` | `mosquitto` on `app-nw` | Container TLS port `8883`, independently of the published host port |
+| BMW | `app-nw` and `backend-nw` | `mosquitto` on `app-nw` | Container TLS port `8883`, independently of the published host port |
 
-`localhost` inside BMW's container is not the broker. A public MQTT listener is
-not needed for communication between BMW and the local broker. Neither bridge
-publishes an additional host port. The examples below explicitly select
-plaintext for the local host/container network; SMA itself defaults to verified
-MQTT TLS on port 8883. BMW's upstream CarData connection is encrypted independently.
+`localhost` inside either bridge container is not the broker. Both services use
+the shared Compose networks; no host networking is selected. Neither bridge
+publishes an additional host port. Both examples use MQTT TLS on port 8883 with
+certificate verification disabled. Traffic is encrypted; the broker certificate
+and hostname are not authenticated. No MQTT client CA file or extra CA copy is
+required for these broker connections. The broker still needs its own TLS server
+certificate/key, independently of client verification. BMW's upstream CarData
+TLS connection is configured independently of these local broker settings.
 
 The template explicitly sets `BMB_MQTT_LOCAL_HOST=mosquitto` for the bundled
 broker. If the variable is absent or empty, the Compose fallback is
@@ -113,15 +120,12 @@ configured separately. Set a reachable broker address in `.env` rather than
 relying on this fallback. `BMB_MQTT_LOCAL_CLIENT_ID` can select a unique client
 identity; use different IDs when running additional bridge instances.
 
-For a remote broker, enable MQTT TLS and use its certificate-matching hostname
-and TLS port. Verification defaults to enabled. For SMA with a private CA, put
-its public certificate under `./data/sma-mqtt-bridge/` and select its **container** path in
-`smab.env`, for example `SMAB_MQTT_TLS_CA_FILE=/data/sma-mqtt-bridge/config/ca.crt`.
-For BMW, uncomment its optional read-only CA mount and set
-`BMB_MQTT_LOCAL_TLS_CA_FILE=/etc/bridge-mqtt-ca.crt` in `.env`. Ensure files exist
-and are readable by the image's non-root user. Mount only the public CA
-certificate, not the CA private key. For a publicly trusted BMW MQTT broker,
-the image's system CA bundle is used by default.
+For a remote broker, set a reachable hostname and its TLS port. If you later
+choose certificate verification, configure it explicitly with the actual broker
+certificate name and a trusted issuing CA. Private-CA paths and mounts can be
+added to the local configuration as needed; the default templates do not
+reference an MQTT CA file. See the [MQTT guide](mqtt.md) and the upstream bridge
+configuration references for that optional setup.
 
 ## 3. Enable SMA measurements
 
@@ -137,20 +141,32 @@ SMAB_UID=10001
 SMAB_GID=10001
 ```
 
-For a new installation, create `smab.env` and start with this example, adapting
-addresses, account, password and the exact supported model before enabling `sma`:
+For a **new** installation, copy the public example only if no working private
+file exists:
+
+```bash
+cp smab.env.example smab.env
+chmod 600 smab.env
+```
+
+The MQTT section is prepared for the bundled broker:
 
 ```dotenv
-SMAB_MQTT_HOST=127.0.0.1
-SMAB_MQTT_PORT=1883
-SMAB_MQTT_TLS=false
-SMAB_MQTT_USERNAME=sma-bridge
-SMAB_MQTT_PASSWORD=CHANGE_ME_SMA_MQTT_PASSWORD
-SMAB_INVERTER1_ENABLED=true
-SMAB_INVERTER1_HOST=inverter.example.invalid
-SMAB_INVERTER1_PROFILE=sma-stp8-0-3av-40
-SMAB_COMMANDS_ENABLED=false
+SMAB_MQTT_HOST=mosquitto
+SMAB_MQTT_PORT=8883
+SMAB_MQTT_USERNAME=mosquitto
+SMAB_MQTT_PASSWORD=mosquitto-mqtt
+SMAB_MQTT_TLS=true
+SMAB_MQTT_TLS_VERIFY=false
 ```
+
+This is a public example login, not a private deployment password. Change it in
+both the broker and `smab.env`. The file keeps the illustrated inverter, Home
+Manager, eCharger, BYD and portal readers enabled. Replace the synthetic addresses,
+serial selectors, model profiles and account placeholders; disable readers for
+hardware or accounts you do not have. Global, charger and portal write gates
+are `true` in this example. Review the upstream command setup before using it;
+set all three to `false` for read-only operation.
 
 Create the broker account first; generate a password with `openssl rand -hex 32`
 and set the same value on both sides. Modbus TCP must be enabled on the inverter.
@@ -159,28 +175,41 @@ and [profile guide](https://github.com/alaub81/sma-mqtt-bridge/blob/main/docs/PR
 for devices, firmware, unit IDs, additional inverters, eCharger, BYD and plant
 calculations. These settings all belong in `smab.env`; no Compose mapping is
 needed for additional application variables. Do not assume compatibility from
-a similar model name. Retain any existing command-gate choices in a working
-installation; the integration does not change them or issue commands itself.
+a similar model name. An existing private `smab.env` is not overwritten; its command-gate choices
+remain under the deployment owner's control.
 
 The `./data/sma-mqtt-bridge` bind contains optional custom profiles, JSON configuration
 and certificates. The public extension mounts it read-only, with runtime state
 in `data_smab_state`. The directory must be readable by UID/GID `10001:10001`, or
-the configured replacement. For a new default directory:
+the configured replacement. For a new directory:
 
 ```bash
 mkdir -p data/sma-mqtt-bridge
+chmod 755 data/sma-mqtt-bridge
 chmod 600 smab.env
 ```
+
+No MQTT CA file needs to be copied for this template's verification-disabled
+connection. The read-only configuration bind remains available for optional
+profiles, JSON configuration and local device certificates.
+
+Keep existing working configuration/certificates when adapting an installation.
+The runtime ENV file is read by Compose, so it can remain owner-only. Optional
+local charger trust files belong under the same mounted directory; the example
+path is `/data/sma-mqtt-bridge/config/certificates/sma-echarger.crt` inside the
+container. Configure its real certificate and matching server name before use.
 
 No JSON file is required. The optional ENV-file declaration allows the disabled
 profile to coexist with a checkout that has no `smab.env`; prepare and verify the
 file before enabling `sma`. The profile does not enable sources by itself.
 
-For Sunny Home Manager UDP or supplemental phase telegrams, follow the upstream
-[Home Manager guide](https://github.com/alaub81/sma-mqtt-bridge/blob/main/docs/HOME_MANAGER_MODBUS.md).
-Configure its actual serial, host and multicast interface in `smab.env`.
-Host networking is selected so UDP multicast can reach the bridge; Modbus alone
-does not require it. Enable at least one configured source before starting.
+Sunny Home Manager uses **Modbus TCP only** in this example:
+`SMAB_HOME_MANAGER_TRANSPORT=modbus-tcp`, port 502, with supplemental UDP and
+multicast disabled. Configure its real host and serial and enable the required
+device interface. UDP-only phase telegrams are not received by this setup.
+See the upstream [Home Manager guide](https://github.com/alaub81/sma-mqtt-bridge/blob/main/docs/HOME_MANAGER_MODBUS.md)
+for the supported Modbus registers and firmware requirements. No multicast or
+host-network configuration is required here.
 Then add `sma` to `COMPOSE_PROFILES` and run:
 
 ```bash

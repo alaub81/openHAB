@@ -79,6 +79,18 @@ class LintRegressionTests(unittest.TestCase):
             "CHANGE_ME_POSTGRES_PASSWORD",
         )
 
+    def test_public_mqtt_example_exception_is_explicit_and_exact(self):
+        public = {"SMAB_MQTT_PASSWORD": "mosquitto-mqtt"}
+        example = "SMAB_MQTT_PASSWORD=mosquitto-mqtt\n"
+        self.assertEqual(dotenv(example, public_credentials=public)["SMAB_MQTT_PASSWORD"], "mosquitto-mqtt")
+        for text, exceptions in [
+            (example, None),
+            ("SMAB_MQTT_PASSWORD=not-a-real-credential\n", public),
+            ("SMAB_PORTAL_PASSWORD=mosquitto-mqtt\n", public),
+        ]:
+            with self.assertRaises(ValueError):
+                dotenv(text, public_credentials=exceptions)
+
 
 if __name__ == "__main__":
     unittest.main()

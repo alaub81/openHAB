@@ -88,8 +88,8 @@ def openhab_entities(name, document):
     return section, document[section]
 
 
-def dotenv(text):
-    """Check assignment syntax and ensure tracked credentials remain placeholders."""
+def dotenv(text, public_credentials=None):
+    """Require placeholder credentials, with explicitly selected public examples."""
     values = {}
     for number, line in enumerate(text.splitlines(), 1):
         if not line.strip() or line.lstrip().startswith("#"):
@@ -100,8 +100,8 @@ def dotenv(text):
         key, value = match.groups()
         values[key] = value
         if re.search(r"PASSWORD|PASSWD|TOKEN|SECRET|API_KEY", key, re.IGNORECASE):
-            if not re.fullmatch(r"CHANGE_ME_[A-Z0-9_]+", value):
-                raise ValueError(f"{key}: use a CHANGE_ME_ placeholder in .env.example")
+            if not re.fullmatch(r"CHANGE_ME_[A-Z0-9_]+", value) and value != (public_credentials or {}).get(key):
+                raise ValueError(f"{key}: use a CHANGE_ME_ credential placeholder")
     return values
 
 
@@ -131,7 +131,7 @@ def main():
         path = ROOT / name
         suffix = path.suffix
         yaml_file = name.endswith((".yml", ".yaml", ".yml.example", ".yaml.example"))
-        text_file = yaml_file or suffix in {".md", ".py", ".sh", ".js", ".json", ".conf", ".persist", ".influx"} or path.name == ".env.example"
+        text_file = yaml_file or suffix in {".md", ".py", ".sh", ".js", ".json", ".conf", ".persist", ".influx"} or path.name in {".env.example", "smab.env.example"}
         if not text_file:
             continue
         try:
@@ -164,8 +164,11 @@ def main():
                 if result.returncode:
                     raise ValueError("bash -n failed")
                 label = "Bash syntax"
-            elif path.name == ".env.example":
-                env_values = dotenv(text)
+            elif path.name in {".env.example", "smab.env.example"}:
+                public = {"SMAB_MQTT_PASSWORD": "mosquitto-mqtt"} if path.name == "smab.env.example" else None
+                parsed = dotenv(text, public_credentials=public)
+                if path.name == ".env.example":
+                    env_values = parsed
                 label = "Dotenv / credential placeholders"
             else:
                 label = "Text merge markers"

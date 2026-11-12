@@ -9,7 +9,7 @@ Detailed documentation stays beside each YAML file.
 
 | Library/source | Blocks and purpose | Guide |
 | --- | --- | --- |
-| [lhlab_alarm_library.yml](lhlab_alarm_library.yml) | DWD warning monitoring, generic alarm groups, delayed Contact/Switch monitoring, alarm records and current-alarm values | [Alarm management](lhlab_alarm_library.md) |
+| [lhlab_alarm_library.yml](lhlab_alarm_library.yml) | DWD warning monitoring, generic alarm groups, delayed Contact/Switch and temperature-dependent window monitoring, alarm records and current-alarm values | [Alarm management](lhlab_alarm_library.md) |
 | [lhlab_battery_alarm_library.yml](lhlab_battery_alarm_library.yml) | Battery-group monitoring with confirmation, batching and reminder cooldowns | [Battery alarms](lhlab_battery_alarm_library.md) |
 | [lhlab_humity_alarm_library.yml](lhlab_humity_alarm_library.yml) | Room-based humidity monitoring, per-sensor thresholds and external alarm integration | [Humidity alarms](lhlab_humity_alarm_library.md) |
 | [lhlab_thermostat_library.yml](lhlab_thermostat_library.yml) | Heating, heating/cooling, and Shelly wall-display controllers | [Thermostat control and Shelly profiles](lhlab_thermostat_library.md) |
@@ -45,6 +45,7 @@ archived migration scripts.
 | Battery monitoring | Select a group of numeric percentage Items. Trigger on member state changes; evaluate once after startup or manually to initialize existing values. Configure thresholds, confirmation and action areas. |
 | Humidity monitoring | Select sensor and alarm groups, map them to semantic rooms, and trigger on relevant group-member changes, including externally supplied alarm changes. |
 | Contact/Switch alarms | Select a source and a dedicated Switch alarm Item. Trigger on source changes and initialize after startup; configure delay and reminders. |
+| Temperature-dependent windows | Select a Contact, temperature and dedicated Switch alarm Item. Trigger on contact/temperature state changes and all inputs to the temperature-limit expression; initialize after startup. No periodic trigger is needed. |
 | DWD warnings | Adapt the shared Item prefix, slot count and binding/rule triggers to your warning Items. The prefix is text, not a single selectable Item. |
 | Thermostats | Assign setpoints, modes, sensors and actuators. Add triggers for relevant state changes and schedule requirements; loading a block does not create periodic execution. |
 | Thing control | Select a Thing and choose enable/disable. A restart requires an explicitly composed disable, delay and enable sequence. |

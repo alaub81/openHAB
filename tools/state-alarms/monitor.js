@@ -27,7 +27,7 @@ function lhlab_state_monitor(config, onNotify, onClear) {
     throw new Error('Zustandsalarm: Alarm-Item in derselben Script-Aktion unterschiedlich konfiguriert.');
   }
   if (!state) {
-    state = { signature, generation: 0, openedAt: null, sent: 0, lastSent: null,
+    state = { signature, generation: 0, openedAt: null, durationKnown: false, sent: 0, lastSent: null,
       lastMessage: '', pendingClear: null };
     api.cache.private.put(key, state);
   }
@@ -63,7 +63,10 @@ function lhlab_state_monitor(config, onNotify, onClear) {
     return {
       id: alarmName, group: 'state-monitor', kind, title,
       message: kind === 'CLEARED'
-        ? label + ' ist wieder ' + inactiveText + '.'
+        ? (onState === 'ON'
+          ? label + ' wurde nach ' + (minutes === null ? 'mehr als ' + config.delayMinutes : minutes) +
+            (minutes === 1 ? ' Minute ' : ' Minuten ') + inactiveText + '.'
+          : label + ' ist wieder ' + inactiveText + '.')
         : (kind === 'REMINDER' ? 'Erinnerung: ' : 'Achtung! ') + label +
           ' ist seit mindestens ' + minutes + (minutes === 1 ? ' Minute ' : ' Minuten ') + activeText + '.',
       previousMessage: state.lastMessage, previousTitle: title, comparison: sourceName
@@ -87,10 +90,14 @@ function lhlab_state_monitor(config, onNotify, onClear) {
     if (raw === offState) {
       cancel();
       if (api.items.getItem(alarmName).state === 'ON' && !state.pendingClear) {
-        state.pendingClear = event('CLEARED', label, 0);
+        const minutes = state.durationKnown && state.openedAt !== null
+          ? Math.max(0, Math.floor((now - state.openedAt) / 60000)) : null;
+        // Freeze the duration at clearance so delivery retries keep the same message.
+        state.pendingClear = event('CLEARED', label, minutes);
       }
       writeAlarm('OFF');
       state.openedAt = null;
+      state.durationKnown = false;
       state.sent = 0;
       state.lastSent = null;
       if (state.pendingClear) {
@@ -105,7 +112,8 @@ function lhlab_state_monitor(config, onNotify, onClear) {
       state.openedAt = now;
       // After reload, retain an already active persisted alarm without replaying
       // its notifications or granting it a new set of reminders.
-      if (api.items.getItem(alarmName).state === 'ON') state.sent = repeats + 1;
+      state.durationKnown = api.items.getItem(alarmName).state !== 'ON';
+      if (!state.durationKnown) state.sent = repeats + 1;
       else writeAlarm('OFF');
     }
     if (state.sent > 0) writeAlarm('ON');

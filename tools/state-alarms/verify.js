@@ -49,6 +49,7 @@ function verifyStateMonitor(vm, source) {
   assert(f.notices.map(n=>n.kind).join()==='NEW,REMINDER,REMINDER','Event kinds');
   assert(f.notices.every(n=>n.id===f.cfg.alarm),'Stable notification identity');
   f.source('CLOSED');f.run();f.run();assert(f.alarm()==='OFF'&&f.clears.length===1,'One clearance');
+  assert(f.clears[0].message==='Testfenster ist wieder geschlossen.','Window clearance stays unchanged');
   results.push('15-minute deadline, no sliding reset, two five-minute reminders, one clearance');
 
   f=fixture({delayMinutes:30,intervalMinutes:10});f.run();f.advance(29.9);
@@ -76,7 +77,36 @@ function verifyStateMonitor(vm, source) {
   f=fixture({active:'ON',delayMinutes:2,repeats:0,title:'Lichtalarm'});f.run();f.advance(10);
   assert(f.notices.length===1&&f.notices[0].message.includes('eingeschaltet'),'Light alarm');
   f.source('OFF');f.run();assert(f.clears.length===1&&f.alarm()==='OFF','Light clearance');
+  assert(f.clears[0].message==='Testfenster wurde nach 10 Minuten ausgeschaltet.','Light clearance includes total ON duration');
   results.push('ON/OFF light source and zero reminders');
+
+  f=fixture({active:'ON',delayMinutes:15,title:'Lichtalarm'});
+  f.values.get(f.cfg.source).label='Abstellkammer';
+  f.run();f.advance(23.9);f.source('OFF');f.run();
+  assert(f.clears[0].message==='Abstellkammer wurde nach 23 Minuten ausgeschaltet.',
+    'Light duration starts at ON, ignores reminders and uses completed minutes');
+  f.source('ON');f.run();f.advance(16);f.source('OFF');f.run();
+  assert(f.clears[1].message==='Abstellkammer wurde nach 16 Minuten ausgeschaltet.','Next ON cycle gets a fresh duration');
+  results.push('Light clearance measures completed minutes from ON across reminders and resets per cycle');
+
+  for(const observeActive of [false,true]) {
+    f=fixture({active:'ON',delayMinutes:15,title:'Lichtalarm'});
+    f.values.get(f.cfg.alarm).state='ON';
+    if(observeActive){f.run();f.advance(30);}
+    f.source('OFF');f.run();
+    assert(f.clears[0].message==='Testfenster wurde nach mehr als 15 Minuten ausgeschaltet.',
+      'Restored light alarm uses unknown-duration fallback even after observing ON');
+  }
+  results.push('Restored light alarms use configured delay as fallback when the original start is unknown');
+
+  f=fixture({active:'ON',delayMinutes:1,repeats:0,title:'Lichtalarm'});
+  f.run();f.advance(1.5);f.source('OFF');let lightClearAttempts=0;
+  const retryClear=e=>{if(++lightClearAttempts===1)throw Error('Clear failure');f.clears.push(e);};
+  try{f.run(f.cfg,f.notify,retryClear);}catch(e){}
+  f.advance(5);f.run(f.cfg,f.notify,retryClear);
+  assert(f.clears.length===1&&f.clears[0].message==='Testfenster wurde nach 1 Minute ausgeschaltet.',
+    'Clearance retry retains original duration and singular minute');
+  results.push('Light clearance retries preserve the OFF timestamp and singular minute wording');
 
   f=fixture({active:'ON',delayMinutes:30,intervalMinutes:5,title:'Lichtalarm'});
   f.run();f.advance(29.9);assert(!f.notices.length,'Bathroom light must not warn before thirty minutes');

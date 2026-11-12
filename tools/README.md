@@ -11,7 +11,7 @@ at runtime. Current widget and Blockly library sources are maintained under
 | `battery-widget/` | Battery widget regression test |
 | `humidity-widget/` | Humidity widget regression test |
 | `window-widget/` | Widget generator and regression test |
-| `state-alarms/` | JavaScript source, library generator, and simulated alarm test |
+| `state-alarms/` | State/temperature-window JavaScript sources, library generator, and simulated alarm checks |
 | `humidity-alarms/` | JavaScript source and simulated test for the original humidity monitor |
 | `heatpump-daily/` | Blockly generator and simulated test for daily heat-pump consumption |
 | `migrate_shelly_links.py` | Existing Shelly link migration tool |
@@ -25,6 +25,8 @@ The battery and humidity widget tests run on macOS using `osascript`. Their widg
 documentation contains the commands and YAML-to-JSON conversion instructions.
 The other JavaScript tests expose functions that take a Node VM and the required
 source data; they are not standalone CLI programs.
+For state/temperature-window alarms, the `state-alarms/check.cjs` CLI runs both
+sources and generated helpers; see the [alarm guide](../data/openhab/conf/yaml/block_libraries/lhlab_alarm_library.md#build-and-offline-verification).
 
 ## Shelly link migration
 

@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2026 Andreas Laub
-"""Extend the canonical alarm YAML and build a normal Blockly kitchen example."""
-import copy
+"""Build the state/temperature alarm blocks and synthetic Blockly examples."""
 import json
 from pathlib import Path
 import subprocess
@@ -57,10 +56,52 @@ def definitions():
     return block, utility
 
 
+def temperature_definitions():
+    block = {'component': 'BlockType', 'config': {
+        'type': 'lhlab_temperature_window_monitor',
+        'message0': 'Fenster temperaturabhängig überwachen\nFenster-Item %1\nTemperatur-Item %2\nTemperaturgrenze (°C, Alarm bei ≤) %3\nAlarm-Item %4\nWartezeit (Minuten) %5\nzusätzliche Erinnerungen %6\nErinnerungsabstand (Minuten) %7\nTitel %8\nbei Alarm / Erinnerung %9\nbei Entwarnung %10',
+        'args0': [
+            {'type': 'input_value', 'name': 'SOURCE', 'check': ['String', 'oh_item']},
+            {'type': 'input_value', 'name': 'TEMPERATURE', 'check': ['String', 'oh_item']},
+            {'type': 'input_value', 'name': 'THRESHOLD', 'check': 'Number'},
+            {'type': 'input_value', 'name': 'ALARM', 'check': ['String', 'oh_item']},
+            {'type': 'field_number', 'name': 'DELAY', 'value': 10, 'min': 1},
+            {'type': 'field_number', 'name': 'REPEATS', 'value': 2, 'min': 0, 'max': 20, 'precision': 1},
+            {'type': 'field_number', 'name': 'INTERVAL', 'value': 10, 'min': 1},
+            {'type': 'input_value', 'name': 'TITLE', 'check': 'String'},
+            {'type': 'input_statement', 'name': 'NOTIFY'}, {'type': 'input_statement', 'name': 'CLEAR'}],
+        'previousStatement': '', 'nextStatement': '', 'inputsInline': False, 'colour': 15,
+        'tooltip': 'Alarm bei offenem Fenster und Temperatur ≤ Grenze nach der Wartezeit. Schließen oder Temperatur > Grenze beendet Timer und Alarm. Die Grenze wird bei Bedarf neu ausgewertet; Bedingungen direkt anschließen. Keine regelmäßige Prüfung. Meldung, Titel und Kennung liefert „aktueller Alarm“. Pro Alarm-Item genau eine Regel verwenden.'},
+        'slots': {'code': [{'component': 'BlockCodeTemplate', 'config': {'template': '''{{utility:lhlab_temperature_window_monitor}}({
+  source: [{{input:SOURCE}}][0], temperature: [{{input:TEMPERATURE}}][0], alarm: [{{input:ALARM}}][0],
+  threshold: function() { return [{{input:THRESHOLD}}][0]; },
+  delayMinutes: {{field:DELAY}}, repeats: {{field:REPEATS}}, intervalMinutes: {{field:INTERVAL}}, title: [{{input:TITLE}}][0]
+}, function(lhlabAlarmEvent) {
+{{statements:NOTIFY}}
+}, function(lhlabAlarmEvent) {
+{{statements:CLEAR}}
+});
+'''}}], 'toolbox': []}}
+    for name, value in [('SOURCE', 'MyContact'), ('TEMPERATURE', 'MyTemperature'),
+                        ('ALARM', 'MyAlarm'), ('TITLE', 'Fensteralarm')]:
+        is_item = name != 'TITLE'
+        block['slots']['toolbox'].append({'component': 'PresetInput', 'config': {
+            'name': name, 'type': 'oh_item' if is_item else 'text', 'shadow': True,
+            'fields': {'itemName' if is_item else 'TEXT': value}}})
+    block['slots']['toolbox'].append({'component': 'PresetInput', 'config': {
+        'name': 'THRESHOLD', 'type': 'math_number', 'shadow': True, 'fields': {'NUM': 20.5}}})
+    utility = {'component': 'UtilityFunction', 'config': {'name': 'lhlab_temperature_window_monitor',
+        'code': (HERE / 'temperature-monitor.js').read_text().replace(
+            'function lhlab_temperature_window_monitor(', 'function {{name}}(', 1)}}
+    return block, utility
+
+
 def extend_library():
     source = LIBRARY.read_text()
-    for name, definition in zip(['block', 'utility'], definitions()):
-        start, end = '      # state-monitor-' + name + '-begin\n', '      # state-monitor-' + name + '-end\n'
+    fragments = [('state-monitor', definitions()), ('temperature-window', temperature_definitions())]
+    for prefix, name, definition in [(prefix, name, definition) for prefix, pair in fragments
+                                     for name, definition in zip(['block', 'utility'], pair)]:
+        start, end = '      # ' + prefix + '-' + name + '-begin\n', '      # ' + prefix + '-' + name + '-end\n'
         if start in source:
             a = source.index(start)
             b = source.index(end, a) + len(end)
@@ -124,6 +165,23 @@ def kitchen_xml():
     return ET.tostring(root, encoding='unicode')
 
 
+def temperature_window_xml():
+    root = ET.Element('{' + NS + '}xml')
+    monitor = block(UID + '_lhlab_temperature_window_monitor',
+                    {'DELAY': 10, 'REPEATS': 2, 'INTERVAL': 10}, {
+                        'SOURCE': item('MyContact', 'Example contact'),
+                        'TEMPERATURE': item('MyTemperature', 'Example room temperature'),
+                        'THRESHOLD': block('math_number', {'NUM': 20.5}),
+                        'ALARM': item('MyContactAlarm', 'Example contact alarm'),
+                        'TITLE': text('Fensteralarm')})
+    monitor.set('x', '30')
+    monitor.set('y', '30')
+    ET.SubElement(monitor, '{' + NS + '}statement', {'name': 'NOTIFY'}).append(notification())
+    ET.SubElement(monitor, '{' + NS + '}statement', {'name': 'CLEAR'}).append(notification())
+    root.append(monitor)
+    return ET.tostring(root, encoding='unicode')
+
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
@@ -133,3 +191,4 @@ if __name__ == '__main__':
     extend_library()
     (args.output / 'library.json').write_text(json.dumps(read_library(), ensure_ascii=False, indent=2))
     (args.output / 'kitchen.xml').write_text(kitchen_xml())
+    (args.output / 'temperature-window.xml').write_text(temperature_window_xml())

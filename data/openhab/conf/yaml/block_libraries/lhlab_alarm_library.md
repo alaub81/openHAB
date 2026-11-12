@@ -79,6 +79,14 @@ Both Blockly action areas use the existing current-alarm value block for message
 - **Alarm/reminder:** runs after the delay and for configured reminders; event kind is `NEW` or `REMINDER`.
 - **Clearance:** runs once when a confirmed return state ends a previously active alarm. The message already contains suitable clearance text; event kind is `CLEARED`.
 
+For light alarms (`ON`/`OFF`), the clearance message includes the total time since
+the light was first observed ON, in completed minutes: for example,
+`Abstellkammer wurde nach 23 Minuten ausgeschaltet.` Reminders do not reset this
+duration. After a script reload or restart, an already active alarm has no known
+start time; its clearance uses `mehr als 15 Minuten` instead (with the configured
+delay). Window clearance messages remain unchanged. Failed clearance actions
+retain the duration measured when OFF was first confirmed.
+
 The block sends no notifications and starts no Alexa rule itself. Those actions remain visible in the two statement areas. Identity is the alarm Item name, suitable as a stable push reference. Alarm states use `postUpdate` only when changed. There are no regular info logs; unexpected execution failures are logged as errors.
 
 #### Behavior and state
@@ -91,7 +99,8 @@ The block sends no notifications and starts no Alexa rule itself. Those actions 
 - If action statements throw, execution retries after one minute while the event still applies. Exactly-once external delivery is not guaranteed: a successful push can repeat if a later action fails. Stable push references limit duplicate entries.
 - A failed clearance action is discarded if the source becomes active again before retry.
 
-Temperature thresholds are not included in this first monitoring block. Existing temperature-dependent window rules were not replaced.
+Temperature thresholds use the separate temperature-window block below. The
+ordinary Contact/Switch block does not evaluate temperatures.
 
 #### Example setup
 
@@ -99,6 +108,114 @@ Choose your own Contact Item, Switch alarm Item, delay and reminder settings.
 Trigger the rule on source state changes and optionally at system start.
 Configure notification actions in the block's action areas; no external speech
 rule is required. The generator in `tools/state-alarms/` uses synthetic Item names.
+
+### Temperature-dependent windows
+
+The **Fenster temperaturabhängig überwachen** block is part of this same library.
+It manages one Contact Item and one dedicated Switch alarm Item. It does not
+replace existing rules automatically. Install this updated YAML before converting
+any rule; keep exactly one responsible rule/block per alarm Item.
+
+| Input | Meaning |
+| --- | --- |
+| Window Item | Contact Item with `OPEN` / `CLOSED` states. |
+| Temperature Item | `Number:Temperature`, converted to °C; a plain `Number` is interpreted as °C. |
+| Temperature limit | Numeric value in °C, or a connected Blockly expression returning a number. |
+| Alarm Item | Dedicated Switch Item, different from the window and temperature Items. |
+| Delay | Minutes continuously observed OPEN with temperature at or below the limit; minimum 1. |
+| Additional reminders | 0–20; 2 means at most three successful alarm/reminder callbacks. |
+| Reminder interval | Minutes between successful callbacks; minimum 1. |
+| Title | Title returned by the current-alarm value block. |
+
+The two action areas work with **aktueller Alarm → Meldung / Titel / Kennung**,
+just like the ordinary state-monitor block. The identity is the alarm Item name;
+event kind is `NEW`, `REMINDER` or `CLEARED`. Push, speech, recipients, icons and
+references remain caller choices. This block itself never sends notifications.
+
+#### Conditions and clearance
+
+- An open window starts the delay only when temperature is **at or below** the
+  limit. Equality matches the old temperature rules.
+- Temperature falling to the limit while the window is already open starts the
+  full delay. Further qualifying changes do not postpone it.
+- Closing the window or temperature rising **above** the limit cancels the
+  countdown and reminders. A later qualifying condition starts a new full delay.
+  No hysteresis is applied; every crossing of the limit ends/starts a cycle.
+- Only an active alarm produces clearance. Window closure says the window is
+  closed. Temperature clearance explicitly says that the window is **still open**
+  and reports the temperature and current limit. After a temperature clearance,
+  closing the window produces no second clearance for that cycle.
+- Before a timed action, the block re-reads the contact, temperature and limit.
+  A missed close/warm-up trigger therefore cannot produce a stale warning.
+- Alarm messages measure completed minutes from the start of the qualifying
+  cold/open condition, which can be later than the window's opening. They include
+  the current temperature and current limit.
+
+Connect seasonal/setpoint logic **directly to the temperature-limit input**.
+The generator wraps that expression in a function; it is evaluated only for an
+open window and again before each timed action. For example, a Blockly conditional
+expression can return `20.5` in winter and `18` otherwise. An Item-based setpoint
+expression must return a finite number in °C. Avoid a variable calculated once
+before the monitor: a timer would retain that old value. The expression must
+only read/compute a value, without side effects.
+
+#### Runtime and triggers
+
+Use **state-change** triggers for the window and temperature Items, plus each Item
+read by the limit expression (for example season or thermostat setpoint). Add a
+system-start trigger after restored states are available. Do not use a cron
+trigger, an every-update trigger or the alarm Item itself as a trigger. Connecting
+an Item or expression in Blockly does not create these rule triggers.
+
+The block is event-driven: there are no group scans, persistence queries, sleeps,
+background intervals or periodic baseline checks. With a closed window, it only
+reads the contact and alarm, and never reads temperature or evaluates the limit.
+An inactive closed/warm window keeps no timer. A qualifying window keeps at most
+one timer, reused across source events, until the next deadline/reminder. Only
+changed alarm states are posted; there are no normal info logs. State is kept in
+the script-private cache without JSON serialization on each event.
+
+Temperature state changes still invoke the containing rule, even with the window
+closed; the early return reduces its work rather than eliminating that invocation.
+These are structural safeguards, not a measurement of CPU use on the live server.
+
+Unknown contact states, invalid temperature/units and invalid limits generate no
+alarm or clearance. They cancel timers instead of polling for recovery. A pending
+first warning starts a fresh full delay when valid data returns through a rule
+trigger. An already active alarm and its remaining reminder budget are retained;
+valid data resumes the budget, without replaying elapsed reminders. A confirmed
+closed contact can clear an alarm even if the temperature/limit is unavailable.
+
+Script reload/restart loses pending delays and starts a fresh delay for a cold,
+open window whose alarm is OFF. A restored alarm already ON is retained without
+replaying notifications or granting reminders; closure or warm-up still clears it.
+Failed action callbacks retry after one minute using the same single timer, only
+while the event still applies. Missing data suspends retries until a new event.
+Reopening into a cold condition discards a pending failed clearance. Callback
+failures can duplicate external actions if an earlier action already succeeded;
+use stable notification references. Unexpected timer failures are logged without
+creating an automatic error polling loop.
+
+#### Build and offline verification
+
+The generator updates the state/temperature sections of this YAML and writes
+synthetic Blockly examples and a JSON library export into the supplied directory:
+
+```bash
+python3 tools/state-alarms/build.py /tmp/openhab-state-alarms
+node tools/state-alarms/check.cjs /tmp/openhab-state-alarms/library.json
+```
+
+The checks run both JavaScript sources and their generated YAML utilities with
+virtual Items and time. They also expand and execute the new block's code template.
+Coverage includes fixed deadlines, bounded reminders, dynamic limits, °C/°F/K,
+invalid data, independent windows, cancelled callbacks, restored alarms, callback
+failures and distinct closure/warm-up messages. A resource check executes 1,000
+closed-window evaluations without temperature/limit reads, timers, writes or
+messages. Ordinary state-monitor checks guard the existing window/light behavior.
+This new block has not yet been validated in the live MainUI Blockly generator or
+with real notifications. Converting an existing temperature rule requires an
+explicit migration after the updated library has been installed.
 
 ### Alarm data (`Alarmdaten`)
 

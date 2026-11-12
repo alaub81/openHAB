@@ -7,9 +7,9 @@ installation details, reusable openHAB components, and maintenance.
 
 | Guide | Contents |
 | --- | --- |
-| [Deployment](deployment.md) | Host requirements, image versions, local overrides, permissions, service connections, updates and troubleshooting |
+| [Deployment](deployment.md) | Host requirements, post-start UI setup, InfluxDB V2, manual test results, local overrides and updates |
 | [Advanced bridges](bridges.advanced.md) | Optional SMA/BMW profiles, separate `smab.env`, MQTT connections and BMW authentication |
-| [MQTT](mqtt.md) | Create the broker password file and prepare TLS certificates before first startup |
+| [MQTT](mqtt.md) | Prepare passwords/certificates before startup; connect openHAB with TLS and a correctly formatted certificate pin |
 | [InfluxDB](influxdb.md) | Optional resource tuning, backup destination and manual backups |
 | [Grafana non-root migration](grafana-non-root-migration.md) | Back up an existing Grafana instance and prepare volume permissions |
 

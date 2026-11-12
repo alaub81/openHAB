@@ -17,6 +17,57 @@ publish their configured ports; PostgreSQL and the renderer have no published
 host ports. The internal backend network connects the database and rendering
 services. The app network also allows services to reach external sources.
 
+### Testing on macOS with Docker Desktop
+
+The deployment target remains Linux. A disposable macOS/Apple Silicon checkout
+was used for the [manual first-setup check](#manual-first-setup-results).
+Start Docker Desktop and enable **Settings → Resources → Network → Enable host
+networking**, then apply and restart. Docker Desktop requires version 4.34+ for
+this feature; its host networking does not provide all Linux discovery behavior.
+See [Docker's host-networking guide](https://docs.docker.com/engine/network/drivers/host/#docker-desktop).
+
+Keep the standard Compose file unchanged. For a new disposable Mac checkout,
+create an ignored `docker-compose.local.yml` with the following content. Merge
+this service setting into an existing local file instead of overwriting it:
+
+```yaml
+services:
+  openhab:
+    volumes: !override
+      - "./data/openhab/conf:/openhab/conf"
+      - "./data/openhab/addons:/openhab/addons"
+      - "data_openhab_userdata:/openhab/userdata"
+```
+
+`!override` requires Compose **2.24.4+** and replaces the entire mount list. This
+omits the Linux `/etc/localtime` and `/etc/timezone` mounts while retaining the
+existing configuration, add-ons and userdata. An ordinary list would merge with
+the base list and leave the unwanted mounts in place. See
+[Compose merge rules](https://docs.docker.com/reference/compose-file/merge/#replace-value).
+The [local example](../docker-compose.local.yml.example) includes the same block
+as an optional comment; its image-version, InfluxDB tuning and `/backup` settings
+are independent and are not required for the Mac adjustment.
+
+Set the existing `COMPOSE_FILE` assignment in `.env` to load Local last:
+
+```dotenv
+COMPOSE_FILE=docker-compose.yml:docker-compose.local.yml
+```
+
+If Advanced is already selected, retain it in the file list:
+
+```dotenv
+COMPOSE_FILE=docker-compose.yml:docker-compose.advanced.yml:docker-compose.local.yml
+```
+
+Keep `TZ` configured and Docker Desktop host networking enabled; that desktop
+setting cannot be enabled by a Compose override. If you previously commented
+out the two base mounts during the manual test, restore those lines after
+preparing Local. Do not carry this Mac-only override to the Linux deployment.
+The README's numeric `chown` example is for Linux; do not apply it blindly to a
+macOS checkout. The manual Mac test did not require that ownership change.
+Use the normal shared `pull` and full-stack `up` steps after these adjustments.
+
 ## Optional service profiles
 
 Copy `.env.example` to `.env` for a new installation. openHAB is the only service
@@ -70,11 +121,11 @@ real shared token before enabling it.
 | `data_grafana` | Grafana plugins and local files |
 | `data_mosquitto_data` and `data_mosquitto_log` | MQTT persistence and logs |
 
-Docker prefixes named volumes with the effective Compose project name.
-`PROJECT_NAME` in `.env` controls bridge-interface names; the template does not
-set `COMPOSE_PROJECT_NAME`. Preserve your existing directory name or explicit
-`docker compose -p ...` selection to reuse the same volumes. Keep `PROJECT_NAME`
-short as documented in `.env`.
+Docker derives the Compose project name from the directory containing the base
+Compose file and uses it to prefix named volumes, containers and networks.
+Preserve that directory name when updating to reuse the same volumes.
+`PROJECT_NAME` in `.env` controls only the Linux bridge-interface names; it does
+not select the Compose project name. Keep it short as documented in `.env`.
 
 ## Credentials and permissions
 
@@ -105,34 +156,152 @@ file and certificates are bind mounts.
 Compose starts infrastructure; it does not create Things, linked Items, Grafana
 dashboards, data sources or application-specific rules.
 
-Follow only the optional integration steps you need:
+Complete the [README preparation and full-stack startup](../README.md#quick-start-docker-stack)
+first. There is no need to start services one by one or complete UI setup between
+container starts. Follow only the integrations enabled by your profiles.
+No additional application configuration file is required for these UI steps.
 
-1. Complete openHAB's first-run setup and create its administrator account.
-2. For MQTT, install the MQTT binding. With the local `mqtt` profile, openHAB uses
-   the host network, so configure its
-   broker Thing with `127.0.0.1` and the published MQTT port from `.env`, plus the
-   username/password created during MQTT setup. Port 1883 is plaintext; for TLS
-   use the certificate's matching host name, the published TLS port and CA trust.
-3. For InfluxDB persistence, install InfluxDB Persistence and configure a connection.
-   With the local `influxdb` profile, use the
-   published address, normally `http://127.0.0.1:8086`, your organization, bucket
-   and an appropriate read/write token. The included
-   [`influxdb.persist`](../data/openhab/conf/persistence/influxdb.persist) applies
-   `everyUpdate` and `restoreOnStartup` to all Items for this persistence service;
-   adapt that broad policy to your own retention and write-volume requirements.
-4. For the `grafana` profile, sign in to Grafana. If using local InfluxDB, add a
-   data source using Flux,
-   `http://db:8086`, the same organization/bucket, and an appropriate read token.
-   This is a container-network address; `localhost` inside Grafana is Grafana
-   itself. For external services, use their reachable addresses. PostgreSQL is
-   already selected through Grafana's environment settings.
-5. Install bindings supplying the Items needed by your selected
-   [widgets](../data/openhab/conf/yaml/widgets/README.md). For Blockly rules, install the JavaScript
-   Scripting automation add-on and follow the
-   [library guide](../data/openhab/conf/yaml/block_libraries/README.md).
+### Initial accounts and tokens
 
-For email, enable `GRAFANA_SMTP_ENABLED` and configure all relevant SMTP settings
-in `.env`. The SMTP password must match the existing mail account.
+- Open openHAB at `http://YOURSERVERNAME:8080` and create its administrator account.
+- Sign in to InfluxDB at `http://YOURSERVERNAME:8086` using
+  `INFLUXDB_INIT_USERNAME` and `INFLUXDB_INIT_PASSWORD`. With `INFLUXDB_INIT_MODE=setup`,
+  empty storage is initialized with the organization and bucket from `.env`.
+  These initialization settings do not reset an existing database.
+- Under InfluxDB **Load Data → API Tokens → Generate API Token → Read/Write API
+  Token**, create `openhab-persistence` with **Read and Write** for that bucket.
+  Create a separate `grafana-read` token with **Read only** for the same bucket.
+  Copy each token when created and store it securely.
+- Sign in to Grafana at `http://YOURSERVERNAME:3000` with `admin` / `admin` for
+  fresh storage, then set a new administrator password. PostgreSQL is already
+  configured through the container environment; no database setup in Grafana is
+  required.
+
+The example ports above follow `.env.example`; use your configured ports.
+Never paste private tokens or passwords into diagnostic reports.
+
+### openHAB MQTT
+
+Install the **MQTT Binding**, then create an MQTT Broker Thing using the
+[TLS and certificate-pinning instructions](mqtt.md#connect-openhab-using-tls-and-certificate-pinning).
+Check that it becomes **ONLINE**. Because openHAB uses host networking, connect
+through the published broker port and a certificate-matching host address.
+Port 1883 is plaintext; use 8883 for the default TLS listener. For an external
+broker, use its reachable address and configured authentication/trust settings.
+
+### openHAB InfluxDB persistence: explicitly select V2
+
+Install **InfluxDB Persistence** from the persistence add-ons, then open
+**Settings → Other Services → InfluxDB Persistence Service**:
+
+| Setting | Value |
+| --- | --- |
+| Version (`version`) | **V2**; the add-on defaults to V1 |
+| URL (`url`) | `http://127.0.0.1:8086`, using `INFLUXDB_HTTP_PORT` if changed |
+| Database / Organization (`db`) | `INFLUXDB_INIT_ORG` |
+| Retention policy / Bucket (`retentionPolicy`) | `INFLUXDB_INIT_BUCKET` |
+| Token (`token`) | The new `openhab-persistence` read/write token |
+
+The ENV names in the table mean their configured values, not literal text to
+enter. Username/password can remain empty when using the token. For V2, `db`
+means the organization and `retentionPolicy` means the bucket. Leaving V1
+selected prevented writes during the manual test; changing it to V2 resolved
+the problem.
+
+Save the settings, then send a new Item update. A value already displayed in
+openHAB does not prove it was persisted. The included
+[`influxdb.persist`](../data/openhab/conf/persistence/influxdb.persist) applies
+`everyUpdate` and `restoreOnStartup` to all Items for this service; adapt the
+broad policy to your retention and write-volume requirements. A pre-existing
+`services/influxdb.cfg` overrides UI settings; no such file is needed for this
+setup. See the [add-on configuration](https://www.openhab.org/addons/persistence/influxdb/#configuration).
+
+### Grafana InfluxDB data source
+
+Under **Connections → Data sources → Add data source → InfluxDB**, set:
+
+| Setting | Value |
+| --- | --- |
+| Product, if shown | InfluxDB OSS 2.x |
+| Query language | Flux |
+| URL | `http://db:8086` |
+| Basic auth | Disabled |
+| Organization | Your `INFLUXDB_INIT_ORG` value |
+| Default Bucket | Your `INFLUXDB_INIT_BUCKET` value |
+| Token | The new `grafana-read` token |
+
+Select **Save & test**. `db` is the Compose network alias; `localhost` inside
+Grafana would refer to Grafana itself. This internal port remains 8086 when the
+published host port changes. For an external database, use its reachable URL.
+
+For email, enable `GRAFANA_SMTP_ENABLED` and configure its SMTP settings in
+`.env`. The SMTP password must match the existing mail account.
+
+### Widgets and Blockly libraries
+
+The bundled YAML is mounted into openHAB. Follow the
+[widget catalog](../data/openhab/conf/yaml/widgets/README.md) to select Items and
+the [library guide](../data/openhab/conf/yaml/block_libraries/README.md) for rules.
+Install **JavaScript Scripting** before using Blockly scripts. Loading a library
+does not create or execute a rule.
+
+### Optional integration checks
+
+These checks are separate from the short installation path:
+
+- Verify MQTT authentication, TLS and delivery with the
+  [publish/subscribe check](mqtt.md#optional-publishsubscribe-check).
+- Create a Generic MQTT Thing using the local broker, with a Number channel's
+  state topic set to `firstsetup/value` and no command topic. Link a Number Item,
+  then publish a synthetic numeric value to that state topic. The Item should
+  update and the persistence service should store it.
+- In Grafana **Explore**, select the configured InfluxDB source and run the
+  query below. Replace `YOUR_TEST_ITEM` with the actual Item name, not its label
+  or Channel ID. By default openHAB uses the Item name as the measurement and
+  `value` as the field; custom InfluxDB Item metadata can change the measurement.
+  A single point is easiest to inspect in table view.
+
+```flux
+from(bucket: v.defaultBucket)
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "YOUR_TEST_ITEM" and
+    r._field == "value"
+  )
+```
+
+If no row appears, check V2, the organization/bucket and write-token permissions
+first, then inspect the openHAB log. Send a new update after fixing settings.
+
+For a renderer check, save a temporary dashboard with a Text panel. In the panel
+menu select **Share → Share link → Generate image**. A visible image confirms
+the renderer connection, shared token and callback path. Delete temporary test
+dashboards, Things and Items after checking; leave normal connections intact.
+
+### Manual first-setup results
+
+On 2026-11-12, the user manually tested a fresh clone at commit `2f46e40` on
+macOS/Apple Silicon with Docker Desktop. For that run the two Linux time-file
+mounts were commented out directly; the Local override documented above is the
+subsequently validated configuration alternative, not an additional runtime
+test. The following results were confirmed:
+
+- All six standard services started and reported healthy.
+- MQTT password authentication, verified TLS publish/subscribe and the openHAB
+  broker connection with a preconfigured certificate pin worked.
+- InfluxDB initialized its account, organization and bucket. openHAB persistence
+  and Grafana querying worked after explicitly selecting V2 in openHAB.
+- Grafana login, PostgreSQL-backed health and rendered panel images worked.
+- Widgets and Blockly libraries were present; individual component behavior was
+  not tested.
+
+The services were started in stages for diagnosis. The shortened shared-start
+sequence above uses the existing Compose dependency ordering but was not itself
+repeated as a fresh runtime test. Native Linux startup, `restoreOnStartup`, a
+backup restore and live Advanced/Local deployments remain unverified by this
+manual run. A dashboard `managedFields` schema error also appeared in Grafana's
+logs; rendering succeeded, but the cause and dashboard reload behavior were not
+confirmed. Healthchecks and static lint do not establish those results.
 
 ## Healthchecks and shutdown
 

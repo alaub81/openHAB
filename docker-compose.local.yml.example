@@ -6,6 +6,13 @@
 services:
   openhab:
     image: openhab/openhab:${OPENHAB_VERSION:?Set OPENHAB_VERSION in .env}
+    # Optional macOS test override (Compose 2.24.4+): uncomment this entire block.
+    # Replace the complete mount list to omit Linux /etc/localtime and /etc/timezone.
+    # Keep the configuration, add-ons and existing userdata volume mounted.
+    # volumes: !override
+    #   - "./data/openhab/conf:/openhab/conf"
+    #   - "./data/openhab/addons:/openhab/addons"
+    #   - "data_openhab_userdata:/openhab/userdata"
 
   mosquitto:
     image: eclipse-mosquitto:${MOSQUITTO_VERSION:?Set MOSQUITTO_VERSION in .env}

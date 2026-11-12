@@ -61,14 +61,21 @@ variables belonging to inactive profiles.
 Environment templates are versioned; `.env` is ignored by Git. Keep an existing
 `.env` when updating, and preserve its credentials, project identity and volumes.
 
-### 2. Prepare MQTT and permissions
+### 2. Download images and prepare MQTT
+
+Download the images for the selected profiles together. This does not start the
+services:
+
+```bash
+docker compose pull
+```
 
 If enabling `mqtt`, complete the [MQTT setup](docs/mqtt.md) **before starting the
 broker**: replace the public example login (`mosquitto` / `mosquitto-mqtt`)
 and provide TLS certificates. Skip this step when
 using openHAB alone or an external broker.
 
-For a new checkout, allow openHAB's configured UID/GID `9001:9001` to write its
+On Linux, for a new checkout, allow openHAB's configured UID/GID `9001:9001` to write its
 bind-mounted configuration and add-ons directories:
 
 ```bash
@@ -77,17 +84,25 @@ sudo chown -R 9001:9001 data/openhab
 
 For different IDs or an existing installation, follow the
 [deployment guide](docs/deployment.md) instead of changing ownership blindly.
+For a disposable macOS test, follow the
+[Docker Desktop notes](docs/deployment.md#testing-on-macos-with-docker-desktop).
 
 ### 3. Validate and start
 
 ```bash
 docker compose config --quiet
-docker compose up -d
+docker compose up -d --wait --wait-timeout 1200
 docker compose ps
-docker compose logs --tail=100 openhab
 ```
 
-Allow openHAB to finish its first startup. Enabled services use these default ports:
+This starts all selected services in one operation; Compose handles dependency
+ordering. There is no need to start each service separately. The command waits
+up to 20 minutes for healthchecks; if it times out, inspect the affected service's
+logs. A healthcheck alone does not prove application integration.
+
+### 4. Complete application setup
+
+After startup, open the enabled applications at these default ports:
 
 | Service | URL |
 | --- | --- |
@@ -99,6 +114,8 @@ Complete openHAB's setup and add the bindings you need. Configure MQTT, persiste
 and Grafana data sources for the local profiles or external services you use.
 These application connections and dashboards are not provisioned by Compose; see
 [connecting the services](docs/deployment.md#connect-the-applications).
+In particular, select **V2** explicitly in openHAB's InfluxDB Persistence settings;
+the add-on defaults to V1 even though this stack runs InfluxDB 2.
 
 ## Quick start: widgets and Blockly libraries
 

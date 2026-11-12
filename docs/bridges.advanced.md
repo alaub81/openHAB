@@ -216,13 +216,27 @@ Then add `sma` to `COMPOSE_PROFILES` and run:
 docker compose config --quiet
 docker compose pull sma-mqtt-bridge
 docker compose run --rm --no-deps sma-mqtt-bridge --check-config
+```
+
+Review the configuration check before starting the service. It does not test
+broker or device reachability. Start only with at least one intentionally enabled
+and configured device source:
+
+```bash
 docker compose up -d sma-mqtt-bridge
 docker compose ps sma-mqtt-bridge
 docker compose logs --tail=100 sma-mqtt-bridge
 ```
 
-Review the configuration check for the expected enabled sources and command-gate
-settings. It does not test broker or device reachability. Check those after startup.
+With all sources disabled, `--check-config` can succeed, but the normal process
+exits with `No sources enabled; use --check-config for offline validation`.
+With `restart: unless-stopped`, this produces repeated starts, not an idle healthy
+bridge. Stop it with `docker compose stop sma-mqtt-bridge` and remove `sma` from
+the existing profile selection if retaining an offline-only setup. A successful
+one-off `run --rm` is removed automatically and does not appear in ordinary
+`docker compose ps` output.
+
+Check broker/device reachability after a real source is enabled and started.
 The image supplies the heartbeat healthcheck; this extension only adjusts timing.
 
 The stack's `.env` is not passed wholesale into either bridge. SMA receives
@@ -320,7 +334,59 @@ Synthetic SMA ENV fixtures verify that runtime settings come from the separate
 file and are not shadowed by similarly named stack variables. The existing CI runs
 the basic linter; this additional profile check is a separate manual command.
 
-These are configuration checks, not a live acceptance test. Image availability,
-BMW OAuth, real device access, LAN multicast, MQTT discovery, TLS trust and actual
-openHAB widget use require a later test on the intended host. No authentication,
-device commands or deployment are performed by these checks.
+These automated checks validate configuration, not live integrations. They do
+not authenticate, send device commands, download images or deploy services.
+
+### Optional BMW container check without authentication
+
+For a new test installation, leave the BMW ID placeholders in `.env` and keep
+the `bmw` profile disabled. Explicitly targeting the service still permits this
+one-off test. It retains the image entrypoint, but substitutes shell checks for
+the bridge program; it does not authenticate or make network requests:
+
+```bash
+docker compose pull bmw-mqtt-bridge
+docker compose run --rm --no-deps bmw-mqtt-bridge /bin/sh -ec '
+  test "$(id -u)" = 10001
+  test "$(id -g)" = 10001
+  test -x /app/bmw_mqtt_bridge
+  test ! -w /app
+  test -w /tmp
+  grep -q "NoNewPrivs:[[:space:]]*1" /proc/self/status
+  grep -q "CapEff:[[:space:]]*0000000000000000" /proc/self/status
+
+  probe="$(mktemp /app/token/.firstsetup.XXXXXX)"
+  trap '\''rm -f "$probe"'\'' EXIT
+  printf "container-test\n" > "$probe"
+  test -s "$probe"
+  echo "BMW container check OK"
+'
+```
+
+Expect `BMW container check OK`. The test writes and removes its own temporary
+file in the token directory; it does not create BMW tokens. Use a fresh test
+volume, not a live deployment's token volume: the normal entrypoint also manages
+permissions of existing token files. The container is removed after the command
+and is not expected to remain healthy/running in `docker compose ps`. This does
+not execute the bridge binary or validate OAuth, MQTT connections or its normal
+service healthcheck. A normal service start requires the authentication described
+above.
+
+### Manual Advanced test results
+
+On 2026-11-12, the user performed these checks in the macOS/Apple Silicon
+first-setup checkout:
+
+| Check | Confirmed result |
+| --- | --- |
+| Base + Advanced with default profiles | Compose validation succeeded and still selected exactly the six standard services; both bridges stayed disabled. |
+| SMA image and ENV loading | The published image ran `--check-config` with a private test `smab.env` and returned `{"valid": true, "enabledSources": 0, "readOnly": true}`. Device sources and write gates had been disabled only in that test file. |
+| SMA normal start with zero sources | The process exited with the documented no-sources message and repeatedly restarted. It was stopped; this was not a successful runtime health test. |
+| BMW container environment | The command above completed with `BMW container check OK`, confirming UID/GID, executable presence, restricted privileges and writable temporary/token storage. No BMW account was configured. |
+
+The public device examples and command-gate defaults were not changed for these
+tests. Real SMA/BMW data access, BMW OAuth, bridge-to-broker authentication/TLS,
+bridge discovery and sustained service health remain untested. Standard-stack
+MQTT/TLS and openHAB integration were tested separately; they do not establish
+bridge connectivity. See the [standard results](deployment.md#manual-first-setup-results)
+and the subsequent [Local results](deployment.md#manual-local-override-results).

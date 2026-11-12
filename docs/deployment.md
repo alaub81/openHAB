@@ -282,9 +282,9 @@ dashboards, Things and Items after checking; leave normal connections intact.
 
 On 2026-11-12, the user manually tested a fresh clone at commit `2f46e40` on
 macOS/Apple Silicon with Docker Desktop. For that run the two Linux time-file
-mounts were commented out directly; the Local override documented above is the
-subsequently validated configuration alternative, not an additional runtime
-test. The following results were confirmed:
+mounts were initially commented out directly. The subsequent
+[Local test](#manual-local-override-results) used the override documented above.
+The following results were confirmed:
 
 - All six standard services started and reported healthy.
 - MQTT password authentication, verified TLS publish/subscribe and the openHAB
@@ -297,9 +297,12 @@ test. The following results were confirmed:
 
 The services were started in stages for diagnosis. The shortened shared-start
 sequence above uses the existing Compose dependency ordering but was not itself
-repeated as a fresh runtime test. Native Linux startup, `restoreOnStartup`, a
-backup restore and live Advanced/Local deployments remain unverified by this
-manual run. A dashboard `managedFields` schema error also appeared in Grafana's
+repeated against empty storage. The later full-stack Local application retained
+the existing data. [Advanced checks](bridges.advanced.md#manual-advanced-test-results)
+covered disabled profiles, SMA configuration and the BMW container environment,
+without real device or BMW access. Native Linux startup, `restoreOnStartup`,
+actual backups/restores and authenticated bridge operation remain unverified
+by these manual checks. A dashboard `managedFields` schema error also appeared in Grafana's
 logs; rendering succeeded, but the cause and dashboard reload behavior were not
 confirmed. Healthchecks and static lint do not establish those results.
 
@@ -407,7 +410,53 @@ All referenced files must exist. Git leaves the ignored `.env` and
 local file unchanged. A locally selected version continues to override later
 repository defaults until you change or remove that override.
 
-**Existing deployment migration:** the old `OPENHAB_VERSION`, `MOSQUITTO_VERSION`,
+### Manual Local override results
+
+On 2026-11-12, the user applied Standard + Advanced + Local to the existing
+macOS/Apple Silicon test stack. Both bridge profiles were disabled. Local used
+the existing standard image tags through `.env`, the Mac-specific openHAB mount
+replacement, the example InfluxDB tuning and a relative host backup directory.
+The full-stack command was:
+
+```bash
+docker compose config --quiet
+docker compose config --images
+docker compose up -d --pull never --wait --wait-timeout 1200
+docker compose ps
+```
+
+All six services returned healthy and the existing application data remained
+available. The running InfluxDB container reported all ten expected query/storage
+variables from the [Local example](../docker-compose.local.yml.example).
+`docker inspect` confirmed a writable bind mount at `/backup`, and an in-container
+directory/write-permission check succeeded. These checks confirm configuration
+delivery and mount permissions; no backup or file-write/restore round trip was
+performed, and no performance benefit or memory ceiling was measured.
+
+For a disposable Mac test, use this host directory in the Local InfluxDB service
+instead of the example's Linux `/backup/influxdb` host path:
+
+```bash
+mkdir -p backups/influxdb
+```
+
+```yaml
+services:
+  influxdb:
+    volumes:
+      - "./backups/influxdb:/backup"
+```
+
+Merge that entry into the existing service. The host directory is `backups`
+(plural), already ignored by Git; the container destination remains `/backup`
+(singular). This host-specific change belongs only in the private Local file.
+The [Mac openHAB mount override](#testing-on-macos-with-docker-desktop) is a
+separate service setting in that same file. A native Linux deployment and an
+image-version upgrade were not tested by this run.
+
+### Existing deployment migration
+
+The old `OPENHAB_VERSION`, `MOSQUITTO_VERSION`,
 `INFLUXDB_VERSION`, `POSTGRES_VERSION` and `GRAFANA_VERSION` assignments in `.env`
 no longer select standard-service images on their own. Before applying the new
 Compose file, review `docker compose config --images`. Add local `image`

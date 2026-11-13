@@ -1,0 +1,76 @@
+# Replace each example hostname with the corresponding wall display IP address.
+# WRITEONLY prevents polling the screen command endpoint.
+version: 1
+
+things:
+  http:url:walldisplay_esszimmer_screen:
+    label: Walldisplay Esszimmer Bildschirm HTTP
+    location: Esszimmer
+    config:
+      baseURL: http://walldisplay-esszimmer.example.invalid
+      commandMethod: GET
+      refresh: 30
+      timeout: 5000
+    channels:
+      screen:
+        type: http:switch
+        label: Bildschirm
+        config:
+          mode: WRITEONLY
+          commandExtension: '/rpc/Ui.Screen.Set?params={"on":%2$s}'
+          onValue: 'true'
+          offValue: 'false'
+
+  http:url:walldisplay_linuszimmer_screen:
+    label: Walldisplay Linuszimmer Bildschirm HTTP
+    location: Linuszimmer
+    config:
+      baseURL: http://walldisplay-linuszimmer.example.invalid
+      commandMethod: GET
+      refresh: 30
+      timeout: 5000
+    channels:
+      screen:
+        type: http:switch
+        label: Bildschirm
+        config:
+          mode: WRITEONLY
+          commandExtension: '/rpc/Ui.Screen.Set?params={"on":%2$s}'
+          onValue: 'true'
+          offValue: 'false'
+
+  http:url:walldisplay_flurkg_screen:
+    label: Walldisplay Flur Keller Bildschirm HTTP
+    location: Flur Keller
+    config:
+      baseURL: http://walldisplay-flurkg.example.invalid
+      commandMethod: GET
+      refresh: 30
+      timeout: 5000
+    channels:
+      screen:
+        type: http:switch
+        label: Bildschirm
+        config:
+          mode: WRITEONLY
+          commandExtension: '/rpc/Ui.Screen.Set?params={"on":%2$s}'
+          onValue: 'true'
+          offValue: 'false'
+
+  http:url:walldisplay_badezimmer_screen:
+    label: Walldisplay Badezimmer Bildschirm HTTP
+    location: Badezimmer
+    config:
+      baseURL: http://walldisplay-badezimmer.example.invalid
+      commandMethod: GET
+      refresh: 30
+      timeout: 5000
+    channels:
+      screen:
+        type: http:switch
+        label: Bildschirm
+        config:
+          mode: WRITEONLY
+          commandExtension: '/rpc/Ui.Screen.Set?params={"on":%2$s}'
+          onValue: 'true'
+          offValue: 'false'

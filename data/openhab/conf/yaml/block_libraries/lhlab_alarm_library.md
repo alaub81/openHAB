@@ -56,6 +56,71 @@ Identity uses the event text plus the start instant, not the slot number. Identi
 
 The three action areas run once for every new, changed or ended warning. Clearance is for that particular warning; other warnings may remain active. Optional execution context `alarmSeed: true` records the complete current snapshot without invoking any action area, for a deliberate first-run baseline only.
 
+### Configurable DWD notification text
+
+Two String-output blocks can be used inside the DWD monitor's **new**, **changed**
+and **ended** action areas:
+
+- **DWD-Warntext erstellen** selects **Push** or **Sprache (Alexa)**. Description
+  and period are enabled by default; behavioral instructions are disabled.
+  Push puts the original description first, followed by the compact period on
+  a separate line. Speech adds the warning level and event, then the period
+  and description, with whitespace flattened. No description or instruction is
+  automatically summarized or cut off.
+- **aktuelle DWD-Warnung** exposes the readable event name, warning level,
+  formatted push title, original headline, description, instructions, push or
+  speech period, formatted begin/end and raw ISO begin/end. Combine these values
+  with Blockly's standard text-join block for custom messages. Missing fields
+  and use outside an alarm callback return empty text.
+
+For a frost warning, the default push title is `DWD · Wetterwarnung: Frost`.
+The push body is:
+
+```text
+Es tritt leichter Frost zwischen 0 °C und -3 °C auf.
+Heute 20:00 bis morgen 09:00 Uhr.
+```
+
+The corresponding speech text is:
+
+```text
+Wetterwarnung: Frost. Heute ab 20 Uhr bis morgen um 9 Uhr. Es tritt leichter Frost zwischen 0 °C und -3 °C auf.
+```
+
+Relative dates are computed when text is generated, in `Europe/Berlin`, using
+calendar days across daylight-saving transitions. Same-day periods omit the
+second day; warnings already in progress show only their end. Later dates use
+`dd.MM.`, including the year when it differs from the current year. Push and
+speech have separate clock formats. Previously delivered notifications retain
+their original text; relative dates are not recalculated when viewed later.
+
+The formatter generates a specific clearance message when called in the ended
+action area and retains the notice that other warnings may still be active.
+Checkboxes apply to active warnings; clearance omits the old description,
+period and instructions. A push formatter with all components disabled returns
+empty text; speech still identifies the warning.
+
+The full original message remains available through **aktueller Alarm →
+Meldung**. Existing alarm identities, content comparisons, memory format version
+and generic alarm callers remain compatible. The optional `dwd` object stores
+source fields alongside each alarm, so clearance never reads a reused warning
+slot. Unchanged legacy records are enriched silently on the next evaluation.
+Until then, clearance can derive the event from a legacy title; unavailable
+individual source fields remain empty. Presentation options and relative dates
+do not participate in change detection.
+
+The installed DWD rule uses a separate formatter for push and Alexa in each
+action area, with instructions off. The field block supplies new/updated push
+titles. Notification references, icons, tags, Overview links, triggers and the
+existing Alexa announcement rule's time window remain unchanged. Reopen the
+Blockly editor after updating the file-managed library to load the new blocks.
+
+The presentation definitions and utility are maintained by
+`tools/dwd-messages/build.py` and `tools/dwd-messages/format.js`. Run the builder
+after editing them. `tools/dwd-messages/verify.js` exercises formatting and
+monitor state with isolated Items, memory, timers and delivery captures; its
+`verifyDwd(time, sources)` entry point accepts the installed openHAB time API.
+
 ## Blocks
 
 ### State monitoring: windows and lights
@@ -271,7 +336,14 @@ The library stores JSON text, not shared JavaScript objects. State is committed 
 
 Offline checks cover new/changed/cleared events, unchanged messages, list reordering, unknown states, duplicate identities, action exceptions and retries on the next evaluation, special object-key names, optional memory recovery and invalid memory types/content. Generated code templates were also expanded and executed with mocked openHAB APIs.
 
-The extended file-based library was loaded and checked on openHAB 5.2.3. A triggerless native test with an active synthetic warning passed, including date formatting and snapshot processing, with no push or Alexa actions. The final rule was saved through REST, opened successfully in Blockly, regenerated with the installed Blockly generator and saved in MainUI. No test notifications were sent. External push delivery and actual Alexa playback remain untested.
+The extended file-based library was loaded and checked on openHAB 5.2.3. A triggerless native test with an active synthetic warning passed, including date formatting and snapshot processing, with no push or Alexa actions. The final rule was saved through REST, opened successfully in Blockly, regenerated with the installed Blockly generator and saved in MainUI.
+
+The configurable DWD presentation blocks passed 59 assertions in the installed
+runtime, including captured delivery calls from the native-generated rule. On
+13 November 2026, a separately requested one-shot test sent the current frost
+warning through push and the existing Echo announcement group. The user
+confirmed that the iPhone displayed the complete shortened message and Alexa
+read it correctly. Instructions were disabled on both channels.
 
 ## openHAB 5.2.3 code generation fix
 

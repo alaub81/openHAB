@@ -1,0 +1,6 @@
+// Use the existing semantic location groups for each room.
+// These states represent the last command, not device-reported screen states.
+Switch Esszimmer_Walldisplay_Bildschirm   "Esszimmer Walldisplay Bildschirm"   <screen> (GF_Dining)   [Control, Power] { channel="http:url:walldisplay_esszimmer_screen:screen", autoupdate="true" }
+Switch Linuszimmer_Walldisplay_Bildschirm "Linuszimmer Walldisplay Bildschirm" <screen> (AT_LinusRoom) [Control, Power] { channel="http:url:walldisplay_linuszimmer_screen:screen", autoupdate="true" }
+Switch FlurKG_Walldisplay_Bildschirm      "Flur Keller Walldisplay Bildschirm" <screen> (C_Corridor)  [Control, Power] { channel="http:url:walldisplay_flurkg_screen:screen", autoupdate="true" }
+Switch Badezimmer_Walldisplay_Bildschirm  "Badezimmer Walldisplay Bildschirm"  <screen> (FF_Bathroom) [Control, Power] { channel="http:url:walldisplay_badezimmer_screen:screen", autoupdate="true" }

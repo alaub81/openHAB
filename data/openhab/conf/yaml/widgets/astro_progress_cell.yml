@@ -71,7 +71,7 @@ widgets:
       action: "=props.detailsGroup ? 'group' : ''"
       actionGroupPopupItem: "=props.detailsGroup"
       stylesheet: |
-        .cell-contents { display: none; }
+        .cell-contents { display: none !important; }
         .astro-content { position:absolute; inset:0; padding:8px 10px; box-sizing:border-box; container-type:inline-size; display:grid; grid-template-rows:18px minmax(26px,1fr) 14px 4px 25px; row-gap:3px; color:var(--f7-text-color); font-variant-numeric:tabular-nums; }
         .astro-times { display:flex; align-items:center; justify-content:space-between; gap:6px; min-width:0; }
         .astro-time { display:flex; align-items:center; gap:5px; min-width:0; font-size:14px; font-weight:500; white-space:nowrap; }

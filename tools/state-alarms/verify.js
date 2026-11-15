@@ -47,9 +47,12 @@ function verifyStateMonitor(vm, source) {
   f.advance(.1);assert(f.notices.length===1&&f.alarm()==='ON','First deadline');
   f.advance(30);assert(f.notices.length===3&&!f.timers.some(t=>t.active),'Exactly one alarm plus two reminders');
   assert(f.notices.map(n=>n.kind).join()==='NEW,REMINDER,REMINDER','Event kinds');
+  assert(f.notices.map(n=>n.message).join('|')===
+    'Achtung! Testfenster ist seit über 15 Minuten offen.|Achtung! Testfenster ist seit über 20 Minuten offen.|Achtung! Testfenster ist seit über 25 Minuten offen.',
+    'Contact warnings and reminders use the original wording directly');
   assert(f.notices.every(n=>n.id===f.cfg.alarm),'Stable notification identity');
   f.source('CLOSED');f.run();f.run();assert(f.alarm()==='OFF'&&f.clears.length===1,'One clearance');
-  assert(f.clears[0].message==='Testfenster ist wieder geschlossen.','Window clearance stays unchanged');
+  assert(f.clears[0].message==='Testfenster wurde nach 45 Minuten geschlossen.','Window clearance includes total OPEN duration');
   results.push('15-minute deadline, no sliding reset, two five-minute reminders, one clearance');
 
   f=fixture({delayMinutes:30,intervalMinutes:10});f.run();f.advance(29.9);
@@ -61,6 +64,32 @@ function verifyStateMonitor(vm, source) {
   f.advance(20);assert(f.notices.length===3&&!f.timers.some(t=>t.active),'Reminder budget exhausted');
   f.source('CLOSED');f.run();assert(f.clears.length===1&&f.alarm()==='OFF','Thirty-minute alarm clears');
   results.push('30/40/50-minute alarm sequence, no early notifications and no further reminders');
+
+  f=fixture({delayMinutes:30,intervalMinutes:10,title:'Türalarm'});
+  f.values.get(f.cfg.source).label='Terrasse Tür';
+  f.run();f.advance(63.9);f.source('CLOSED');f.run();
+  assert(f.notices.length===3&&f.clears[0].message==='Terrasse Tür wurde nach 63 Minuten geschlossen.',
+    'Terrace clearance counts completed minutes from opening, including all reminders');
+  f.source('OPEN');f.run();f.advance(31.2);f.source('CLOSED');f.run();
+  assert(f.clears[1].message==='Terrasse Tür wurde nach 31 Minuten geschlossen.','Reopened door gets a new duration');
+  results.push('Terrace door: total open duration across reminders and a fresh duration after reopening');
+
+  for(const observeActive of [false,true]) {
+    f=fixture({delayMinutes:30,title:'Türalarm'});f.values.get(f.cfg.alarm).state='ON';
+    if(observeActive){f.run();f.advance(60);}
+    f.source('CLOSED');f.run();
+    assert(f.clears[0].message==='Testfenster wurde nach mehr als 30 Minuten geschlossen.',
+      'Restored Contact alarm uses the same unknown-start fallback as a light alarm');
+  }
+  results.push('Contact reload: unknown opening time uses configured delay instead of a guessed duration');
+
+  f=fixture({delayMinutes:1,repeats:0});f.run();f.advance(1.5);f.source('CLOSED');let contactClearAttempts=0;
+  const retryContactClear=e=>{if(++contactClearAttempts===1)throw Error('Clear failure');f.clears.push(e);};
+  try{f.run(f.cfg,f.notify,retryContactClear);}catch(e){}
+  f.advance(5);f.run(f.cfg,f.notify,retryContactClear);
+  assert(f.clears.length===1&&f.clears[0].message==='Testfenster wurde nach 1 Minute geschlossen.',
+    'Contact clearance retry keeps the original duration and singular minute wording');
+  results.push('Contact clearance retries preserve the original return timestamp and singular minute wording');
 
   f=fixture();f.run();const stale=f.timers[0];f.advance(5);f.source('CLOSED');f.run();
   f.source('OPEN');f.run();stale.callback();assert(!f.notices.length,'Stale callback must not raise alarm');
@@ -75,10 +104,18 @@ function verifyStateMonitor(vm, source) {
   results.push('Two windows in one script: cancelling one preserves the other');
 
   f=fixture({active:'ON',delayMinutes:2,repeats:0,title:'Lichtalarm'});f.run();f.advance(10);
-  assert(f.notices.length===1&&f.notices[0].message.includes('eingeschaltet'),'Light alarm');
+  assert(f.notices.length===1&&f.notices[0].message==='Achtung! Testfenster ist seit über 2 Minuten an.','Light alarm uses the original wording directly');
   f.source('OFF');f.run();assert(f.clears.length===1&&f.alarm()==='OFF','Light clearance');
   assert(f.clears[0].message==='Testfenster wurde nach 10 Minuten ausgeschaltet.','Light clearance includes total ON duration');
   results.push('ON/OFF light source and zero reminders');
+
+  f=fixture({active:'ON',delayMinutes:1,intervalMinutes:1,repeats:1,title:'Lichtalarm'});
+  f.run();f.advance(2);
+  assert(f.notices.map(n=>n.kind).join()==='NEW,REMINDER','Light reminder retains its event kind');
+  assert(f.notices.map(n=>n.message).join('|')===
+    'Achtung! Testfenster ist seit über 1 Minute an.|Achtung! Testfenster ist seit über 2 Minuten an.',
+    'Light warnings and reminders need no caller text replacements');
+  results.push('Central light wording uses an, seit über and Achtung for both warnings and reminders');
 
   f=fixture({active:'ON',delayMinutes:15,title:'Lichtalarm'});
   f.values.get(f.cfg.source).label='Abstellkammer';

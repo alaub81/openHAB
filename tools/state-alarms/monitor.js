@@ -58,17 +58,15 @@ function lhlab_state_monitor(config, onNotify, onClear) {
       }));
   }
   function event(kind, label, minutes) {
-    const activeText = onState === 'OPEN' ? 'offen' : 'eingeschaltet';
+    const activeText = onState === 'OPEN' ? 'offen' : 'an';
     const inactiveText = onState === 'OPEN' ? 'geschlossen' : 'ausgeschaltet';
     return {
       id: alarmName, group: 'state-monitor', kind, title,
       message: kind === 'CLEARED'
-        ? (onState === 'ON'
-          ? label + ' wurde nach ' + (minutes === null ? 'mehr als ' + config.delayMinutes : minutes) +
-            (minutes === 1 ? ' Minute ' : ' Minuten ') + inactiveText + '.'
-          : label + ' ist wieder ' + inactiveText + '.')
-        : (kind === 'REMINDER' ? 'Erinnerung: ' : 'Achtung! ') + label +
-          ' ist seit mindestens ' + minutes + (minutes === 1 ? ' Minute ' : ' Minuten ') + activeText + '.',
+        ? label + ' wurde nach ' + (minutes === null ? 'mehr als ' + config.delayMinutes : minutes) +
+          (minutes === 1 ? ' Minute ' : ' Minuten ') + inactiveText + '.'
+        : 'Achtung! ' + label + ' ist seit über ' + minutes +
+          (minutes === 1 ? ' Minute ' : ' Minuten ') + activeText + '.',
       previousMessage: state.lastMessage, previousTitle: title, comparison: sourceName
     };
   }

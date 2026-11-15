@@ -144,13 +144,29 @@ Both Blockly action areas use the existing current-alarm value block for message
 - **Alarm/reminder:** runs after the delay and for configured reminders; event kind is `NEW` or `REMINDER`.
 - **Clearance:** runs once when a confirmed return state ends a previously active alarm. The message already contains suitable clearance text; event kind is `CLEARED`.
 
-For light alarms (`ON`/`OFF`), the clearance message includes the total time since
-the light was first observed ON, in completed minutes: for example,
-`Abstellkammer wurde nach 23 Minuten ausgeschaltet.` Reminders do not reset this
-duration. After a script reload or restart, an already active alarm has no known
-start time; its clearance uses `mehr als 15 Minuten` instead (with the configured
-delay). Window clearance messages remain unchanged. Failed clearance actions
-retain the duration measured when OFF was first confirmed.
+The ordinary Contact/Switch block centrally preserves the original warning text:
+`Achtung! Abstellkammer ist seit über 15 Minuten an.` or
+`Achtung! Küchenfenster ist seit über 15 Minuten offen.` Reminders use the same
+`Achtung!` prefix while retaining event kind `REMINDER`. Singular durations use
+`1 Minute`. Callers can use **aktueller Alarm → Meldung** directly for both push
+and speech; no text-replacement blocks or intermediate message variable are
+needed. Regenerate saved scripts after installing this wording update, and
+remove old caller replacements rather than maintaining the wording twice.
+
+For both Contact alarms (`OPEN`/`CLOSED`) and light alarms (`ON`/`OFF`), the
+clearance message includes the total time since the source was first observed
+active, in completed minutes. For example: `Terrasse Tür wurde nach 63 Minuten
+geschlossen.` or `Abstellkammer wurde nach 23 Minuten ausgeschaltet.` The same
+duration tracking and message generation serve both kinds; reminders do not reset
+the duration. After a script reload or restart, an already active alarm has no
+known start time; its clearance uses `mehr als 15 Minuten` instead (with the
+configured delay). Failed clearance actions retain the duration measured when
+the return state was first confirmed.
+
+No additional timestamp/cache blocks are needed in callers. After installing the
+updated YAML, regenerate affected Blockly scripts and use **aktueller Alarm →
+Meldung** in the clearance action. Existing custom clearance text is not replaced
+automatically; timestamp bookkeeping added by older migrations can then be removed.
 
 The block sends no notifications and starts no Alexa rule itself. Those actions remain visible in the two statement areas. Identity is the alarm Item name, suitable as a stable push reference. Alarm states use `postUpdate` only when changed. There are no regular info logs; unexpected execution failures are logged as errors.
 

@@ -1,6 +1,6 @@
 services:
   openhab:
-    image: openhab/openhab:5.2.3
+    image: openhab/openhab:5.2.4
     depends_on:
       influxdb:
         condition: service_healthy

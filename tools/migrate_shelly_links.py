@@ -107,10 +107,7 @@ DEPRECATED_RE = re.compile(
 # ============================================================================
 
 session = requests.Session()
-session.headers.update({
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-})
+session.headers.update({"Accept": "application/json", "Content-Type": "application/json"})
 
 
 def enc(value: str) -> str:
@@ -118,8 +115,9 @@ def enc(value: str) -> str:
 
 
 def request(method, path, **kwargs):
-    response = session.request(method, f"{OPENHAB_URL}{path}", timeout=(5, 30),
-                               allow_redirects=False, **kwargs)
+    response = session.request(
+        method, f"{OPENHAB_URL}{path}", timeout=(5, 30), allow_redirects=False, **kwargs
+    )
     if not 200 <= response.status_code < 300:
         raise RuntimeError(f"{method} failed with HTTP {response.status_code}; stopping")
     return response
@@ -132,6 +130,7 @@ def get_json(path: str):
 # ============================================================================
 # Log file parsing
 # ============================================================================
+
 
 def parse_logfile(path: str):
     """
@@ -159,6 +158,7 @@ def parse_logfile(path: str):
 # ============================================================================
 # Thing / Channel helper functions
 # ============================================================================
+
 
 def get_thing_uid(thing):
     return thing.get("UID") or thing.get("uid")
@@ -303,6 +303,7 @@ def get_item_type(item_name):
 # Type and risk checks
 # ============================================================================
 
+
 def is_number_type(item_type):
     return item_type == "Number" or str(item_type).startswith("Number:")
 
@@ -414,6 +415,7 @@ def classify_known_shelly_risk(old_channel_uid, new_channel_uid, item_type):
 # Link modification
 # ============================================================================
 
+
 def delete_link(item_name, channel_uid):
     path = f"/rest/links/{enc(item_name)}/{enc(channel_uid)}"
 
@@ -430,7 +432,7 @@ def create_link(item_name, channel_uid, configuration=None):
     payload = {
         "itemName": item_name,
         "channelUID": channel_uid,
-        "configuration": configuration or {}
+        "configuration": configuration or {},
     }
 
     if DRY_RUN:
@@ -443,6 +445,7 @@ def create_link(item_name, channel_uid, configuration=None):
 # ============================================================================
 # Additional check: existing powerFactor links
 # ============================================================================
+
 
 def warn_powerfactor_links(links):
     """
@@ -472,13 +475,16 @@ def warn_powerfactor_links(links):
             print(f"[WARN-POWERFACTOR] {item_name}")
             print(f"                   Channel: {channel_uid}")
             print(f"                 Item type: {item_type}")
-            print("                     Reason: powerFactor is now Number, previously Number:Dimensionless")
+            print(
+                "                     Reason: powerFactor is now Number, previously Number:Dimensionless"
+            )
             print("                             Please review Item and persistence manually")
 
 
 # ============================================================================
 # Main
 # ============================================================================
+
 
 def main():
     print("Shelly Channel Link Migration")
@@ -500,16 +506,14 @@ def main():
 
     if not isinstance(things, list) or not isinstance(links, list):
         raise RuntimeError("Invalid Things/links response; no changes sent")
-    if any(not isinstance(link, dict) or not link.get("itemName") or
-           not link.get("channelUID") for link in links):
+    if any(
+        not isinstance(link, dict) or not link.get("itemName") or not link.get("channelUID")
+        for link in links
+    ):
         raise RuntimeError("Invalid link record; no changes sent")
     plan = []
     existing = {(link["itemName"], link["channelUID"]) for link in links}
-    things_by_uid = {
-        get_thing_uid(t): t
-        for t in things
-        if get_thing_uid(t)
-    }
+    things_by_uid = {get_thing_uid(t): t for t in things if get_thing_uid(t)}
 
     shelly_lookup = build_shelly_lookup(things)
 
@@ -582,9 +586,7 @@ def main():
 
         # Check known Shelly-specific edge cases first.
         risk_status, risk_reason = classify_known_shelly_risk(
-            old_channel_uid,
-            new_channel_uid,
-            item_type
+            old_channel_uid, new_channel_uid, item_type
         )
 
         if risk_status == "skip":
@@ -688,7 +690,9 @@ def main():
 
 def configure():
     global OPENHAB_URL, LOGFILE, DRY_RUN, BACKUP_FILE
-    parser = argparse.ArgumentParser(description="Preview Shelly link migrations; no changes by default.")
+    parser = argparse.ArgumentParser(
+        description="Preview Shelly link migrations; no changes by default."
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--execute", action="store_true")
     mode.add_argument("--dry-run", action="store_true")
@@ -696,7 +700,15 @@ def configure():
     args = parser.parse_args()
     OPENHAB_URL = os.environ.get("OPENHAB_URL", "").rstrip("/")
     parsed = urlsplit(OPENHAB_URL)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path:
+    if (
+        parsed.scheme not in ("http", "https")
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+        or parsed.path
+    ):
         parser.error("Set OPENHAB_URL to an HTTP(S) base URL without credentials or path")
     LOGFILE = os.environ.get("OPENHAB_LOG", "")
     if not Path(LOGFILE).is_file():
@@ -719,7 +731,10 @@ if __name__ == "__main__":
         main()
     except (requests.RequestException, OSError, ValueError, RuntimeError) as error:
         detail = str(error) if isinstance(error, RuntimeError) else type(error).__name__
-        print(f"Migration stopped: {detail}. Check inputs/connectivity and backup; completed actions are not rolled back.", file=sys.stderr)
+        print(
+            f"Migration stopped: {detail}. Check inputs/connectivity and backup; completed actions are not rolled back.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     except KeyboardInterrupt:
         print("Aborted. Check links and backup before retrying.", file=sys.stderr)

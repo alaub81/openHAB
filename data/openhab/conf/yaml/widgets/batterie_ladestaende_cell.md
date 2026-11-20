@@ -45,7 +45,7 @@ Each view caches the battery group structure query. Live states come from MainUI
 ```sh
 ruby -ryaml -rjson -e 'puts JSON.generate(YAML.load_file(ARGV[0]))' \
   data/openhab/conf/yaml/widgets/batterie_ladestaende_cell.yml > /tmp/battery-widget.json
-osascript -l JavaScript tools/battery-widget/verify.js /tmp/battery-widget.json
+node tools/battery-widget/verify.js /tmp/battery-widget.json
 ```
 
 Checks cover numeric sorting, 0%, decimals, invalid data, live changes, the full-charge state, and actual display bindings including fill widths in both views. An optional second argument accepts a complete local Item export. With the available 57-battery export, 50 checks passed. The test uses a restricted JavaScript context, not MainUI's complete parser.

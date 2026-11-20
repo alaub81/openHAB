@@ -1,126 +1,108 @@
-# Basic repository checks
+# Repository checks
 
-Run from a checkout, without starting any containers:
+Run the same entry points locally and in GitHub Actions:
 
 ```bash
 ./tests/linter-check.sh
+./tests/test-check.sh
 ```
 
-The wrapper works from any directory. It requires Python 3.9+, Git, Bash, and
-Docker CLI with Compose v2.20.2+ (for the existing `start_interval` settings).
-A running Docker daemon is not required. On first use it creates `.lint-venv/`
-and installs the pinned PyYAML dependency from `requirements-lint.txt`; that
-installation requires package-index access. Later checks work offline.
-The environment is ignored by Git and does not change system Python packages.
+Both wrappers work from any directory and fail when a required tool is missing.
+Use Python 3.9+, Git, Bash, Node.js at the version in [`.node-version`](../.node-version),
+and Docker CLI with Compose v2.20.2+ (for `start_interval`). The behavior tests
+also require jq and OpenSSL. No running Docker daemon is required.
 
-The command runs small regression tests for the checker, then checks tracked
-files and non-ignored untracked files that exist in the working tree. It exits
-with status 1 for failures and status 2 for unsupported arguments.
-Checks do not contact live services or start containers. The linter runs only its
-own regression tests and checks application-script syntax without executing those
-scripts. There is no automatic formatting. Optional script safety tests are
-run separately with `./tests/script-check.sh`.
+On first use, the wrappers create the ignored `.lint-venv/` and install the exact
+Python dependencies in [`requirements-lint.txt`](requirements-lint.txt). Lint
+also prepares ShellCheck and Actionlint in the ignored `.lint-tools/`, using the
+versions and release checksums in [`lint-tools.json`](../lint-tools.json).
+Matching system installations can be reused. The native tool installer supports
+Linux and macOS on x86-64 and arm64. Initial dependency preparation needs network
+access; subsequent checks run offline. System Python packages are not changed.
+
+## Lint and documentation
+
+`linter-check.sh` runs checker/planner regression tests and validates tracked and
+non-ignored untracked public files. It does not format or execute application code.
+Coverage includes:
+
+- YAML syntax and duplicate keys, including inactive `.yml.example` files.
+- openHAB file-provider wrappers, `version: 1`, component declarations, unique
+  active UIDs, explicit Item selection and unset thermostat profile fields.
+- String MQTT `on`/`off` keys; valid JSON without duplicate keys.
+- ENV placeholders and unique assignments, with the explicitly documented public
+  SMA MQTT example exception. Private `.env` and `smab.env` files remain excluded.
+- All eight base Compose profile combinations, using the public ENV example in
+  isolation from local credentials. Compose warnings are failures.
+- Python syntax, Ruff static checks and Ruff formatting; Bash syntax and
+  ShellCheck; GitHub Actions syntax with Actionlint; JavaScript/CommonJS syntax.
+- LF line endings, final newlines, trailing whitespace and merge markers.
+- Local Markdown links and heading fragments, including reference-style links;
+  syntax of fenced Bash, YAML, JSON and Python examples. Examples are parsed,
+  never executed. External URLs and image availability are not queried.
+
+Python rules are defined in [`ruff.toml`](../ruff.toml). To format an intentional
+Python change, use `.lint-venv/bin/python -m ruff format --config ruff.toml PATH`.
+No Dockerfiles are present, so Hadolint is not needed for this profile.
+
+## Offline behavior tests
+
+`test-check.sh` runs Python regression tests, the Advanced Compose checker and a
+shared Node runner. All inputs are synthetic or versioned public YAML; no local
+archives, accounts, devices, services or notification endpoints are used.
+
+- Maintenance scripts: measurement deletion, orphan cleanup, conflict logs,
+  timerange boundaries, wrong-value predicates, failures and Digitalstrom actions.
+- InfluxDB move/merge: stateful fake database, typed values, nanoseconds,
+  preservation of target data and refusal to delete unverified sources.
+- Certificates: temporary keys/certificates, signatures/SAN and overwrite refusal.
+  OpenSSL is required by the full entry point, so these checks cannot silently skip.
+- Shelly migration: fake requests API, protected backups, preflight failure,
+  create-before-delete ordering and failed-link handling.
+- Advanced Compose: all 32 profile combinations, unchanged base services,
+  default-off bridges, separate SMA ENV, external MQTT and required BMW IDs.
+- Battery/humidity widgets: actual YAML helpers and bindings, using Node on Linux
+  or macOS. Optional private archived-Item comparisons remain outside CI.
+- Window widget: synthetic contacts, metadata, loading, alarm and unknown states,
+  plus current compact/detail bindings. The optional historical performance
+  comparison still requires a caller-supplied old widget.
+- Shelly thermostat: 48 operating combinations, 28 invalid configurations,
+  profile zero and disabled behavior, with Item/MQTT/time mocks.
+- State/temperature alarms: source and generated YAML utilities are both checked,
+  including equality with their maintained JavaScript sources.
+- Humidity alarms: both the standalone source and the current YAML utility run
+  against the simulated Items/cache/timer harness. They are checked separately;
+  their synchronization policy remains documented in the tools guide.
+- DWD: source/YAML equality, formatting, alarm memory, updates, clearance and DST
+  scenarios. CI uses a small time double backed by Node's Intl timezone data;
+  verification against openHAB's installed time API is still required.
+
+The runner converts YAML to temporary JSON with the pinned Python YAML parser;
+Ruby and macOS `osascript` are not needed. `script-check.sh` remains available as
+a smaller, standard-library-only maintenance test subset, requiring Python, Bash
+and jq. That subset keeps its optional OpenSSL behavior for compatibility.
+
+The heat-pump verifier in `tools/heatpump-daily/verify.js` needs JavaScript
+produced by openHAB's Blockly generator; this generated rule is not versioned.
+It remains an explicit manual verification, as does DWD notification-rule wiring
+with a saved generated rule. CI does not claim to cover either installed rule,
+MainUI's native generator/rendering, Item DSL, Flux semantics or real devices.
 
 ## GitHub Actions
 
-[Repository lint](../.github/workflows/lint.yml) runs the same basic linter for
-pull requests, pushes to `master` and manual workflow dispatches. It uses a hosted
-Ubuntu runner with Python and Docker Compose, read-only repository permissions
-and pinned action revisions. It requires no deployment credentials, starts no
-services and runs neither the optional script tests nor the database integration
-tests. No images, tags or releases are built or published.
+[Repository checks](../.github/workflows/lint.yml) runs on pull requests, pushes to
+`master` and manual dispatch. Lint, Compose validation and documentation/example
+checks always run. Behavior tests may skip only when a known diff contains solely
+Markdown or LICENSE changes. Changes to workflows, tools, dependencies, Compose,
+fixtures or unknown paths run all behavior tests. Missing/unavailable bases and
+empty diffs also run all tests. Renames include both old and new paths.
 
-## Coverage
-
-- YAML syntax and duplicate mapping keys, including `.yml.example` templates.
-  This includes the local Compose example and Dependabot configuration; lint does
-  not query registries, run Dependabot or verify available image tags.
-- openHAB file-provider wrappers: integer `version: 1`, the appropriate entity
-  map, component declarations, and unique UIDs among active files of each type.
-- MQTT `on`/`off` keys remain strings rather than YAML 1.1 booleans.
-- JSON syntax and duplicate keys.
-- Python syntax using `ast.parse`, without importing or running project scripts.
-- Bash syntax using `bash -n`, without running shell commands in those scripts.
-- Unresolved merge markers in recognized text/source files.
-- Unique `.env.example` assignments and `CHANGE_ME_...` credential placeholders.
-  Local `.env` files are ignored and never read by the checker, even if present.
-- The public `smab.env.example` receives the same checks, with one explicit
-  exception for the documented public MQTT example password. Other passwords
-  must remain placeholders; the private runtime `smab.env` is ignored.
-- Compose configuration validation against `.env.example` for all eight
-  combinations of the `mqtt`, `influxdb` and `grafana` profiles. It checks the
-  exact service selection, including openHAB-only and the complete stack.
-  Validation fails on warnings as well as errors. Shell values and a local
-  `.env` cannot override the template. Diagnostic output never dumps resolved
-  configuration or credential values. A local `.env` is not required to run checks.
-
-Ignored archives, backups, virtual environments, and local thermostat Item files
-are excluded. The checker does not validate JavaScript expressions, Item DSL,
-Flux queries, binding-specific settings, Markdown links, external services,
-image availability, or runtime behavior. Existing widget tests in `tools/`
-remain separate. Passing lint is not a deployment or integration test.
-
-## Shelly profile behavior checks
-
-The profile regression runner requires Node.js in addition to the basic lint
-tools. Export the library as JSON, then run the generated code with isolated
-Item/MQTT/time mocks (no live openHAB connection):
-
-```bash
-ruby -ryaml -rjson -e 'puts JSON.generate(YAML.load_file(ARGV[0]))' \
-  data/openhab/conf/yaml/block_libraries/lhlab_thermostat_library.yml \
-  > /tmp/thermostat-library.json
-node tests/verify_shelly_profiles.js /tmp/thermostat-library.json
-```
-
-It covers 48 operating combinations, 28 invalid profile/MQTT configurations,
-profile zero, and a disabled thermostat. The basic lint runner also checks that
-widget Item defaults remain empty and that all five profile fields start unset.
-Native MainUI/Blockly generation and device integration still require a later
-server-side verification.
-
-## Optional script safety tests
-
-Run these separately when changing maintenance scripts, the certificate helper
-or the Shelly link migrator:
-
-```bash
-./tests/script-check.sh
-```
-
-The runner works from any directory and requires Python 3.9+, Bash and jq.
-It uses only Python's standard library, creates no virtual environment and
-installs no packages. The real curl executable and the requests package are
-replaced by test doubles. OpenSSL is optional: certificate generation is skipped
-when it is unavailable. All files are created in temporary directories; no live
-API or Docker daemon is contacted. These tests are not part of `linter-check.sh`.
-
-`test_maintenance.py` runs single configured Bash script copies with fake API
-responses. It covers full measurement deletion, complete orphan cleanup,
-conflict-log cleanup, timerange scopes, exact timestamp/tag predicates for wrong
-values, response validation, failures and Digitalstrom actions. InfluxDB 1-only
-checks were removed with the retired scripts. Token headers are checked without
-logging token values.
-
-`test_influxdb2_move.py` uses a stateful fake database to verify source-over-target
-merging, preservation of unrelated target data, Item-tag changes, all field types,
-nanoseconds, preflight changes, streamed errors and refusal to delete an
-unverified source. No third-party Python packages are required.
-
-These are offline safeguards, not live installation tests. Separate manual
-checks with an isolated InfluxDB 2.9 container verify real protocol behavior.
-The optional runner itself starts no containers.
-
-Optional Bash style check (requires ShellCheck):
-
-```bash
-shellcheck scripts/*.sh certs/generate-certs.sh
-```
-
-The existing Shelly Python migrator is checked with a fake requests module for
-backup protection, preflight failure, create-before-delete ordering and failed
-link creation. Certificate tests use temporary repository paths; when OpenSSL is
-available, they verify certificate signatures/SAN and refusal to overwrite keys.
+The `CI required` job runs even after failures and cancellations. It accepts a
+skipped behavior job only when the planner explicitly selected documentation-only
+checks. Permissions remain read-only, actions are SHA-pinned, jobs have timeouts,
+and newer runs may cancel older runs of the same branch. No containers, images,
+tags or releases are started, built or published. This does not configure GitHub
+branch protection or required-status enforcement.
 
 ## Optional real InfluxDB 2.9 checks
 

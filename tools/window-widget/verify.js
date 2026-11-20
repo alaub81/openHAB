@@ -78,13 +78,24 @@ function verifyWindowWidget(vm, widget, oldWidget, items, metadataPlan) {
   assert(shell&&shell.config.class.includes('card-opened-fade-out'),'Background shell must hide when the cell opens');
   assert(widget.config.animate===false,'Expanded content must not wait for a WebView animation event');
   results.push('Background fades out and native details mount without an opening animation');
-  // Same complete closed state and actual bindings, excluding the expanded
-  // detail slot, which oh-cell mounts only when it is opened.
-  closed();const old=context(oldWidget.slots.background[0].config.functions);old.loop={contacts,equipment};
-  reads=0;render(find(oldWidget.slots.background,'contact-compact'),old);const oldReads=reads;
-  reads=0;ctx.loop={view:model()};render(find(widget.slots.background,'contact-compact'),ctx);const newReads=reads;
-  assert(newReads<oldReads/4,'Repeated reactive Item proxy accesses not sufficiently reduced');
-  results.push('Actual collapsed bindings: reactive Item reads reduced from '+oldReads+' to '+newReads);
+  // Always evaluate the current bindings. A private historical widget can
+  // optionally supply the old performance baseline for a local comparison.
+  closed();reads=0;ctx.loop={view:model()};
+  render(find(widget.slots.background,'contact-compact'),ctx);
+  const newReads=reads;
+  render(find(widget.slots.default,'contact-detail'),ctx);
+  states.set(contacts[0].name,'OPEN');states.set(contacts[0].metadata.contactOverview.value,'ON');
+  ctx.loop={view:model()};
+  render(find(widget.slots.background,'contact-compact'),ctx);
+  render(find(widget.slots.default,'contact-detail'),ctx);
+  results.push('Current compact and detail bindings evaluate for closed and active-alarm states');
+  let oldReads = null;
+  if (oldWidget) {
+    closed();const old=context(oldWidget.slots.background[0].config.functions);old.loop={contacts,equipment};
+    reads=0;render(find(oldWidget.slots.background,'contact-compact'),old);oldReads=reads;
+    assert(newReads<oldReads/4,'Repeated reactive Item proxy accesses not sufficiently reduced');
+    results.push('Actual collapsed bindings: reactive Item reads reduced from '+oldReads+' to '+newReads);
+  }
   return {results,itemReadsBefore:oldReads,itemReadsAfter:newReads,trackedItems:tracked.size};
 }
 verifyWindowWidget;

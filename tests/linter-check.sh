@@ -12,15 +12,11 @@ if [[ $# -ne 0 ]]; then
   exit 2
 fi
 
-if [[ ! -x .lint-venv/bin/python ]]; then
-  python3 -m venv .lint-venv
-fi
-
-LINT_PYTHON="$PROJECT_DIR/.lint-venv/bin/python"
-export PYTHONDONTWRITEBYTECODE=1
-if ! "$LINT_PYTHON" -c 'from importlib.metadata import version; assert version("PyYAML") == "6.0.3"' >/dev/null 2>&1; then
-  "$LINT_PYTHON" -m pip install --no-cache-dir --requirement tests/requirements-lint.txt
-fi
-
+# shellcheck source=tests/prepare-tools.sh
+source "$PROJECT_DIR/tests/prepare-tools.sh"
+"$LINT_PYTHON" tests/install_lint_tools.py
+export PATH="$PROJECT_DIR/.lint-tools/bin:$PATH"
 "$LINT_PYTHON" -m unittest discover -s tests -p 'test_lint.py'
-exec "$LINT_PYTHON" tests/lint.py
+"$LINT_PYTHON" -m unittest discover -s tests -p 'test_check_pipeline.py'
+"$LINT_PYTHON" tests/lint.py
+exec "$LINT_PYTHON" tests/source-check.py

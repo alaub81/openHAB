@@ -393,7 +393,7 @@ widgets:
                   headline: "BEISPIEL: Amtliche Unwetterwarnung vor SCHWEREM GEWITTER"
                   description: |-
                     Beispiel einer längeren kombinierten Gewitterwarnung. Der kompakte Titel bleibt lesbar; dieser Bereich enthält den vollständigen Text.
-                    
+
                     Auch Absätze bleiben erhalten.
                   instruction: "Beispiel: Aufenthalt im Freien vermeiden."
                 -

@@ -67,7 +67,7 @@ JavaScript checks cover percentage formatting, placeholder-to-live transitions, 
 ```sh
 ruby -ryaml -rjson -e 'puts JSON.generate(YAML.load_file(ARGV[0]))' \
   data/openhab/conf/yaml/widgets/luftfeuchtigkeit_alarm_cell.yml > /tmp/widget.json
-osascript -l JavaScript tools/humidity-widget/verify.js /tmp/widget.json
+node tools/humidity-widget/verify.js /tmp/widget.json
 ```
 
 An optional second argument accepts a complete local Item export to check the 18 existing alarms. With the saved export, 52 checks passed and all 18 alarms found exactly one sensor. The test uses a restricted JavaScript context, not MainUI's complete parser. Live server checks, installation, and visual MainUI verification are pending.

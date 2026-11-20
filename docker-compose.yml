@@ -220,7 +220,7 @@ services:
       # - GF_LOG_FILTERS=rendering:debug
       # for anonymous access to embedding graphs
       #- GF_AUTH_ANONYMOUS_ENABLED=true
-      #- GF_SECURITY_ALLOW_EMBEDDING=true      
+      #- GF_SECURITY_ALLOW_EMBEDDING=true
       - TZ=${TZ}
     # Optional: uncomment to enable Watchtower label-based selection.
     # labels:

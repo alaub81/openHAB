@@ -11,6 +11,12 @@ from lint import dotenv, load_yaml, openhab_entities, project_files, unique_json
 
 
 class LintRegressionTests(unittest.TestCase):
+    def test_compose_merge_tags_preserve_duplicate_key_checks(self):
+        self.assertEqual(load_yaml("volumes: !override [one, two]\n"), {"volumes": ["one", "two"]})
+        self.assertEqual(load_yaml("ports: !reset []\n"), {"ports": []})
+        with self.assertRaises(ValueError):
+            load_yaml("settings: !override {key: one, key: two}\n")
+
     def test_local_environment_is_excluded_even_if_it_exists(self):
         with patch("lint.subprocess.check_output", return_value=b".env\0.env.example\0"):
             with patch("lint.Path.is_file", return_value=True):
@@ -25,11 +31,31 @@ class LintRegressionTests(unittest.TestCase):
                     self.assertFalse(param.get("default"), (path.name, param["name"]))
 
     def test_shelly_profile_fields_require_explicit_configuration(self):
-        path = Path(__file__).resolve().parents[1] / "data/openhab/conf/yaml/block_libraries/lhlab_thermostat_library.yml"
-        blocks = load_yaml(path.read_text())["blocks"]["lhlab_thermostat_library"]["slots"]["blocks"]
-        block = next(b for b in blocks if b["config"]["type"] == "Shelly Walldisplay Thermostat Control")
-        fields = {a["name"]: a for a in block["config"]["args0"] if a["name"].startswith("PROFILE_") and a["name"] != "PROFILE_ITEM"}
-        self.assertEqual(set(fields), {"PROFILE_WINDOW", "PROFILE_ABSENCE", "PROFILE_BOOSTER", "PROFILE_SGGREEN", "PROFILE_NIGHT"})
+        path = (
+            Path(__file__).resolve().parents[1]
+            / "data/openhab/conf/yaml/block_libraries/lhlab_thermostat_library.yml"
+        )
+        blocks = load_yaml(path.read_text())["blocks"]["lhlab_thermostat_library"]["slots"][
+            "blocks"
+        ]
+        block = next(
+            b for b in blocks if b["config"]["type"] == "Shelly Walldisplay Thermostat Control"
+        )
+        fields = {
+            a["name"]: a
+            for a in block["config"]["args0"]
+            if a["name"].startswith("PROFILE_") and a["name"] != "PROFILE_ITEM"
+        }
+        self.assertEqual(
+            set(fields),
+            {
+                "PROFILE_WINDOW",
+                "PROFILE_ABSENCE",
+                "PROFILE_BOOSTER",
+                "PROFILE_SGGREEN",
+                "PROFILE_NIGHT",
+            },
+        )
         for field in fields.values():
             self.assertEqual(field["value"], -1)
             self.assertEqual(field["precision"], 1)
@@ -82,7 +108,9 @@ class LintRegressionTests(unittest.TestCase):
     def test_public_mqtt_example_exception_is_explicit_and_exact(self):
         public = {"SMAB_MQTT_PASSWORD": "mosquitto-mqtt"}
         example = "SMAB_MQTT_PASSWORD=mosquitto-mqtt\n"
-        self.assertEqual(dotenv(example, public_credentials=public)["SMAB_MQTT_PASSWORD"], "mosquitto-mqtt")
+        self.assertEqual(
+            dotenv(example, public_credentials=public)["SMAB_MQTT_PASSWORD"], "mosquitto-mqtt"
+        )
         for text, exceptions in [
             (example, None),
             ("SMAB_MQTT_PASSWORD=not-a-real-credential\n", public),

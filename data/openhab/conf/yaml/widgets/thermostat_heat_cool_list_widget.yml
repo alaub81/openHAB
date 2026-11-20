@@ -150,7 +150,7 @@ widgets:
           items[props.istthermostat].state === 'HEAT' &&
           items[props.istvalve].state === 'ON') ? '▲' :
           (Number.parseFloat(items[props.setpointEffective].state))>
-          (Number.parseFloat(items[props.item].state)) ? '△' : 
+          (Number.parseFloat(items[props.item].state)) ? '△' :
           (Number.parseFloat(items[props.setpointEffective].state))<
           (Number.parseFloat(items[props.item].state)) ? '▽' :
           (items[props.istthermostat].state) === 'HEAT' ? '◉' :
@@ -159,7 +159,7 @@ widgets:
           '')
         + ' '
 
-        + (props.setpointEffective && items[props.setpointEffective] 
+        + (props.setpointEffective && items[props.setpointEffective]
           && items[props.item]
           && (Number.parseFloat(items[props.setpointEffective].state))-
           (Number.parseFloat(items[props.item].state)) > 0 ? '+' :
@@ -167,7 +167,7 @@ widgets:
 
         + (props.setpointEffective && items[props.setpointEffective] && items[props.item]
           && (Number.parseFloat(items[props.setpointEffective].state))-
-          (Number.parseFloat(items[props.item].state)) != 0 
+          (Number.parseFloat(items[props.item].state)) != 0
           ? ((Number.parseFloat(items[props.setpointEffective].state))-
           (Number.parseFloat(items[props.item].state))).toFixed(1) :
           '')
@@ -299,4 +299,4 @@ widgets:
                         width: 14
                         height: 14
                         color: white
-                        
+

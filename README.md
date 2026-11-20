@@ -165,9 +165,12 @@ library does not create or run a rule. Start with the
 - [Thing templates and Somfy sun sensors](data/openhab/conf/yaml/things/README.md)
 - [Development tools](tools/README.md) and [repository checks](tests/README.md)
 
-Run `./tests/linter-check.sh` to validate the repository without starting containers.
-The same check runs in GitHub Actions for pull requests and pushes to `master`;
-optional maintenance and integration tests are separate.
+Run `./tests/linter-check.sh` for configuration, source and documentation checks,
+and `./tests/test-check.sh` for offline behavior tests, without starting containers.
+GitHub Actions uses the same commands for pull requests and pushes to `master`;
+behavior tests may skip for known documentation-only changes. The `CI required`
+status summarizes the planned checks. Real database integration tests remain
+separate; see [prerequisites and coverage](tests/README.md).
 
 Bridge-specific features and widgets are maintained in
 [SMA MQTT Bridge](https://github.com/alaub81/sma-mqtt-bridge) and

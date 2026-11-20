@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020-2026 Andreas Laub
-// Run with: osascript -l JavaScript tools/humidity-widget/verify.js /tmp/widget.json
+// Run with: node tools/humidity-widget/verify.js /tmp/widget.json
 // Export YAML to JSON first. Restrict globals to the values MainUI exposes.
-ObjC.import('Foundation');
+if (typeof module === 'undefined') ObjC.import('Foundation');
+function readJson(file) {
+  return JSON.parse(typeof module === 'object' ? require('node:fs').readFileSync(file, 'utf8')
+    : $.NSString.stringWithContentsOfFileEncodingError(file, $.NSUTF8StringEncoding, null).js);
+}
 function run(argv) {
-  var doc=JSON.parse($.NSString.stringWithContentsOfFileEncodingError(argv[0],$.NSUTF8StringEncoding,null).js);
+  var doc=readJson(argv[0]);
   var widget=doc.widgets.luftfeuchtigkeit_alarm_cell;
   var defs=widget.slots.background[0].config.functions;
   var assertions=0;
@@ -54,7 +58,7 @@ function run(argv) {
   check(f.flatten([{name:'a',members:[{name:'b',members:[{name:'c'}]}]}],f.flatten,0).length===3,'Recursive model');
   check(f.sensors(index.concat([sensor]),'sensors',f.room,f.semantics).length===1,'Duplicate group paths deduplicated');
   if(argv[1]) {
-    var actual=JSON.parse($.NSString.stringWithContentsOfFileEncodingError(argv[1],$.NSUTF8StringEncoding,null).js);
+    var actual=readJson(argv[1]);
     var alarms=actual.filter(function(s){return (s.groupNames || []).indexOf('Humidity_Alarm')>=0 && s.type==='Switch';});
     var sensors=f.sensors(actual,'Humidity_Innen_ALL',f.room,f.semantics);
     var actualRows=f.rows(alarms,sensors,actual,f.room,f.semantics,f.resolve,function(n){var i=actual.find(function(s){return s.name===n;});return i?i.state:'-';},f.humidity);
@@ -64,4 +68,9 @@ function run(argv) {
   check(!/BadOG|Shelly|LaubRaspi|Schlafzimmmer/.test(JSON.stringify(defs)),'No installation-specific Item mappings');
   check(JSON.stringify(defs)===JSON.stringify(widget.slots.default[0].config.functions),'Both views use identical functions');
   return assertions+' Prüfungen bestanden; ursprünglicher Fehler reproduziert, Korrektur geprüft.';
+}
+
+if (typeof module === 'object') {
+  module.exports = run;
+  if (require.main === module) console.log(run(process.argv.slice(2)));
 }

@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020-2026 Andreas Laub
-ObjC.import('Foundation');
+if (typeof module === 'undefined') ObjC.import('Foundation');
+function readJson(file) {
+  return JSON.parse(typeof module === 'object' ? require('node:fs').readFileSync(file, 'utf8')
+    : $.NSString.stringWithContentsOfFileEncodingError(file, $.NSUTF8StringEncoding, null).js);
+}
 function run(argv) {
- var doc=JSON.parse($.NSString.stringWithContentsOfFileEncodingError(argv[0],$.NSUTF8StringEncoding,null).js);
+ var doc=readJson(argv[0]);
  var w=doc.widgets.batterie_ladestaende_cell,defs=w.slots.background[0].config.functions;
  var states={},items=new Proxy({}, {get:function(_,name){return {state:states[name] || '-'};}}),f={},count=0;
  function check(v,msg){count++;if(!v)throw Error(msg);}
@@ -53,7 +57,7 @@ function run(argv) {
  editmode=false;render(w.slots.default[0],{});
  check(JSON.stringify(defs)===JSON.stringify(w.slots.default[0].config.functions),'Identical functions in both views');
  if(argv[1]) {
-  var actual=JSON.parse($.NSString.stringWithContentsOfFileEncodingError(argv[1],$.NSUTF8StringEncoding,null).js);
+  var actual=readJson(argv[1]);
   var batteries=actual.filter(function(s){return (s.groupNames || []).indexOf('Battery_ALL')>=0;});
   var rows=f.rows(batteries,function(n){return batteries.find(function(s){return s.name===n;}).state;},f.value);
   var sorted=f.summary(rows,f.sorted);
@@ -62,4 +66,9 @@ function run(argv) {
   check(sorted.rows.every(function(r,i,a){return i===0 || r.value===null || a[i-1].value!==null && a[i-1].value<=r.value;}),'Archived ascending order');
  }
  return count+' Prüfungen für Sortierung, Prozentwerte, Füllstand und Vollzustand bestanden.';
+}
+
+if (typeof module === 'object') {
+  module.exports = run;
+  if (require.main === module) console.log(run(process.argv.slice(2)));
 }

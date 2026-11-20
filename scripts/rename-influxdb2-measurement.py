@@ -11,7 +11,7 @@ Requires only Python's standard library. Stop writers to BOTH measurements first
 import argparse
 import calendar
 import csv
-from datetime import datetime, timezone
+from datetime import datetime
 import json
 import math
 import os
@@ -46,7 +46,17 @@ MIN_TIME = "1677-09-21T00:12:43.145224194Z"
 MAX_TIME = "2262-04-11T23:47:16.854775807Z"
 # Flux range stop is exclusive; the delete endpoint uses an inclusive valid storage bound.
 DELETE_MAX_TIME = "2262-04-11T23:47:16.854775806Z"
-META_COLUMNS = {"", "result", "table", "_start", "_stop", "_time", "_value", "_field", "_measurement"}
+META_COLUMNS = {
+    "",
+    "result",
+    "table",
+    "_start",
+    "_stop",
+    "_time",
+    "_value",
+    "_field",
+    "_measurement",
+}
 
 
 def flux_literal(value):
@@ -57,25 +67,31 @@ def flux_literal(value):
 
 
 def read_query(bucket, measurement):
-    return (f"from(bucket: {flux_literal(bucket)})\n"
-            f"    |> range(start: time(v: {flux_literal(MIN_TIME)}), stop: time(v: {flux_literal(MAX_TIME)}))\n"
-            f"    |> filter(fn: (r) => r._measurement == {flux_literal(measurement)})\n")
+    return (
+        f"from(bucket: {flux_literal(bucket)})\n"
+        f"    |> range(start: time(v: {flux_literal(MIN_TIME)}), stop: time(v: {flux_literal(MAX_TIME)}))\n"
+        f"    |> filter(fn: (r) => r._measurement == {flux_literal(measurement)})\n"
+    )
 
 
 def copy_query(bucket, org, old, new, rename_item):
     """Keep all fields, types, timestamps and tags; rename only the selected Item tag."""
     query = "source = " + read_query(bucket, old)
     if rename_item:
-        query += ("output = union(tables: [\n"
-                  f"    source |> filter(fn: (r) => if exists r.item then r.item == {flux_literal(old)} else false)"
-                  f" |> set(key: \"item\", value: {flux_literal(new)}),\n"
-                  f"    source |> filter(fn: (r) => if exists r.item then r.item != {flux_literal(old)} else false),\n"
-                  "    source |> filter(fn: (r) => not exists r.item),\n])\n")
+        query += (
+            "output = union(tables: [\n"
+            f"    source |> filter(fn: (r) => if exists r.item then r.item == {flux_literal(old)} else false)"
+            f' |> set(key: "item", value: {flux_literal(new)}),\n'
+            f"    source |> filter(fn: (r) => if exists r.item then r.item != {flux_literal(old)} else false),\n"
+            "    source |> filter(fn: (r) => not exists r.item),\n])\n"
+        )
     else:
         query += "output = source\n"
-    return (query + f"output |> set(key: \"_measurement\", value: {flux_literal(new)})\n"
-            f"    |> to(bucket: {flux_literal(bucket)}, org: {flux_literal(org)})\n"
-            "    |> count(column: \"_value\") |> yield(name: \"copied_field_values\")\n")
+    return (
+        query + f'output |> set(key: "_measurement", value: {flux_literal(new)})\n'
+        f"    |> to(bucket: {flux_literal(bucket)}, org: {flux_literal(org)})\n"
+        '    |> count(column: "_value") |> yield(name: "copied_field_values")\n'
+    )
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -86,22 +102,42 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 class Influx2API:
     def __init__(self, url, org, bucket, token, ca_file="", timeout=120, max_bytes=1024**3):
         parsed = urllib.parse.urlsplit(url)
-        if (parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username
-                or parsed.password or parsed.query or parsed.fragment or parsed.path not in {"", "/"}):
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username
+            or parsed.password
+            or parsed.query
+            or parsed.fragment
+            or parsed.path not in {"", "/"}
+        ):
             raise ValueError("Use an HTTP(S) base URL without credentials, path, query or fragment")
-        if not token or token.startswith(("CHANGE_ME", "YOUR_")) or any(char.isspace() for char in token):
+        if (
+            not token
+            or token.startswith(("CHANGE_ME", "YOUR_"))
+            or any(char.isspace() for char in token)
+        ):
             raise ValueError("Set a real local InfluxDB API token or token file")
         if timeout <= 0 or max_bytes <= 0:
             raise ValueError("Timeout and export size limit must be positive")
         self.url, self.org, self.bucket, self.token = url.rstrip("/"), org, bucket, token
         self.timeout, self.max_bytes = timeout, max_bytes
         context = ssl.create_default_context(cafile=ca_file or None)
-        self.opener = urllib.request.build_opener(NoRedirect(), urllib.request.HTTPSHandler(context=context))
+        self.opener = urllib.request.build_opener(
+            NoRedirect(), urllib.request.HTTPSHandler(context=context)
+        )
 
     def post(self, path, payload, output=None):
-        request = urllib.request.Request(self.url + path, data=json.dumps(payload).encode(), method="POST",
-            headers={"Authorization": "Token " + self.token, "Content-Type": "application/json",
-                     "Accept": "application/csv" if output else "application/json"})
+        request = urllib.request.Request(
+            self.url + path,
+            data=json.dumps(payload).encode(),
+            method="POST",
+            headers={
+                "Authorization": "Token " + self.token,
+                "Content-Type": "application/json",
+                "Accept": "application/csv" if output else "application/json",
+            },
+        )
         try:
             with self.opener.open(request, timeout=self.timeout) as response:
                 expected = 200 if output else 204
@@ -119,19 +155,34 @@ class Influx2API:
                                 raise RuntimeError("Export size limit exceeded; source retained")
                             target.write(chunk)
         except urllib.error.HTTPError as error:
-            raise RuntimeError(f"InfluxDB request failed with HTTP {error.code}; source deletion stopped") from None
+            raise RuntimeError(
+                f"InfluxDB request failed with HTTP {error.code}; source deletion stopped"
+            ) from None
         except urllib.error.URLError:
-            raise RuntimeError("InfluxDB connection/TLS request failed; source deletion stopped") from None
+            raise RuntimeError(
+                "InfluxDB connection/TLS request failed; source deletion stopped"
+            ) from None
 
     def query(self, query, output):
-        self.post("/api/v2/query?" + urllib.parse.urlencode({"org": self.org}),
-                  {"query": query, "type": "flux", "dialect": {"header": True,
-                   "annotations": ["datatype", "group", "default"]}}, output)
+        self.post(
+            "/api/v2/query?" + urllib.parse.urlencode({"org": self.org}),
+            {
+                "query": query,
+                "type": "flux",
+                "dialect": {"header": True, "annotations": ["datatype", "group", "default"]},
+            },
+            output,
+        )
 
     def delete(self, measurement):
-        self.post("/api/v2/delete?" + urllib.parse.urlencode({"org": self.org, "bucket": self.bucket}),
-                  {"start": MIN_TIME, "stop": DELETE_MAX_TIME,
-                   "predicate": "_measurement=" + json.dumps(measurement)})
+        self.post(
+            "/api/v2/delete?" + urllib.parse.urlencode({"org": self.org, "bucket": self.bucket}),
+            {
+                "start": MIN_TIME,
+                "stop": DELETE_MAX_TIME,
+                "predicate": "_measurement=" + json.dumps(measurement),
+            },
+        )
 
 
 def timestamp_ns(value):
@@ -205,19 +256,25 @@ def import_snapshot(db, table, path, measurement, old, new, rename_item):
                 if rename_item and name == "item" and value == old:
                     value = new
                 tags.append((name, value))
-            identity = json.dumps([timestamp_ns(record["_time"]), sorted(tags), record["_field"]], ensure_ascii=False)
+            identity = json.dumps(
+                [timestamp_ns(record["_time"]), sorted(tags), record["_field"]], ensure_ascii=False
+            )
             value = field_value(kinds[header.index("_value")], record["_value"])
             try:
                 db.execute(f"INSERT INTO {table} VALUES (?, ?)", (identity, value))
             except sqlite3.IntegrityError:
-                raise ValueError("Duplicate point identity after Item-tag mapping; source retained") from None
+                raise ValueError(
+                    "Duplicate point identity after Item-tag mapping; source retained"
+                ) from None
     db.commit()
     return db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
 
 
 def equal_tables(db, left, right):
     for first, second in ((left, right), (right, left)):
-        if db.execute(f"SELECT 1 FROM (SELECT * FROM {first} EXCEPT SELECT * FROM {second}) LIMIT 1").fetchone():
+        if db.execute(
+            f"SELECT 1 FROM (SELECT * FROM {first} EXCEPT SELECT * FROM {second}) LIMIT 1"
+        ).fetchone():
             return False
     return True
 
@@ -228,23 +285,36 @@ def check_query_errors(path):
             raise RuntimeError("InfluxDB returned a streamed copy error; source retained")
 
 
-def move_measurement(api, old, new, backup_root, *, execute=False, delete_source=True, rename_item=True):
+def move_measurement(
+    api, old, new, backup_root, *, execute=False, delete_source=True, rename_item=True
+):
     if old == new:
         raise ValueError("Source and target must differ")
     for name in (api.org, api.bucket, old, new):
         flux_literal(name)
     Path(backup_root).mkdir(parents=True, exist_ok=True, mode=0o700)
     folder = Path(tempfile.mkdtemp(prefix="move-", dir=backup_root))
-    manifest = {"source": old, "target": new, "bucket": api.bucket, "org": api.org,
-                "rename_item_tag": rename_item, "delete_source": delete_source, "status": "planning"}
+    manifest = {
+        "source": old,
+        "target": new,
+        "bucket": api.bucket,
+        "org": api.org,
+        "rename_item_tag": rename_item,
+        "delete_source": delete_source,
+        "status": "planning",
+    }
+
     def status(value):
         manifest["status"] = value
-        (folder/"manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    with sqlite3.connect(folder/"verification.sqlite3") as db:
+        (folder / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    with sqlite3.connect(folder / "verification.sqlite3") as db:
+
         def snapshot(table, measurement, transform=False):
-            path = folder/(table+".csv")
+            path = folder / (table + ".csv")
             api.query(read_query(api.bucket, measurement), path)
             return import_snapshot(db, table, path, measurement, old, new, transform)
+
         source_count = snapshot("source_before", old, rename_item)
         target_count = snapshot("target_before", new)
         if not source_count:
@@ -255,21 +325,33 @@ def move_measurement(api, old, new, backup_root, *, execute=False, delete_source
         db.commit()
         manifest.update(source_field_values=source_count, target_field_values=target_count)
         status("planned")
-        print(f"Source field values: {source_count}; target field values: {target_count}; snapshots: {folder}")
+        print(
+            f"Source field values: {source_count}; target field values: {target_count}; snapshots: {folder}"
+        )
         if not execute:
             status("dry_run")
-            print("DRY-RUN: source values would overwrite matching target values; no database writes sent.")
+            print(
+                "DRY-RUN: source values would overwrite matching target values; no database writes sent."
+            )
             return folder
         snapshot("source_preflight", old, rename_item)
         snapshot("target_preflight", new)
-        if not equal_tables(db, "source_before", "source_preflight") or not equal_tables(db, "target_before", "target_preflight"):
-            raise RuntimeError("Source/target changed during planning; stop writers and run a new preview")
+        if not equal_tables(db, "source_before", "source_preflight") or not equal_tables(
+            db, "target_before", "target_preflight"
+        ):
+            raise RuntimeError(
+                "Source/target changed during planning; stop writers and run a new preview"
+            )
         status("copying")
-        api.query(copy_query(api.bucket, api.org, old, new, rename_item), folder/"copy-result.csv")
-        check_query_errors(folder/"copy-result.csv")
+        api.query(
+            copy_query(api.bucket, api.org, old, new, rename_item), folder / "copy-result.csv"
+        )
+        check_query_errors(folder / "copy-result.csv")
         snapshot("source_after_copy", old, rename_item)
         snapshot("target_after_copy", new)
-        if not equal_tables(db, "source_before", "source_after_copy") or not equal_tables(db, "expected", "target_after_copy"):
+        if not equal_tables(db, "source_before", "source_after_copy") or not equal_tables(
+            db, "expected", "target_after_copy"
+        ):
             status("verification_failed_source_retained")
             raise RuntimeError("Copy verification failed; source retained and snapshots available")
         status("copy_verified")
@@ -278,7 +360,9 @@ def move_measurement(api, old, new, backup_root, *, execute=False, delete_source
             api.delete(old)
             if snapshot("source_after_delete", old, rename_item):
                 status("delete_not_verified")
-                raise RuntimeError("Source still contains data after deletion; inspect snapshots before retrying")
+                raise RuntimeError(
+                    "Source still contains data after deletion; inspect snapshots before retrying"
+                )
             status("move_verified")
             print("Target verified; source data deleted and empty source verified.")
         else:
@@ -296,16 +380,29 @@ def main(argv=None):
     parser.add_argument("--copy-only", action="store_true")
     args = parser.parse_args(argv)
     token = Path(INFLUX_TOKEN_FILE).read_text().strip() if INFLUX_TOKEN_FILE else INFLUX_TOKEN
-    api = Influx2API(INFLUX_URL, INFLUX_ORG, INFLUX_BUCKET, token, API_CA_FILE, REQUEST_TIMEOUT, MAX_EXPORT_BYTES)
+    api = Influx2API(
+        INFLUX_URL, INFLUX_ORG, INFLUX_BUCKET, token, API_CA_FILE, REQUEST_TIMEOUT, MAX_EXPORT_BYTES
+    )
     execute = args.execute or (not DRY_RUN and not args.dry_run)
     os.umask(0o077)
-    move_measurement(api, args.old, args.new, BACKUP_DIR, execute=execute,
-                     delete_source=DELETE_SOURCE and not args.copy_only, rename_item=RENAME_ITEM_TAG)
+    move_measurement(
+        api,
+        args.old,
+        args.new,
+        BACKUP_DIR,
+        execute=execute,
+        delete_source=DELETE_SOURCE and not args.copy_only,
+        rename_item=RENAME_ITEM_TAG,
+    )
 
 
 if __name__ == "__main__":
     try:
         main()
     except (OSError, ValueError, RuntimeError, csv.Error, sqlite3.Error) as error:
-        detail = str(error) if isinstance(error, (ValueError, RuntimeError)) else type(error).__name__
-        raise SystemExit(f"Stopped: {detail}. Keep the snapshots; completed target writes are not rolled back.")
+        detail = (
+            str(error) if isinstance(error, (ValueError, RuntimeError)) else type(error).__name__
+        )
+        raise SystemExit(
+            f"Stopped: {detail}. Keep the snapshots; completed target writes are not rolled back."
+        )

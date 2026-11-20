@@ -21,12 +21,15 @@ and library YAML files. Run them manually; they do not run at startup.
 The humidity source is not automatically synchronized with the current YAML
 library; compare them before making changes.
 
-The battery and humidity widget tests run on macOS using `osascript`. Their widget
-documentation contains the commands and YAML-to-JSON conversion instructions.
-The other JavaScript tests expose functions that take a Node VM and the required
-source data; they are not standalone CLI programs.
-For state/temperature-window alarms, the `state-alarms/check.cjs` CLI runs both
-sources and generated helpers; see the [alarm guide](../data/openhab/conf/yaml/block_libraries/lhlab_alarm_library.md#build-and-offline-verification).
+Run `./tests/test-check.sh` for the shared offline behavior checks. The runner
+exports public YAML to temporary JSON and invokes Node on Linux or macOS;
+Ruby and `osascript` are not required. Battery/humidity CLIs retain compatibility
+with their older per-widget commands. Current window, Shelly, state/temperature,
+humidity and DWD checks use synthetic data; see the
+[test guide](../tests/README.md#offline-behavior-tests) for coverage and limits.
+The heat-pump verifier and installed-rule wiring checks still need JavaScript
+produced by openHAB's Blockly generator. Private historical data and performance
+comparisons remain explicit local options.
 
 ## Shelly link migration
 

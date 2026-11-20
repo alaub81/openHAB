@@ -10,6 +10,8 @@ data/openhab/conf/items/thermostat*.items
 AGENTS.md
 /backups/
 /.lint-venv/
+/.lint-tools/
+/.ruff_cache/
 __pycache__/
 /certs/*.key
 /certs/*.crt

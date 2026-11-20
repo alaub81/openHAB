@@ -1,4 +1,4 @@
-name: Repository lint
+name: Repository checks
 
 on:
   pull_request:
@@ -16,7 +16,36 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
+    outputs:
+      tests: ${{ steps.plan.outputs.tests }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Plan behavior checks
+        id: plan
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 tests/change_plan.py
+      - name: Check repository configuration
+        run: ./tests/linter-check.sh
+
+  tests:
+    needs: lint
+    if: needs.lint.outputs.tests == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -26,5 +55,30 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: '3.13'
-      - name: Check repository configuration
-        run: ./tests/linter-check.sh
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Run offline behavior checks
+        run: ./tests/test-check.sh
+
+  required:
+    name: CI required
+    needs: [lint, tests]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Verify all planned checks
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TESTS_REQUIRED: ${{ needs.lint.outputs.tests }}
+          TEST_RESULT: ${{ needs.tests.result }}
+        run: |
+          test "$LINT_RESULT" = success
+          if [ "$TESTS_REQUIRED" = true ]; then
+            test "$TEST_RESULT" = success
+          else
+            test "$TESTS_REQUIRED" = false
+            test "$TEST_RESULT" = skipped
+          fi

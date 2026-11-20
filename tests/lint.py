@@ -54,6 +54,19 @@ def unique_mapping(loader, node):
 ConfigLoader.add_constructor("tag:yaml.org,2002:map", unique_mapping)
 
 
+def compose_override(loader, node):
+    """Recognize Compose merge tags while retaining duplicate-key checks."""
+    if isinstance(node, yaml.SequenceNode):
+        return loader.construct_sequence(node, deep=True)
+    if isinstance(node, yaml.MappingNode):
+        return unique_mapping(loader, node)
+    return loader.construct_scalar(node)
+
+
+for compose_tag in ("!override", "!reset"):
+    ConfigLoader.add_constructor(compose_tag, compose_override)
+
+
 def unique_json(pairs):
     result = {}
     for key, value in pairs:
@@ -69,13 +82,26 @@ def load_yaml(text):
 
 def openhab_entities(name, document):
     """Validate the file-provider wrapper, not binding-specific configuration."""
-    sections = {"widgets": "widgets", "block_libraries": "blocks", "things": "things", "pages": "pages"}
+    sections = {
+        "widgets": "widgets",
+        "block_libraries": "blocks",
+        "things": "things",
+        "pages": "pages",
+    }
     section = sections.get(Path(name).parent.name)
     if section is None:
         raise ValueError("unsupported openHAB YAML directory")
-    if not isinstance(document, dict) or type(document.get("version")) is not int or document["version"] != 1:
+    if (
+        not isinstance(document, dict)
+        or type(document.get("version")) is not int
+        or document["version"] != 1
+    ):
         raise ValueError("expected file-based YAML with version: 1")
-    if set(document) != {"version", section} or not isinstance(document[section], dict) or not document[section]:
+    if (
+        set(document) != {"version", section}
+        or not isinstance(document[section], dict)
+        or not document[section]
+    ):
         raise ValueError(f"expected a nonempty {section}: map")
     for uid, entity in document[section].items():
         if not isinstance(uid, str) or not uid or not isinstance(entity, dict):
@@ -100,7 +126,9 @@ def dotenv(text, public_credentials=None):
         key, value = match.groups()
         values[key] = value
         if re.search(r"PASSWORD|PASSWD|TOKEN|SECRET|API_KEY", key, re.IGNORECASE):
-            if not re.fullmatch(r"CHANGE_ME_[A-Z0-9_]+", value) and value != (public_credentials or {}).get(key):
+            if not re.fullmatch(r"CHANGE_ME_[A-Z0-9_]+", value) and value != (
+                public_credentials or {}
+            ).get(key):
                 raise ValueError(f"{key}: use a CHANGE_ME_ credential placeholder")
     return values
 
@@ -109,10 +137,13 @@ def project_files():
     result = subprocess.check_output(
         ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT
     )
-    return sorted({
-        name for name in result.decode().split("\0")
-        if name and name != ".env" and (ROOT / name).is_file()
-    })
+    return sorted(
+        {
+            name
+            for name in result.decode().split("\0")
+            if name and name != ".env" and (ROOT / name).is_file()
+        }
+    )
 
 
 def main():
@@ -131,7 +162,24 @@ def main():
         path = ROOT / name
         suffix = path.suffix
         yaml_file = name.endswith((".yml", ".yaml", ".yml.example", ".yaml.example"))
-        text_file = yaml_file or suffix in {".md", ".py", ".sh", ".js", ".json", ".conf", ".persist", ".influx"} or path.name in {".env.example", "smab.env.example"}
+        text_file = (
+            yaml_file
+            or suffix
+            in {
+                ".md",
+                ".py",
+                ".sh",
+                ".js",
+                ".cjs",
+                ".json",
+                ".conf",
+                ".persist",
+                ".influx",
+                ".toml",
+                ".txt",
+            }
+            or path.name in {".env.example", "smab.env.example"}
+        )
         if not text_file:
             continue
         try:
@@ -165,7 +213,11 @@ def main():
                     raise ValueError("bash -n failed")
                 label = "Bash syntax"
             elif path.name in {".env.example", "smab.env.example"}:
-                public = {"SMAB_MQTT_PASSWORD": "mosquitto-mqtt"} if path.name == "smab.env.example" else None
+                public = (
+                    {"SMAB_MQTT_PASSWORD": "mosquitto-mqtt"}
+                    if path.name == "smab.env.example"
+                    else None
+                )
                 parsed = dotenv(text, public_credentials=public)
                 if path.name == ".env.example":
                     env_values = parsed
@@ -178,7 +230,9 @@ def main():
             fail(name, "invalid YAML" + (f" at line {mark.line + 1}" if mark else ""))
         except (ValueError, TypeError, SyntaxError) as error:
             # Never echo source lines: configuration files can contain credentials.
-            message = "invalid syntax" if isinstance(error, (SyntaxError, UnicodeError)) else str(error)
+            message = (
+                "invalid syntax" if isinstance(error, (SyntaxError, UnicodeError)) else str(error)
+            )
             fail(name, message)
 
     if env_values is None:
@@ -188,21 +242,37 @@ def main():
     else:
         # Do not inherit shell credentials or COMPOSE_* settings when validating
         # the repository template. The Docker daemon is not contacted by config.
-        environment = {k: v for k, v in os.environ.items() if k not in env_values and not k.startswith("COMPOSE_")}
+        environment = {
+            k: v
+            for k, v in os.environ.items()
+            if k not in env_values and not k.startswith("COMPOSE_")
+        }
         # Test each selection independently of the template's default profiles.
         environment["COMPOSE_PROFILES"] = ""
         for size in range(len(PROFILE_SERVICES) + 1):
             for profiles in combinations(PROFILE_SERVICES, size):
-                command = ["docker", "compose", "--env-file", str(ROOT / ".env.example"), "-f", str(ROOT / "docker-compose.yml")]
+                command = [
+                    "docker",
+                    "compose",
+                    "--env-file",
+                    str(ROOT / ".env.example"),
+                    "-f",
+                    str(ROOT / "docker-compose.yml"),
+                ]
                 for profile in profiles:
                     command.extend(["--profile", profile])
                 result = subprocess.run(
                     command + ["config", "--format", "json"],
-                    cwd=ROOT, env=environment, capture_output=True,
+                    cwd=ROOT,
+                    env=environment,
+                    capture_output=True,
                 )
                 selection = ",".join(profiles) or "openhab-only"
                 if result.returncode or result.stderr:
-                    fail("Compose", f"profile selection {selection}: validation failed or reported warnings")
+                    fail(
+                        "Compose",
+                        f"profile selection {selection}: validation failed or reported warnings",
+                    )
                     continue
                 expected = {"openhab"}
                 for profile in profiles:

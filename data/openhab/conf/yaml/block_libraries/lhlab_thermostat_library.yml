@@ -509,7 +509,7 @@ blocks:
                     absence,
                     booster,
                     manualActorMode,
-                    smartgrid,                    
+                    smartgrid,
                     windowcontact,
                     windowOpenDelayMin,
                     windowCloseTimeoutMin,
@@ -746,7 +746,7 @@ blocks:
 
                     if (block.blocked) {
                       return;
-                    } 
+                    }
 
                     // Climate control HEAT or COOL
                     if (thermostatMode === 'HEAT') {
@@ -799,12 +799,12 @@ blocks:
                   climateActor: {{input:CLIMATEACTOR}},
                   temperaturesensor: {{input:TEMPERATURESENSOR}},
                   thermostat: {{input:THERMOSTAT}},
-                  hysteresis: {{input:HYSTERESIS}},              
-                  absencereduction: {{input:ABSENCEREDUCTION}}, 
+                  hysteresis: {{input:HYSTERESIS}},
+                  absencereduction: {{input:ABSENCEREDUCTION}},
                   greenincrease: {{input:GREENINCREASE}},
                   coolgreenreduction: {{input:COOLGREENREDUCTION}},
-                  nightstart: {{input:NIGHTSTART}}, 
-                  nightstop: {{input:NIGHTSTOP}}, 
+                  nightstart: {{input:NIGHTSTART}},
+                  nightstop: {{input:NIGHTSTOP}},
                   nightreduction: {{input:NIGHTREDUCTION}},
                   windowcontact: {{input:WINDOWCONTACT}},
                   windowOpenDelayMin: {{input:WINDOW_OPEN_DELAY_MIN}},
@@ -1172,7 +1172,7 @@ blocks:
                     loglevel,
                     absence,
                     booster,
-                    smartgrid,                    
+                    smartgrid,
                     windowcontact,
                     windowDelayMin,
                     setpointEffective
@@ -1239,7 +1239,7 @@ blocks:
                         } else {
                           if (__legacyThermoLoggingEnabled) log(`Night setback deactivated - used setpoint temperature: ${setpoint}`);
                         }
-                      }  
+                      }
 
                       // Write the effective setpoint to the optional Item
                       safePostUpdate(setpointEffective, setpoint);
@@ -1283,7 +1283,7 @@ blocks:
                   } else {
                     if (__legacyThermoLoggingEnabled) log('Thermostat Switch is OFF');
                     // Write the effective setpoint to the optional Item
-                    safePostUpdate(setpointEffective, setpoint);                   
+                    safePostUpdate(setpointEffective, setpoint);
                     if (items.getItem(heatingvalve).state === 'ON') {
                       items.getItem(heatingvalve).sendCommand('OFF');
                       if (__legacyThermoLoggingEnabled) log('Heating control - heating deactivated');
@@ -1296,11 +1296,11 @@ blocks:
                   heatingvalve: {{input:HEATINGVALVE}},
                   temperaturesensor: {{input:TEMPERATURESENSOR}},
                   thermostat: {{input:THERMOSTAT}},
-                  hysteresis: {{input:HYSTERESIS}},              
-                  absencereduction: {{input:ABSENCEREDUCTION}}, 
-                  greenincrease: {{input:GREENINCREASE}}, 
-                  nightstart: {{input:NIGHTSTART}}, 
-                  nightstop: {{input:NIGHTSTOP}}, 
+                  hysteresis: {{input:HYSTERESIS}},
+                  absencereduction: {{input:ABSENCEREDUCTION}},
+                  greenincrease: {{input:GREENINCREASE}},
+                  nightstart: {{input:NIGHTSTART}},
+                  nightstop: {{input:NIGHTSTOP}},
                   nightreduction: {{input:NIGHTREDUCTION}},
                   windowcontact: {{input:WINDOWCONTACT}},
                   windowDelayMin: {{input:WINDOW_DELAY_MIN}},

@@ -26,7 +26,8 @@ function lhlab_temperature_window_monitor(config, onNotify, onClear) {
     throw new Error('Temperatur-Fensteralarm: Alarm-Item unterschiedlich konfiguriert.');
   }
   if (!state) {
-    state = { signature, generation: 0, coldSince: null, sent: 0, lastSent: null,
+    state = { signature, generation: 0, openedAt: null, openingDurationKnown: false,
+      coldSince: null, sent: 0, lastSent: null,
       lastMessage: '', pendingClear: null };
     api.cache.private.put(key, state);
   }
@@ -71,8 +72,12 @@ function lhlab_temperature_window_monitor(config, onNotify, onClear) {
     cancel();
     if (alarm.state === 'ON' || state.pendingClear) {
       if (!state.pendingClear || state.pendingClear.clearanceReason !== reason) {
+        const minutes = reason === 'CLOSED' && state.openingDurationKnown && state.openedAt !== null
+          ? Math.max(0, Math.floor((Date.now() - state.openedAt) / 60000)) : null;
         state.pendingClear = event('CLEARED', reason === 'CLOSED'
-          ? label + ' ist wieder geschlossen.'
+          ? (minutes === null
+            ? label + ' ist wieder geschlossen. Die Öffnungsdauer ist unbekannt.'
+            : label + ' wurde nach ' + minutes + (minutes === 1 ? ' Minute' : ' Minuten') + ' geschlossen.')
           : 'Entwarnung: ' + label + ' ist weiterhin offen, aber die Temperatur liegt mit ' +
             temperature + ' °C wieder über der Grenze von ' + threshold + ' °C.', reason);
       }
@@ -81,6 +86,12 @@ function lhlab_temperature_window_monitor(config, onNotify, onClear) {
     state.coldSince = null;
     state.sent = 0;
     state.lastSent = null;
+    // Warm-up ends only the temperature condition, not the window's opening.
+    // Build/freeze the clearance before forgetting a confirmed closed interval.
+    if (reason === 'CLOSED') {
+      state.openedAt = null;
+      state.openingDurationKnown = false;
+    }
     if (state.pendingClear) {
       deliver(onClear, state.pendingClear);
       state.pendingClear = null;
@@ -94,7 +105,18 @@ function lhlab_temperature_window_monitor(config, onNotify, onClear) {
     if (alarm.type !== 'Switch') throw new Error('Temperatur-Fensteralarm: Alarm-Item muss Switch sein.');
     // This path deliberately does not read the sensor or evaluate the threshold.
     if (raw === 'CLOSED') { finish(alarm, source.label || sourceName, 'CLOSED'); return; }
-    if (raw !== 'OPEN') { suspend(alarm); return; }
+    if (raw !== 'OPEN') {
+      // The window could have closed and reopened while contact data was missing.
+      state.openingDurationKnown = false;
+      suspend(alarm);
+      return;
+    }
+    if (state.openedAt === null) {
+      // Observe the opening even while warm or while temperature/limit is missing.
+      // A restored alarm does not reveal the original opening instant.
+      state.openedAt = Date.now();
+      state.openingDurationKnown = alarm.state !== 'ON';
+    }
     if (state.coldSince === null && alarm.state === 'ON' && !state.pendingClear) {
       // A restored active alarm must not replay notifications or receive a new budget.
       state.sent = repeats + 1;

@@ -73,7 +73,61 @@ function verifyTemperatureWindow(vm, source, template) {
   assert(f.notices.every(e => e.id === 'alarm' && e.message.includes('20.5 °C')), 'Stable identity and threshold');
   f.source('CLOSED'); f.run(); f.run();
   assert(f.clears.length === 1 && f.clears[0].clearanceReason === 'CLOSED' && f.alarm() === 'OFF', 'One closure clearance');
+  assert(f.clears[0].message === 'Testfenster wurde nach 130 Minuten geschlossen.', 'Closure includes all time after reminder exhaustion');
   results.push('Fixed deadline, at most one timer, two reminders, exhausted budget and one clearance');
+
+  f = fixture(); f.source('CLOSED'); f.run(); f.source('OPEN'); f.temperature(22); f.run(); f.advance(40);
+  f.temperature(20); f.run(); f.advance(22.9);
+  assert(f.notices[0].message.includes('seit mindestens 10 Minuten'), 'Warning duration still starts at the cold condition');
+  f.source('CLOSED'); f.run();
+  assert(f.clears[0].message === 'Testfenster wurde nach 62 Minuten geschlossen.', 'Closure includes the warm period before the first cold warning');
+  f.source('OPEN'); f.run(); f.advance(11.7); f.source('CLOSED'); f.run();
+  assert(f.clears[1].message === 'Testfenster wurde nach 11 Minuten geschlossen.', 'Each confirmed new opening starts its own duration');
+  results.push('Closure counts the entire opening including an initial warm period; warnings keep their cold duration');
+
+  f = fixture(); f.temperature(22); f.run(); f.advance(60);
+  f.temperature(20); f.run(); f.advance(10); f.temperature(22); f.run(); f.advance(20);
+  f.temperature(20); f.run(); f.advance(13.9); f.source('CLOSED'); f.run();
+  assert(f.clears.length === 2 && f.clears[0].clearanceReason === 'WARM', 'Warm-up retains its existing distinct clearance');
+  assert(f.clears[1].message === 'Testfenster wurde nach 103 Minuten geschlossen.', 'Warm-up and a second cold cycle do not reset the opening');
+  assert(f.notices.map(e => e.kind).join() === 'NEW,NEW', 'Warm-up still resets the temperature-cycle budget');
+  results.push('Opening duration spans warm/cold cycles while temperature clearance and reminder budgets retain their behavior');
+
+  for (const missing of ['temperature', 'threshold']) {
+    f = fixture(); f.temperature(22); f.run(); f.advance(10);
+    if (missing === 'temperature') f.temperature(null); else f.threshold(null);
+    f.run(); f.advance(5); f.temperature(20); f.threshold(20.5); f.run(); f.advance(10);
+    f.source('CLOSED'); f.run();
+    assert(f.clears[0].message === 'Testfenster wurde nach 25 Minuten geschlossen.', 'Known OPEN contact retains opening time across missing ' + missing);
+  }
+  results.push('Missing temperature/threshold values suspend cold timers without losing a known opening instant');
+
+  f = fixture(); f.run(); f.advance(10); f.source('UNDEF'); f.run(); f.advance(5); f.source('OPEN'); f.run();
+  f.source('CLOSED'); f.run();
+  assert(f.clears[0].message === 'Testfenster ist wieder geschlossen. Die Öffnungsdauer ist unbekannt.', 'Contact gaps cannot establish continuous opening duration');
+  f.source('OPEN'); f.run(); f.advance(11); f.source('CLOSED'); f.run();
+  assert(f.clears[1].message === 'Testfenster wurde nach 11 Minuten geschlossen.', 'Confirmed closure resets uncertainty for the next opening');
+  results.push('Contact-data gaps report an unknown duration; the next confirmed opening is measured normally');
+
+  for (const observeActive of [false, true]) {
+    f = fixture(); f.items.get('alarm').state = 'ON';
+    if (observeActive) { f.run(); f.advance(60); }
+    f.source('CLOSED'); f.run();
+    assert(f.clears[0].message === 'Testfenster ist wieder geschlossen. Die Öffnungsdauer ist unbekannt.', 'A restored alarm must not invent its opening instant');
+  }
+  results.push('Restored active alarms explicitly report unknown total opening duration');
+
+  f = fixture({ delayMinutes: 1, repeats: 0 }); f.run(); f.advance(1.5); f.source('CLOSED'); let closureAttempts = 0;
+  try { f.run(f.notify, e => { if (++closureAttempts === 1) throw Error('Clear failed'); f.clears.push(e); }); } catch (error) {}
+  f.advance(5);
+  assert(closureAttempts === 2 && f.clears.length === 1 && !f.active().length, 'Failed closure retries without additional timers');
+  assert(f.clears[0].message === 'Testfenster wurde nach 1 Minute geschlossen.', 'Retry preserves the closure instant and singular minute');
+  results.push('Closure retries freeze total opening duration before resetting state and use singular minute wording');
+
+  f = fixture(); f.run(); f.source('CLOSED'); f.advance(10); f.source('OPEN'); f.run(); f.advance(10);
+  f.source('CLOSED'); f.run();
+  assert(f.clears[0].message === 'Testfenster wurde nach 10 Minuten geschlossen.', 'A closure seen by a timer resets the next opening duration');
+  results.push('A missed early-close trigger does not leak an old timestamp into the next opening');
 
   f = fixture(); f.source('CLOSED');
   for (let n = 0; n < 1000; n++) f.run();

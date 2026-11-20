@@ -222,8 +222,9 @@ references remain caller choices. This block itself never sends notifications.
 - Closing the window or temperature rising **above** the limit cancels the
   countdown and reminders. A later qualifying condition starts a new full delay.
   No hysteresis is applied; every crossing of the limit ends/starts a cycle.
-- Only an active alarm produces clearance. Window closure says the window is
-  closed. Temperature clearance explicitly says that the window is **still open**
+- Only an active alarm produces clearance. Window closure includes the **entire
+  observed opening duration** in completed minutes, for example
+  `Schlafzimmer Fenster wurde nach 63 Minuten geschlossen.` Temperature clearance explicitly says that the window is **still open**
   and reports the temperature and current limit. After a temperature clearance,
   closing the window produces no second clearance for that cycle.
 - Before a timed action, the block re-reads the contact, temperature and limit.
@@ -231,6 +232,20 @@ references remain caller choices. This block itself never sends notifications.
 - Alarm messages measure completed minutes from the start of the qualifying
   cold/open condition, which can be later than the window's opening. They include
   the current temperature and current limit.
+- The closure duration starts at the first valid OPEN observation, including any
+  initial warm period and subsequent warm/cold cycles. Temperature/threshold data
+  gaps do not reset it while the contact remains known OPEN. Closing resets it for
+  the next opening. Failed closure actions retain the original duration on retry.
+- A restored active alarm has no known opening instant. An unknown contact state
+  also makes continuous opening uncertain, since it could conceal closure and
+  reopening. In these cases closure explicitly reports that the opening duration
+  is unknown instead of guessing. The next confirmed closed/open cycle restores
+  normal measurement. Time before the first OPEN observation after loading a
+  script is not recoverable without additional historical data.
+
+The existing **aktueller Alarm → Meldung** value supplies the complete closure
+text. No timestamp blocks, variables or extra timers are required in rules.
+Install the updated YAML and regenerate affected saved Blockly scripts to use it.
 
 Connect seasonal/setpoint logic **directly to the temperature-limit input**.
 The generator wraps that expression in a function; it is evaluated only for an
@@ -255,6 +270,8 @@ An inactive closed/warm window keeps no timer. A qualifying window keeps at most
 one timer, reused across source events, until the next deadline/reminder. Only
 changed alarm states are posted; there are no normal info logs. State is kept in
 the script-private cache without JSON serialization on each event.
+Opening duration uses one additional timestamp and validity flag in that same
+state object; it adds no Item reads, persistence access or timer callbacks.
 
 Temperature state changes still invoke the containing rule, even with the window
 closed; the early return reduces its work rather than eliminating that invocation.

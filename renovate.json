@@ -1,0 +1,115 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "docker:enableMajor",
+    ":dependencyDashboard"
+  ],
+  "timezone": "Europe/Berlin",
+  "schedule": [
+    "* 0-5 * * 1"
+  ],
+  "minimumReleaseAge": "3 days",
+  "prConcurrentLimit": 3,
+  "rebaseWhen": "conflicted",
+  "ignoreUnstable": true,
+  "automerge": false,
+  "ignoreTests": false,
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
+  "labels": [
+    "dependencies"
+  ],
+  "ignorePaths": [
+    "archive/**",
+    "backups/**",
+    "certs/**",
+    "**/node_modules/**",
+    "**/.lint-venv/**",
+    "**/.lint-tools/**",
+    ".security-reports/**",
+    "docker-compose.local.yml",
+    "docker-compose.yml.pi5",
+    ".env",
+    "smab.env"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update native tool versions and their per-platform SHA-256 checksums together",
+      "managerFilePatterns": [
+        "/^lint-tools\\.json$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "\"repository\":\\s*\"(?<depName>[^\"]+)\"[\\s\\S]*?\"assets\":\\s*\\{[\\s\\S]*?\\n    \\}",
+        "\"version\":\\s*\"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\",\\s*\"sha256\":\\s*\"(?<currentDigest>[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "github-release-attachments",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^tests/dependency-check\\.py$/"
+      ],
+      "matchStrings": [
+        "IMAGE = \"(?<depName>ghcr.io/renovatebot/renovate):(?<currentValue>[\\d.]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "ubuntu"
+      ],
+      "allowedVersions": "/^24\\.04$/"
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest"
+      ],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Python check tools"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "influxdb"
+      ],
+      "allowedVersions": "/^2(?:\\.\\d+)*(?:-alpine)?$/",
+      "description": "InfluxDB 2 and Flux are required by persistence and maintenance tools"
+    },
+    {
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "groupName": null
+    }
+  ]
+}

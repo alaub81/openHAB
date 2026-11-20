@@ -50,5 +50,57 @@
         "filenameTemplate": "actionlint_{version}_darwin_arm64.tar.gz"
       }
     }
+  },
+  "gitleaks": {
+    "repository": "gitleaks/gitleaks",
+    "versionFlag": "version",
+    "assets": {
+      "linux-x86_64": {
+        "version": "v8.28.0",
+        "sha256": "a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb",
+        "filenameTemplate": "gitleaks_{version}_linux_x64.tar.gz"
+      },
+      "linux-arm64": {
+        "version": "v8.28.0",
+        "sha256": "eff65261156100e5d94a6b3dec313d532fddfe19ae1590bf7a2b4f2699128356",
+        "filenameTemplate": "gitleaks_{version}_linux_arm64.tar.gz"
+      },
+      "darwin-x86_64": {
+        "version": "v8.28.0",
+        "sha256": "edf5a507008b0d2ef4959575772772770586409c1f6f74dabf19cbe7ec341ced",
+        "filenameTemplate": "gitleaks_{version}_darwin_x64.tar.gz"
+      },
+      "darwin-arm64": {
+        "version": "v8.28.0",
+        "sha256": "d942f3ad147250c9edbaab3fed9e482f98d3b59ba10ae97b8d75647e3ade492c",
+        "filenameTemplate": "gitleaks_{version}_darwin_arm64.tar.gz"
+      }
+    }
+  },
+  "trivy": {
+    "repository": "aquasecurity/trivy",
+    "versionFlag": "--version",
+    "assets": {
+      "linux-x86_64": {
+        "version": "v0.70.0",
+        "sha256": "8b4376d5d6befe5c24d503f10ff136d9e0c49f9127a4279fd110b727929a5aa9",
+        "filenameTemplate": "trivy_{version}_Linux-64bit.tar.gz"
+      },
+      "linux-arm64": {
+        "version": "v0.70.0",
+        "sha256": "2f6bb988b553a1bbac6bdd1ce890f5e412439564e17522b88a4541b4f364fc8d",
+        "filenameTemplate": "trivy_{version}_Linux-ARM64.tar.gz"
+      },
+      "darwin-x86_64": {
+        "version": "v0.70.0",
+        "sha256": "52d531452b19e7593da29366007d02a810e1e0080d02f9cf6a1afb46c35aaa93",
+        "filenameTemplate": "trivy_{version}_macOS-64bit.tar.gz"
+      },
+      "darwin-arm64": {
+        "version": "v0.70.0",
+        "sha256": "68e543c51dcc96e1c344053a4fde9660cf602c25565d9f09dc17dd41e13b838a",
+        "filenameTemplate": "trivy_{version}_macOS-ARM64.tar.gz"
+      }
+    }
   }
 }

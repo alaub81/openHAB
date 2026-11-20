@@ -97,11 +97,18 @@ Markdown or LICENSE changes. Changes to workflows, tools, dependencies, Compose,
 fixtures or unknown paths run all behavior tests. Missing/unavailable bases and
 empty diffs also run all tests. Renames include both old and new paths.
 
+Secret scanning always runs. Upstream-image scans run for relevant image,
+workflow or security-tool changes, and on scheduled runs. Dependency-policy
+changes also run the strict Renovate validator and real dependency extraction
+in an isolated container. See [security and updates](../docs/security-and-updates.md)
+for commands, prerequisites, report handling and current baseline findings.
+
 The `CI required` job runs even after failures and cancellations. It accepts a
-skipped behavior job only when the planner explicitly selected documentation-only
-checks. Permissions remain read-only, actions are SHA-pinned, jobs have timeouts,
-and newer runs may cancel older runs of the same branch. No containers, images,
-tags or releases are started, built or published. This does not configure GitHub
+skipped behavior or image job only when the planner explicitly selected that
+subset. Secret-scan failures also block the summary. Permissions remain read-only, actions are SHA-pinned, jobs have timeouts,
+and newer runs may cancel older runs of the same branch. The dependency-policy
+check starts only the isolated validator container; application services are not
+started and no images, tags or releases are built or published. This does not configure GitHub
 branch protection or required-status enforcement.
 
 ## Optional real InfluxDB 2.9 checks

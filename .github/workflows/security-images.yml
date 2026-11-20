@@ -1,0 +1,40 @@
+name: Upstream image security
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Scan all public default images (amd64)
+        run: ./tools/image-security-check.sh .security-reports/trivy
+      - name: Preserve complete JSON and SARIF evidence
+        if: always() && hashFiles('.security-reports/trivy/**') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: upstream-trivy-amd64
+          path: .security-reports/trivy/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Upload SARIF where Code Scanning is available
+        if: always() && github.event_name != 'pull_request' && github.event.repository.private == false && hashFiles('.security-reports/trivy/*.sarif') != ''
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        with:
+          sarif_file: .security-reports/trivy

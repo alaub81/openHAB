@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from change_plan import changed_files, needs_tests
+from change_plan import changed_files, needs_tests, needs_image_scan, needs_dependency_check
 from source_checks import hygiene, markdown_links, markdown_examples
 from lint import ROOT, load_yaml
 
@@ -27,6 +27,9 @@ class ChangePlanTests(unittest.TestCase):
                                 "LINT_RESULT": lint,
                                 "TEST_RESULT": tests,
                                 "TESTS_REQUIRED": required,
+                                "SECRET_RESULT": "success",
+                                "IMAGES_REQUIRED": "false",
+                                "IMAGE_RESULT": "skipped",
                             },
                         )
                         accepted = lint == "success" and (
@@ -34,6 +37,60 @@ class ChangePlanTests(unittest.TestCase):
                             or (required == "false" and tests == "skipped")
                         )
                         self.assertEqual(result.returncode == 0, accepted)
+
+    def test_security_jobs_cannot_fail_or_skip_silently(self):
+        workflow = load_yaml((ROOT / ".github/workflows/lint.yml").read_text())
+        script = workflow["jobs"]["required"]["steps"][0]["run"]
+        for secret in ("success", "failure", "cancelled", "skipped"):
+            for image in ("success", "failure", "cancelled", "skipped"):
+                for required in ("true", "false", ""):
+                    result = subprocess.run(
+                        ["bash", "-e", "-c", script],
+                        check=False,
+                        env={
+                            "LINT_RESULT": "success",
+                            "TEST_RESULT": "success",
+                            "TESTS_REQUIRED": "true",
+                            "SECRET_RESULT": secret,
+                            "IMAGES_REQUIRED": required,
+                            "IMAGE_RESULT": image,
+                        },
+                    )
+                    accepted = secret == "success" and (
+                        (required == "true" and image == "success")
+                        or (required == "false" and image == "skipped")
+                    )
+                    self.assertEqual(result.returncode == 0, accepted)
+
+    def test_image_scan_triggers(self):
+        for files in (
+            None,
+            [],
+            ["docker-compose.advanced.yml"],
+            [".env.advanced.example"],
+            [".github/workflows/security-images.yml"],
+            ["tests/stack_images.py"],
+            ["tests/scan-images.sh"],
+            ["lint-tools.json"],
+            ["renovate.json"],
+            ["unknown-input"],
+            ["compose.yml"],
+        ):
+            self.assertTrue(needs_image_scan(files), files)
+        self.assertFalse(needs_image_scan(["README.md"]))
+        self.assertFalse(needs_image_scan(["tools/state-alarms/monitor.js"]))
+
+    def test_dependency_validation_covers_manifests_and_policies(self):
+        for name in (
+            "renovate.json",
+            "docker-compose.yml",
+            "tests/requirements-lint.txt",
+            "lint-tools.json",
+            ".github/dependabot.yml",
+            ".node-version",
+        ):
+            self.assertTrue(needs_dependency_check([name]), name)
+        self.assertFalse(needs_dependency_check(["README.md"]))
 
     def test_only_known_documentation_skips_behavior_tests(self):
         self.assertFalse(needs_tests(["README.md", "docs/setup.md", "LICENSE"]))

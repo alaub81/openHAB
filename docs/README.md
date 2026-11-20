@@ -39,6 +39,9 @@ Run repository-relative commands from the repository root unless stated otherwis
 
 ## Maintenance and development
 
+- [Security checks and dependency updates](security-and-updates.md) documents scan gates,
+  report retention, Renovate/Dependabot ownership and current baseline findings.
+
 - [Maintenance scripts](../scripts/README.md) documents explicit targets, credentials,
   dry runs and the effect of each administrative operation.
 - [Development tools](../tools/README.md) describes generators and component checks.

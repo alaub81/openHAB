@@ -29,3 +29,10 @@ upstream-only flaw through the affected project's private reporting channel.
 
 For ordinary setup questions and reproducible non-security bugs, use
 [GitHub issues](https://github.com/alaub81/openHAB/issues).
+
+## Automated checks
+
+See [security checks and dependency updates](docs/security-and-updates.md) for
+Gitleaks history checks, upstream-image Trivy gates, complete reports, known
+baseline findings and the division between Renovate and Dependabot. A red gate
+blocks the CI summary; it is not bypassed for third-party image findings.

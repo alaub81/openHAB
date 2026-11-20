@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 10
     outputs:
       tests: ${{ steps.plan.outputs.tests }}
+      images: ${{ steps.plan.outputs.images }}
+      dependencies: ${{ steps.plan.outputs.dependencies }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -61,10 +63,35 @@ jobs:
           node-version-file: .node-version
       - name: Run offline behavior checks
         run: ./tests/test-check.sh
+      - name: Validate Renovate and dependency extraction
+        if: needs.lint.outputs.dependencies == 'true'
+        run: .lint-venv/bin/python tests/dependency-check.py
+
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan committed changes for secrets
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: ./tools/secret-check.sh
+
+  images:
+    needs: lint
+    if: needs.lint.outputs.images == 'true'
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/security-images.yml
 
   required:
     name: CI required
-    needs: [lint, tests]
+    needs: [lint, tests, secrets, images]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 2
@@ -74,11 +101,21 @@ jobs:
           LINT_RESULT: ${{ needs.lint.result }}
           TESTS_REQUIRED: ${{ needs.lint.outputs.tests }}
           TEST_RESULT: ${{ needs.tests.result }}
+          SECRET_RESULT: ${{ needs.secrets.result }}
+          IMAGES_REQUIRED: ${{ needs.lint.outputs.images }}
+          IMAGE_RESULT: ${{ needs.images.result }}
         run: |
           test "$LINT_RESULT" = success
+          test "$SECRET_RESULT" = success
           if [ "$TESTS_REQUIRED" = true ]; then
             test "$TEST_RESULT" = success
           else
             test "$TESTS_REQUIRED" = false
             test "$TEST_RESULT" = skipped
+          fi
+          if [ "$IMAGES_REQUIRED" = true ]; then
+            test "$IMAGE_RESULT" = success
+          else
+            test "$IMAGES_REQUIRED" = false
+            test "$IMAGE_RESULT" = skipped
           fi

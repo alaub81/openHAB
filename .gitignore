@@ -12,6 +12,7 @@ AGENTS.md
 /.lint-venv/
 /.lint-tools/
 /.ruff_cache/
+/.security-reports/
 __pycache__/
 /certs/*.key
 /certs/*.crt

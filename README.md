@@ -177,6 +177,14 @@ Bridge-specific features and widgets are maintained in
 [BMW MQTT Bridge](https://github.com/alaub81/bmw-mqtt-bridge). The Advanced setup
 uses their published images; the base Compose file runs independently.
 
+## Dependency updates and security checks
+
+Renovate prepares regular updates; Dependabot retains alert-driven security
+updates. InfluxDB stays on version 2 for Flux compatibility. CI checks committed
+changes for secrets and scans upstream images when relevant inputs change;
+scheduled checks cover full history and current image tags. See
+[security gates, reports and known findings](docs/security-and-updates.md).
+
 ## License and security
 
 The repository's original code and documentation are available under the

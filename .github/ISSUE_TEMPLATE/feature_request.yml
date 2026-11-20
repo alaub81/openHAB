@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest an improvement to the stack, reusable openHAB components or tools.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the use case with synthetic examples. Keep credentials and
+        private installation details out of this public issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Who needs this capability, and what is difficult with the current behavior?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the affected component and a concrete example of using the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and compatibility
+      description: |
+        Describe workarounds considered and any requirements for devices,
+        add-ons or versions. Note effects on existing Items, widget/library UIDs,
+        configuration, persistent data or upgrades, if known.

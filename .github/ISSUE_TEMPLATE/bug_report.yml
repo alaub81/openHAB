@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible problem with this repository's stack, widgets, libraries or tools.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for problems in this repository. For an upstream openHAB,
+        binding or container-image defect, report it to the responsible project.
+        Report vulnerabilities privately through the
+        [security policy](https://github.com/alaub81/openHAB/blob/master/SECURITY.md).
+        Remove passwords, tokens, private addresses and installation data from
+        examples, logs and screenshots. Do not attach a complete local ENV file.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Docker Compose stack or service connections
+        - MainUI widget
+        - Blockly library
+        - Maintenance script or development tool
+        - Documentation or repository checks
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Actual and expected behavior
+      description: Describe what happened and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal example using synthetic Item names and data where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Versions and setup
+      description: |
+        Include the repository commit, openHAB version, host OS/architecture and
+        relevant component or image versions. For Compose issues, name the files
+        and profiles used; for widgets/libraries, give the component UID and
+        required add-ons. Describe a fresh installation versus an update.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics
+      description: Include only relevant log excerpts, errors and checks already attempted.
+      render: text

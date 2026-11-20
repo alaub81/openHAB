@@ -185,8 +185,21 @@ changes for secrets; scheduled checks cover the full Git history. Third-party
 container images are not scanned in this repository. See
 [security checks and known history findings](docs/security-and-updates.md).
 
-## License and security
+## Help and security
+
+For setup problems or reproducible bugs, use the
+[issue templates](https://github.com/alaub81/openHAB/issues/new/choose). Include
+the repository commit, relevant versions, reproduction steps and redacted
+diagnostics. Use the feature-request form for proposed improvements.
+Report vulnerabilities privately as described in the [security policy](SECURITY.md).
+
+## Support this project
+
+If this project is useful to you, you can optionally support its maintenance
+through [Buy Me a Coffee](https://www.buymeacoffee.com/alaub81).
+
+## License and credits
 
 The repository's original code and documentation are available under the
 [MIT License](LICENSE). Bundled service images and other external projects retain
-their own licenses. See the [security policy](SECURITY.md) for private reports.
+their own licenses.

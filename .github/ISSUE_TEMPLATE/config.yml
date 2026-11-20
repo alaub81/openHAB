@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/alaub81/openHAB/security/advisories
+    about: Use private vulnerability reporting instead of a public issue; see SECURITY.md.

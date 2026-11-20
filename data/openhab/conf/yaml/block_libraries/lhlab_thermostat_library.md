@@ -13,6 +13,18 @@ the MQTT topics use text blocks. General numeric control defaults such as
 hysteresis, offsets, and window delays are unchanged. Updating the library does
 not overwrite inputs already saved in existing rules.
 
+## Optional window contacts
+
+All three thermostat blocks use `undefined` as the default for the optional
+window-contact input. This means no window contact is configured and no window
+interlock is applied. The helpers already handle this value without looking up
+an Item. Connect an Item selection block to enable monitoring of a contact or
+contact group; existing connected inputs remain unchanged.
+
+Updating the library does not replace the `MyItem` shadow in saved rules. For an
+unset window-contact input, replace that shadow with the `undefined` block and
+save the rule to regenerate its JavaScript. Keep any actual contact selection.
+
 ## Configurable Shelly schedule profiles
 
 The **Shelly Walldisplay Thermostat Control** block provides five number fields:
@@ -39,18 +51,22 @@ and MQTT request contents are otherwise unchanged. Different devices can use
 different profile mappings in their respective rules. Schedule rule IDs inside
 Thing configuration are separate from these profile IDs.
 
-### Applying the update to an existing installation later
+### Configuring existing rules before later activation
 
 Updating the library file does not rewrite JavaScript already saved in a rule.
-For a later deployment, copy the YAML, reload MainUI, open each affected Shelly
-Blockly rule, set the five profile fields and MQTT inputs, then regenerate/save.
+Before using an existing Shelly Blockly rule with this version, reload MainUI,
+open the rule, set the five profile fields and MQTT inputs, then regenerate/save
+while keeping the rule disabled.
 Check the device's actual profile IDs before enabling the rule. Old block XML
 without the new fields must be completed; regenerated code does not silently
 retain the previous mapping. Do not use the historical library-split migration
 script for this behavior update.
 
-The change is prepared and verified locally with simulated Items, MQTT actions,
-and time. It has not been installed or tested against a live thermostat.
+The library definition was installed on 2026-11-20 and verified to match the
+repository file byte for byte. The four existing Shelly Walldisplay rules remain
+disabled and were not regenerated. Profile-selection behavior was verified
+locally with simulated Items, MQTT actions, and time; it has not been executed
+against a live thermostat.
 
 [lhlab_thermostat_library.yml](lhlab_thermostat_library.yml) adds an **OFF** option to the log-level selection in all three heating blocks:
 

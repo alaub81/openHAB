@@ -915,7 +915,7 @@ blocks:
             config:
               name: WINDOWCONTACT
               shadow: true
-              type: oh_item
+              type: oh_logic_undefined
           - component: PresetInput
             config:
               fields:
@@ -1397,7 +1397,7 @@ blocks:
             config:
               name: WINDOWCONTACT
               shadow: true
-              type: oh_item
+              type: oh_logic_undefined
           - component: PresetInput
             config:
               fields:
@@ -2028,5 +2028,5 @@ blocks:
             config:
               name: WINDOWCONTACT
               shadow: true
-              type: oh_item
+              type: oh_logic_undefined
       utilities: []

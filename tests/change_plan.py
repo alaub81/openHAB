@@ -14,11 +14,11 @@ def needs_tests(files):
     return any(not (name.endswith(".md") or name == "LICENSE") for name in files)
 
 
-def needs_image_scan(files):
+def needs_dependency_check(files):
+    # Dependency declarations and their extraction rules are checked together.
+    # Unknown inputs conservatively keep the validator enabled.
     if not files:
         return True
-    # Only known documentation/application sources can skip an upstream scan.
-    # Unknown paths may introduce new image inputs and therefore fail closed.
     known_sources = (
         "data/openhab/conf/",
         "scripts/",
@@ -31,15 +31,10 @@ def needs_image_scan(files):
         "tools/dwd-messages/",
         "tools/heatpump-daily/",
     )
-    for name in files:
-        if name.endswith(".md") or name == "LICENSE" or name.startswith(known_sources):
-            continue
-        return True
-    return False
-
-
-def needs_dependency_check(files):
-    return needs_image_scan(files) or bool(files and ".github/dependabot.yml" in files)
+    return any(
+        not (name.endswith(".md") or name == "LICENSE" or name.startswith(known_sources))
+        for name in files
+    )
 
 
 def changed_files(base):
@@ -66,7 +61,6 @@ def main():
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             output.write(f"tests={value}\n")
             output.write(f"dependencies={'true' if needs_dependency_check(files) else 'false'}\n")
-            output.write(f"images={'true' if needs_image_scan(files) else 'false'}\n")
 
 
 if __name__ == "__main__":

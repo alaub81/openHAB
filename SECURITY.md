@@ -33,6 +33,6 @@ For ordinary setup questions and reproducible non-security bugs, use
 ## Automated checks
 
 See [security checks and dependency updates](docs/security-and-updates.md) for
-Gitleaks history checks, upstream-image Trivy gates, complete reports, known
-baseline findings and the division between Renovate and Dependabot. A red gate
-blocks the CI summary; it is not bypassed for third-party image findings.
+Gitleaks history checks, known baseline findings and the division between
+Renovate and Dependabot. Third-party container images are not scanned in this
+Compose repository. Secret-scan failures block the CI summary.

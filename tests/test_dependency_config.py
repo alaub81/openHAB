@@ -6,7 +6,6 @@ import re
 import unittest
 
 from lint import ROOT, load_yaml
-from stack_images import stack_images
 
 CONFIG = json.loads((ROOT / "renovate.json").read_text())
 
@@ -21,7 +20,10 @@ class DependencyTests(unittest.TestCase):
             self.assertRegex(value, pattern)
         for value in ("1.8", "3", "3.0-alpine", "latest", "2.9-rc1"):
             self.assertNotRegex(value, pattern)
-        self.assertRegex(stack_images()["influxdb"].split(":")[1], pattern)
+        image = load_yaml((ROOT / "docker-compose.yml").read_text())["services"]["influxdb"][
+            "image"
+        ]
+        self.assertRegex(image.split(":")[1], pattern)
 
     def test_dependabot_is_security_only_without_regular_delay(self):
         bot = load_yaml((ROOT / ".github/dependabot.yml").read_text())
@@ -66,23 +68,6 @@ class DependencyTests(unittest.TestCase):
             for a in t["assets"].values()
         )
         self.assertEqual(extracted, expected)
-
-    def test_public_image_inventory_never_uses_local_env(self):
-        images = stack_images()
-        self.assertEqual(
-            set(images),
-            {
-                "openhab",
-                "mosquitto",
-                "influxdb",
-                "postgres",
-                "grafana",
-                "renderer",
-                "sma-mqtt-bridge",
-                "bmw-mqtt-bridge",
-            },
-        )
-        self.assertTrue(all("$" not in value for value in images.values()))
 
 
 if __name__ == "__main__":

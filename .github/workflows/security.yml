@@ -2,8 +2,7 @@ name: Scheduled security
 
 on:
   schedule:
-    - cron: '0 3 * * 1' # Scan upstream images weekly, including mutable latest tags.
-    - cron: '0 3 1 * *' # Scan the complete secret history monthly as well.
+    - cron: '0 3 1 * *' # Scan the complete secret history monthly.
   workflow_dispatch:
 
 permissions:
@@ -15,7 +14,6 @@ concurrency:
 
 jobs:
   secrets:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 1 * *'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -24,8 +22,3 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - run: ./tools/secret-check.sh --full
-  images:
-    permissions:
-      contents: read
-      security-events: write
-    uses: ./.github/workflows/security-images.yml

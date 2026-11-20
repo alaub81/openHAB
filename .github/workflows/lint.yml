@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 10
     outputs:
       tests: ${{ steps.plan.outputs.tests }}
-      images: ${{ steps.plan.outputs.images }}
       dependencies: ${{ steps.plan.outputs.dependencies }}
     steps:
       - name: Check out repository
@@ -81,17 +80,9 @@ jobs:
           HEAD_SHA: ${{ github.sha }}
         run: ./tools/secret-check.sh
 
-  images:
-    needs: lint
-    if: needs.lint.outputs.images == 'true'
-    permissions:
-      contents: read
-      security-events: write
-    uses: ./.github/workflows/security-images.yml
-
   required:
     name: CI required
-    needs: [lint, tests, secrets, images]
+    needs: [lint, tests, secrets]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 2
@@ -102,8 +93,6 @@ jobs:
           TESTS_REQUIRED: ${{ needs.lint.outputs.tests }}
           TEST_RESULT: ${{ needs.tests.result }}
           SECRET_RESULT: ${{ needs.secrets.result }}
-          IMAGES_REQUIRED: ${{ needs.lint.outputs.images }}
-          IMAGE_RESULT: ${{ needs.images.result }}
         run: |
           test "$LINT_RESULT" = success
           test "$SECRET_RESULT" = success
@@ -112,10 +101,4 @@ jobs:
           else
             test "$TESTS_REQUIRED" = false
             test "$TEST_RESULT" = skipped
-          fi
-          if [ "$IMAGES_REQUIRED" = true ]; then
-            test "$IMAGE_RESULT" = success
-          else
-            test "$IMAGES_REQUIRED" = false
-            test "$IMAGE_RESULT" = skipped
           fi

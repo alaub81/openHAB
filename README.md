@@ -181,9 +181,9 @@ uses their published images; the base Compose file runs independently.
 
 Renovate prepares regular updates; Dependabot retains alert-driven security
 updates. InfluxDB stays on version 2 for Flux compatibility. CI checks committed
-changes for secrets and scans upstream images when relevant inputs change;
-scheduled checks cover full history and current image tags. See
-[security gates, reports and known findings](docs/security-and-updates.md).
+changes for secrets; scheduled checks cover the full Git history. Third-party
+container images are not scanned in this repository. See
+[security checks and known history findings](docs/security-and-updates.md).
 
 ## License and security
 

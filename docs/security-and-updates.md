@@ -1,9 +1,15 @@
 # Security checks and dependency updates
 
 This repository consumes upstream images; it does not build or release its own.
-Security gates assess the public defaults in Git, not a private installation's
-local overrides, credentials or running containers. Passing a gate is not proof
-of a vulnerability-free deployment.
+Security checks cover this repository's code and committed history. Third-party
+container images are not scanned here, including optional bridge images. Their
+maintainers publish image fixes and rebuilds. This Compose-only profile
+uses Renovate for version updates and Dependabot for supported security alerts;
+it does not claim that a dependency update makes a deployment vulnerability-free.
+
+The decision to omit upstream-image scans was explicitly requested by the
+repository owner on 2026-11-20. No repository-local image gate or image-scan
+schedule is maintained. Existing scan artifacts remain historical evidence.
 
 ## Secret scanning
 
@@ -26,51 +32,6 @@ file in a later commit does not revoke credentials or erase older commits.
 There are no blanket Gitleaks exceptions. History rewriting is a separate,
 explicitly coordinated migration.
 
-## Upstream image gate
-
-```bash
-./tools/image-security-check.sh .security-reports/trivy
-```
-
-Use the prerequisites in the [test guide](../tests/README.md). The command also
-requires jq and downloads the pinned Trivy tool and current vulnerability
-metadata on first use. It contacts public registries without starting services
-or using a Docker daemon. The eight images come from the base and Advanced
-Compose files and the public Advanced ENV template; local `.env`, `smab.env`,
-Docker state and installed image caches never select the scan targets.
-
-CI scans these images when public Compose/image inputs, scan tooling, workflows
-or dependency policy change. Unknown bases and empty diffs scan everything.
-The scheduled workflow scans all images every Monday at 03:00 UTC, monthly
-alongside the history scan, and on manual dispatch. This covers mutable `latest`
-tags even without repository changes. It downloads metadata; it does not rebuild
-upstream images or update a running installation.
-
-For each image, one full vulnerability scan creates raw JSON with all severity
-levels and unfixed findings. SARIF and the gate are derived from that JSON.
-Only findings with a nonempty fixed version and severity HIGH or CRITICAL block
-the gate. There are currently no vulnerability exceptions. Do not lower severity
-or hide packages merely to make CI green. Scan/database/conversion errors also
-fail; other images continue where possible to preserve evidence.
-
-Complete JSON, SARIF and derived gate JSON are retained as Actions artifacts for
-seven days, including when the gate fails. Categories identify image and scan
-platform. SARIF uploads to Code Scanning run on public non-PR events; PRs and
-repositories without Code Scanning retain the full SARIF artifact instead.
-No `continue-on-error` overrides the vulnerability gate.
-
-The automated scan platform is `linux/amd64`. This is a documented, bounded
-coverage choice for consumed images, not a multiarch release or runtime support
-promise. ARM deployments require separate architecture-specific checks:
-
-```bash
-SCAN_PLATFORM=linux/arm64 ./tools/image-security-check.sh .security-reports/trivy-arm64
-```
-
-Coverage exception owner: Andreas Laub. Review by 2027-02-20, including the
-renderer and optional bridges, before promising automated arm64 coverage.
-Pinned tool versions/checksums are maintained in `lint-tools.json`.
-
 ## Renovate and Dependabot responsibilities
 
 Renovate owns regular Docker/Compose, GitHub Actions, Python check-tool and Node
@@ -84,7 +45,7 @@ release age and at most three concurrently open PRs. Related Actions and Python
 check-tool minor/patch updates are grouped separately. Unstable releases are
 excluded for stable dependencies. Major updates require manual review. Automerge
 is disabled until a dependency-specific allowlist has meaningful runtime checks;
-Compose syntax and an upstream vulnerability scan alone are insufficient.
+Compose syntax checks alone are insufficient.
 
 InfluxDB remains on the **2.x** line because persistence and maintenance tools
 use Flux. Renovate rejects 1.x, 3.x, prerelease and `latest` tags. Dependabot also
@@ -96,8 +57,8 @@ alert-driven security PRs. Its configured ecosystems have a regular version-PR
 limit of zero. Renovate vulnerability PRs are disabled to avoid duplicate
 ownership. Security PRs have no added three-day age restriction, Monday window
 or cooldown. GitHub ecosystem/advisory support determines which alerts can be
-fixed automatically; an upstream Trivy finding does not guarantee a Dependabot
-PR for that image.
+fixed automatically. Upstream image vulnerabilities may require a maintainer
+release and manual review even when no Dependabot PR is available.
 
 The normal offline suite tests policy boundaries and native dependency
 extraction. To run Renovate's actual strict validator and extract-only mode:
@@ -121,7 +82,6 @@ Before considering the rollout active on the default branch, verify:
 - Dependabot Alerts, the dependency graph and Dependabot Security Updates remain
   enabled in [repository security settings](https://github.com/alaub81/openHAB/settings/security_analysis).
 - The Dependency Dashboard and first scheduled Renovate run appear after rollout.
-- Actions can upload artifacts; Code Scanning accepts SARIF where available.
 
 These account settings cannot be inferred from configuration files. During this
 change, the connector confirmed admin access, default branch `master`, public
@@ -136,14 +96,8 @@ Local baseline on 2026-11-20:
   findings in formerly tracked ENV/maintenance files. They remain unresolved;
   a monthly full-history scan will fail until reviewed. No secrets were copied
   into repository documentation or scan exceptions.
-- Trivy scanned all eight public default images for amd64. Fixable HIGH/CRITICAL
-  occurrences were found in openHAB (35), InfluxDB 2 (88), PostgreSQL (45), Grafana
-  (20) and the SMA bridge (1). These are per-image occurrences, not deduplicated
-  CVE counts. All complete JSON/SARIF reports are kept locally in the ignored
-  `.security-reports/trivy/` directory. The image gate currently fails as intended.
 
-These are findings to resolve, not a conformance claim. Unfixed and lower-severity
-findings are also present in the complete reports, including for images with no
-blocking finding. Review current upstream releases, fixes and exploitability
-separately. Historical credential status and production upgrades require owner
-review; this package changes neither credentials nor deployed images.
+Historical credential status and production upgrades require owner review.
+Removing the image scanner does not resolve upstream vulnerabilities. Upstream
+maintainers publish image fixes; deployment operators review and apply updates.
+This package changes neither credentials nor deployed images.

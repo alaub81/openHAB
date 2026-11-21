@@ -144,7 +144,10 @@ darker text without hardcoding white. Cell text colors remain unchanged; traffic
 
 Day traffic signals now have a minimum height of 22 px with approximately 5 px
 lamps, a theme-aware housing border. The active lamp uses its configured status color
-with a soft 3 px glow, without an extra outline or brightness filter.
+with a stronger 4 px glow and a fine outline blended from the status and theme
+text colors. The outline stays darker in light mode and lighter in dark mode
+to distinguish the active lamp even when the glow is hard to see. No brightness
+filter is applied.
 The existing `trafficGlow` setting can disable the glow. Inactive lamps remain visible at bounded lower opacity. Unknown signals
 stay neutral. The remaining-forecast signal has a 14 px minimum; its reserved
 footer space grows with the signal. Configured status colors, thresholds, unit

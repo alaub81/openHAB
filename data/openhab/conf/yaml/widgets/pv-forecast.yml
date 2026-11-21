@@ -345,7 +345,7 @@ widgets:
         .smab-fc-lamp-green { background: var(--fc-signal-green); color: var(--fc-signal-green); }
 
         .smab-fc-traffic-red > .smab-fc-lamp-red, .smab-fc-traffic-orange > .smab-fc-lamp-orange, .smab-fc-traffic-green >
-        .smab-fc-lamp-green { opacity: 1; filter: var(--fc-signal-active-filter); box-shadow: var(--fc-signal-glow); }
+        .smab-fc-lamp-green { opacity: 1; filter: var(--fc-signal-active-filter); outline: .75px solid color-mix(in srgb, currentColor 55%, var(--fc-primary)); outline-offset: 0; box-shadow: var(--fc-signal-glow); }
 
         .smab-fc-traffic-unknown > .smab-fc-lamp { background: var(--fc-signal-unknown); opacity: .65; }
 
@@ -413,7 +413,7 @@ widgets:
         --fc-signal-inactive: '=Number.isFinite(Number(props.trafficInactiveOpacity)) && Number(props.trafficInactiveOpacity)
           >= 0 && Number(props.trafficInactiveOpacity) <= 1 ? Number(props.trafficInactiveOpacity) : 0.25'
         --fc-signal-active-filter: '=''none'''
-        --fc-signal-glow: '=props.trafficGlow === false ? ''none'' : ''0 0 3px currentColor'''
+        --fc-signal-glow: '=props.trafficGlow === false ? ''none'' : ''0 0 4px currentColor'''
         --fc-signal-housing: '=(!props.trafficHousingColor || props.trafficHousingColor
           === ''color-mix(in srgb, var(--fc-muted) 55%, transparent)'') ? ''color-mix(in srgb, var(--fc-primary) 14%, var(--fc-surface))''
           : props.trafficHousingColor || ''color-mix(in srgb, var(--fc-muted) 55%, transparent)'''

@@ -331,226 +331,419 @@ widgets:
           context: "item"
           groupName: "warning5"
           description: "Verhaltenshinweise; leere Inhalte werden ausgeblendet."
+        -
+          name: "displayMode"
+          label: "Darstellung"
+          type: "TEXT"
+          default: "full"
+          options:
+            - value: "full"
+              label: "Vollständig – aufklappbare Warnungen"
+            - value: "overview"
+              label: "Display – Übersicht"
+            - value: "compact"
+              label: "Display – Kompakt"
     component: "f7-card"
     config:
-      class: "dwd-warning-widget"
+      class: "='dwd-warning-widget' + (props.displayMode === 'overview' || props.displayMode === 'compact' ? ' dwd-display-card' : '')"
       stylesheet: |
         .dwd-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 16px; }
         .dwd-heading { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
-        .dwd-count { border-radius: 12px; background: var(--f7-list-item-selected-bg-color, rgba(128,128,128,.12)); padding: 4px 10px; font-size: 12px; }
+        .dwd-count { border-radius: 12px; background: color-mix(in srgb, var(--dwd-primary) 14%, var(--dwd-surface)); color: var(--dwd-primary); font-weight: 500; padding: 4px 10px; font-size: 12px; }
         .dwd-notice { margin: 0 16px 12px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
         .dwd-list { margin: 0 12px 12px; --f7-list-bg-color: transparent; --f7-list-item-title-white-space: normal; --f7-list-item-min-height: 72px; }
         .dwd-list ul::before, .dwd-list ul::after { display: none; }
-        .dwd-warning { margin-top: 8px; border-radius: 10px; border-left: 4px solid; background: var(--f7-card-bg-color); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(128,128,128,.14); }
+        .dwd-warning { margin-top: 8px; border-radius: 10px; border-left: 4px solid; background: var(--f7-card-bg-color); overflow: hidden; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dwd-primary) 22%, transparent); }
         .dwd-warning > .item-link > .item-content { padding-left: 12px; }
         .dwd-warning .item-inner { min-width: 0; }
         .dwd-warning .item-title { min-width: 0; width: 100%; white-space: normal; }
         .dwd-title-line { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
         .dwd-event { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
-        .dwd-level, .dwd-time { font-size: 12px; opacity: .85; white-space: normal; overflow-wrap: anywhere; }
+        .dwd-level, .dwd-time { font-size: 12px; color: var(--dwd-secondary); font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
         .dwd-time { margin-top: 4px; }
         .dwd-detail { padding: 8px 16px 16px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
         .dwd-detail-heading { display: block; font-weight: 600; margin-bottom: 10px; }
         .dwd-instruction-title { display: block; font-weight: 600; margin-top: 14px; margin-bottom: 4px; }
         .dwd-empty { display: flex; align-items: center; gap: 10px; padding: 0 16px 16px; font-size: 14px; }
+        .dwd-display { --dwd-unit: clamp(.8px, min(.5cqw, .29cqh), 1.4px); box-sizing: border-box; display: flex; flex-direction: column; height: 100%; padding: calc(12 * var(--dwd-unit)); gap: calc(8 * var(--dwd-unit)); color: var(--f7-text-color); text-decoration: none; width: 100%; align-items: stretch; white-space: normal; }
+        .dwd-display:focus-visible { outline: 2px solid var(--f7-theme-color); outline-offset: -3px; }
+        .dwd-display-header { display: flex; align-items: center; justify-content: space-between; gap: calc(8 * var(--dwd-unit)); font-size: calc(14 * var(--dwd-unit)); min-width: 0; line-height: 1.25; }
+        .dwd-display-heading { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dwd-display .dwd-count { font-size: calc(12 * var(--dwd-unit)); padding: calc(4 * var(--dwd-unit)) calc(10 * var(--dwd-unit)); flex-shrink: 0; }
+        .dwd-display-body { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: calc(8 * var(--dwd-unit)); }
+        .dwd-display-row { display: flex; align-items: center; gap: calc(10 * var(--dwd-unit)); min-width: 0; border-left: 3px solid; padding-left: calc(10 * var(--dwd-unit)); flex-shrink: 0; }
+        .dwd-display-row > .icon, .dwd-display-row > img { width: calc(30 * var(--dwd-unit)) !important; height: calc(30 * var(--dwd-unit)) !important; font-size: calc(30 * var(--dwd-unit)) !important; flex-shrink: 0; }
+        .dwd-display-copy { min-width: 0; flex: 1; }
+        .dwd-display-event { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: calc(18 * var(--dwd-unit)); font-weight: 600; line-height: 1.15; }
+        .dwd-display-level, .dwd-display-time { display: block; font-size: calc(11 * var(--dwd-unit)); line-height: 1.3; }
+        .dwd-display-level, .dwd-display-time { color: var(--dwd-secondary); font-weight: 500; }
+        .dwd-display-footer { display: flex; justify-content: space-between; gap: calc(8 * var(--dwd-unit)); font-size: calc(12 * var(--dwd-unit)); color: var(--dwd-secondary); font-weight: 500; line-height: 1.2; }
+        .dwd-display-notice { font-size: calc(12 * var(--dwd-unit)); line-height: 1.3; }
+        .dwd-display-state { display: flex; align-items: center; gap: calc(12 * var(--dwd-unit)); font-size: calc(18 * var(--dwd-unit)); line-height: 1.25; }
+        .dwd-display-state > .icon, .dwd-display-state > img { width: calc(32 * var(--dwd-unit)) !important; height: calc(32 * var(--dwd-unit)) !important; font-size: calc(32 * var(--dwd-unit)) !important; flex-shrink: 0; }
+        .dwd-display-compact { --dwd-unit: clamp(.8px, min(.56cqw, .595cqh), 1.35px); padding: calc(8 * var(--dwd-unit)) calc(10 * var(--dwd-unit)); gap: calc(4 * var(--dwd-unit)); }
+        .dwd-display-compact .dwd-display-header { font-size: calc(11 * var(--dwd-unit)); }
+        .dwd-display-compact .dwd-display-body { gap: calc(5 * var(--dwd-unit)); }
+        .dwd-display-compact .dwd-display-row { gap: calc(7 * var(--dwd-unit)); padding-left: calc(6 * var(--dwd-unit)); }
+        .dwd-display-compact .dwd-display-row > .icon, .dwd-display-compact .dwd-display-row > img { width: calc(22 * var(--dwd-unit)) !important; height: calc(22 * var(--dwd-unit)) !important; font-size: calc(22 * var(--dwd-unit)) !important; }
+        .dwd-display-compact .dwd-display-event { display: block; font-size: calc(14 * var(--dwd-unit)); line-height: 1.15; white-space: nowrap; text-overflow: ellipsis; }
+        .dwd-display-compact .dwd-display-time { font-size: calc(10 * var(--dwd-unit)); line-height: 1.2; }
+        .dwd-display-compact .dwd-display-footer { font-size: calc(10 * var(--dwd-unit)); }
+        .dwd-display-compact .dwd-count { font-size: calc(10 * var(--dwd-unit)); padding: calc(2 * var(--dwd-unit)) calc(6 * var(--dwd-unit)); }
       style:
+        container-type: "=props.displayMode === 'overview' || props.displayMode === 'compact' ? 'size' : 'normal'"
+        height: "=props.displayMode === 'overview' || props.displayMode === 'compact' ? '100%' : 'auto'"
+        min-height: "=props.displayMode === 'overview' || props.displayMode === 'compact' ? '0' : 'auto'"
+        margin: "=props.displayMode === 'overview' || props.displayMode === 'compact' ? '0' : ''"
         overflow: "hidden"
         color: "var(--f7-text-color)"
+        --dwd-primary: "var(--f7-text-color)"
+        --dwd-surface: "var(--f7-card-bg-color)"
+        --dwd-secondary: "color-mix(in srgb, var(--dwd-primary) 85%, var(--dwd-surface))"
     slots:
       default:
         -
           component: "oh-context"
           config:
             functions:
-              state: "=(name) => name && items[name] && items[name].state && items[name].state !== 'NULL' && items[name].state !== 'UNDEF' ? items[name].state.trim() : ''"
-              demo: "=() => !!props.testMode && props.testMode !== 'live'"
-              live: "= (read) => [1,2,3,4,5].filter((n) => !!props['alarm' + n]).map((n) => ({slot: n, alarm: read(props['alarm' + n]), event: read(props['event' + n]), severity: read(props['severity' + n]), from: read(props['from' + n]), to: read(props['to' + n]), headline: read(props['headline' + n]), description: read(props['description' + n]), instruction: read(props['instruction' + n])}))"
-              rank: "=(severity) => ({Extreme: 4, Severe: 3, Moderate: 2, Minor: 1})[severity] || 0"
-              warnings: "= (demo, live, rank, samples) => (demo ? samples.slice(0, Number(props.testMode)).map((w, i) => ({slot: i + 1, alarm: 'ON', event: w.event, severity: w.severity, from: dayjs().startOf('day').add(14 + i, 'hour').toISOString(), to: dayjs().startOf('day').add(22 + i * 3, 'hour').toISOString(), headline: w.headline, description: w.description, instruction: w.instruction})) : live.filter((w) => w.alarm === 'ON')).sort((a,b) => rank(b.severity) - rank(a.severity) || (dayjs(a.from).isValid() ? dayjs(a.from).valueOf() : 0) - (dayjs(b.from).isValid() ? dayjs(b.from).valueOf() : 0) || a.slot - b.slot)"
-              unknown: "= (demo, live) => !demo && live.filter((w) => w.alarm !== 'ON' && w.alarm !== 'OFF').length > 0"
-              color: "=(severity) => ({Minor: '#d2a000', Moderate: '#e78619', Severe: '#e04444', Extreme: '#a855b5'})[severity] || 'var(--f7-color-gray)'"
-              level: "=(severity) => ({Minor: 'Wetterwarnung', Moderate: 'Markantes Wetter', Severe: 'Unwetter', Extreme: 'Extremes Unwetter'})[severity] || 'Warnstufe unbekannt'"
-              icon: "=(event) => /TEST/i.test(event) ? 'material:warning' : /GEWITTER/i.test(event) ? 'f7:cloud_bolt' : /GLÄTTE|GLATTEIS|GLAETTE/i.test(event) ? 'material:warning' : /FROST/i.test(event) ? 'f7:thermometer_snowflake' : /SCHNEEVERWEHUNG|SCHNEEFALL/i.test(event) ? 'f7:cloud_snow' : /TAUWETTER/i.test(event) ? 'material:opacity' : /REGEN/i.test(event) ? 'f7:cloud_rain' : /BÖEN|BOEEN|WIND|STURM|ORKAN/i.test(event) ? 'f7:wind' : /NEBEL/i.test(event) ? 'f7:cloud_fog' : /HITZE/i.test(event) ? 'f7:thermometer_sun' : /UV/i.test(event) ? 'f7:sun_max' : 'material:warning'"
-              short: "=(event) => !event ? 'Wetterwarnung' : /GEWITTER/i.test(event) ? (/EXTREMES GEWITTER/i.test(event) ? 'Extremes Gewitter' : /SCHWERES GEWITTER/i.test(event) ? 'Schweres Gewitter' : /STARKES GEWITTER/i.test(event) ? 'Starkes Gewitter' : 'Gewitter') : event.replace(/^VORABINFORMATION\\s+/i, '').charAt(0).toUpperCase() + event.replace(/^VORABINFORMATION\\s+/i, '').slice(1).toLowerCase()"
-              date: "=(value) => !value || !dayjs(value).isValid() ? 'Zeit unbekannt' : (dayjs(value).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD') ? 'Heute' : dayjs(value).format('YYYY-MM-DD') === dayjs().add(1,'day').format('YYYY-MM-DD') ? 'Morgen' : dayjs(value).format('DD.MM.YYYY')) + ' ' + dayjs(value).format('HH:mm')"
+              display: =() => props.displayMode === 'overview' || props.displayMode === 'compact'
+              period: '=(from, to, date) => from && dayjs(from).isValid() && dayjs(from).isAfter(dayjs()) ? ''Ab '' + date(from) + '' · bis '' + date(to) : ''Bis '' + date(to)'
+              state: '=(name) => name && items[name] && items[name].state && items[name].state !== ''NULL'' && items[name].state !== ''UNDEF'' ? items[name].state.trim() : '''''
+              demo: =() => !!props.testMode && props.testMode !== 'live'
+              live: '= (read) => [1,2,3,4,5].filter((n) => !!props[''alarm'' + n]).map((n) => ({slot: n, alarm: read(props[''alarm'' + n]), event: read(props[''event'' + n]), severity: read(props[''severity''
+                + n]), from: read(props[''from'' + n]), to: read(props[''to'' + n]), headline: read(props[''headline'' + n]), description: read(props[''description'' + n]), instruction: read(props[''instruction''
+                + n])}))'
+              rank: '=(severity) => ({Extreme: 4, Severe: 3, Moderate: 2, Minor: 1})[severity] || 0'
+              warnings: '= (demo, live, rank, samples) => (demo ? samples.slice(0, Number(props.testMode)).map((w, i) => ({slot: i + 1, alarm: ''ON'', event: w.event, severity: w.severity, from:
+                dayjs().startOf(''day'').add(14 + i, ''hour'').toISOString(), to: dayjs().startOf(''day'').add(22 + i * 3, ''hour'').toISOString(), headline: w.headline, description: w.description,
+                instruction: w.instruction})) : live.filter((w) => w.alarm === ''ON'')).sort((a,b) => rank(b.severity) - rank(a.severity) || (dayjs(a.from).isValid() ? dayjs(a.from).valueOf() :
+                0) - (dayjs(b.from).isValid() ? dayjs(b.from).valueOf() : 0) || a.slot - b.slot)'
+              unknown: = (demo, live) => !demo && live.filter((w) => w.alarm !== 'ON' && w.alarm !== 'OFF').length > 0
+              color: '=(severity) => ({Minor: ''#d2a000'', Moderate: ''#e78619'', Severe: ''#e04444'', Extreme: ''#a855b5''})[severity] || ''var(--f7-color-gray)'''
+              level: '=(severity) => ({Minor: ''Wetterwarnung'', Moderate: ''Markantes Wetter'', Severe: ''Unwetter'', Extreme: ''Extremes Unwetter''})[severity] || ''Warnstufe unbekannt'''
+              icon: '=(event) => /TEST/i.test(event) ? ''material:warning'' : /GEWITTER/i.test(event) ? ''f7:cloud_bolt'' : /GLÄTTE|GLATTEIS|GLAETTE/i.test(event) ? ''material:warning'' : /FROST/i.test(event)
+                ? ''f7:thermometer_snowflake'' : /SCHNEEVERWEHUNG|SCHNEEFALL/i.test(event) ? ''f7:cloud_snow'' : /TAUWETTER/i.test(event) ? ''material:opacity'' : /REGEN/i.test(event) ? ''f7:cloud_rain''
+                : /BÖEN|BOEEN|WIND|STURM|ORKAN/i.test(event) ? ''f7:wind'' : /NEBEL/i.test(event) ? ''f7:cloud_fog'' : /HITZE/i.test(event) ? ''f7:thermometer_sun'' : /UV/i.test(event) ? ''f7:sun_max''
+                : ''material:warning'''
+              short: '=(event) => !event ? ''Wetterwarnung'' : /GEWITTER/i.test(event) ? (/EXTREMES GEWITTER/i.test(event) ? ''Extremes Gewitter'' : /SCHWERES GEWITTER/i.test(event) ? ''Schweres
+                Gewitter'' : /STARKES GEWITTER/i.test(event) ? ''Starkes Gewitter'' : ''Gewitter'') : event.replace(/^VORABINFORMATION\s+/i, '''').charAt(0).toUpperCase() + event.replace(/^VORABINFORMATION\s+/i,
+                '''').slice(1).toLowerCase()'
+              date: '=(value) => !value || !dayjs(value).isValid() ? ''Zeit unbekannt'' : (dayjs(value).format(''YYYY-MM-DD'') === dayjs().format(''YYYY-MM-DD'') ? ''Heute'' : dayjs(value).format(''YYYY-MM-DD'')
+                === dayjs().add(1,''day'').format(''YYYY-MM-DD'') ? ''Morgen'' : dayjs(value).format(''DD.MM.YYYY'')) + '' '' + dayjs(value).format(''HH:mm'')'
+              briefDate: '=(value) => !value || !dayjs(value).isValid() ? ''Zeit unbekannt'' : (dayjs(value).format(''YYYY-MM-DD'') === dayjs().format(''YYYY-MM-DD'') ? '''' : dayjs(value).format(''YYYY-MM-DD'')
+                === dayjs().add(1,''day'').format(''YYYY-MM-DD'') ? ''morgen '' : dayjs(value).format(''DD.MM.'') + '' '') + dayjs(value).format(''HH:mm'')'
+              compactPeriod: '=(from, to, date) => from && dayjs(from).isValid() && dayjs(from).isAfter(dayjs()) ? ''Ab '' + date(from) + '' – '' + date(to) : ''Bis '' + date(to)'
             constants:
               samples:
-                -
-                  event: "STURMBÖEN"
-                  severity: "Moderate"
-                  headline: "BEISPIEL: Amtliche Warnung vor STURMBÖEN"
-                  description: "Es treten Sturmböen auf. Dieser Text ist ausschließlich eine Demonstration des Widgets und keine aktuelle DWD-Warnung."
-                  instruction: "Beispiel: Lose Gegenstände im Freien sichern."
-                -
-                  event: "FROST"
-                  severity: "Minor"
-                  headline: "BEISPIEL: Amtliche Warnung vor FROST"
-                  description: "Es tritt leichter Frost auf. Beispieldaten ohne Bezug zur aktuellen Wetterlage."
-                  instruction: ""
-                -
-                  event: "SCHWERES GEWITTER mit ORKANBÖEN und HEFTIGEM STARKREGEN"
-                  severity: "Severe"
-                  headline: "BEISPIEL: Amtliche Unwetterwarnung vor SCHWEREM GEWITTER"
-                  description: |-
-                    Beispiel einer längeren kombinierten Gewitterwarnung. Der kompakte Titel bleibt lesbar; dieser Bereich enthält den vollständigen Text.
+              - event: STURMBÖEN
+                severity: Moderate
+                headline: 'BEISPIEL: Amtliche Warnung vor STURMBÖEN'
+                description: Es treten Sturmböen auf. Dieser Text ist ausschließlich eine Demonstration des Widgets und keine aktuelle DWD-Warnung.
+                instruction: 'Beispiel: Lose Gegenstände im Freien sichern.'
+              - event: FROST
+                severity: Minor
+                headline: 'BEISPIEL: Amtliche Warnung vor FROST'
+                description: Es tritt leichter Frost auf. Beispieldaten ohne Bezug zur aktuellen Wetterlage.
+                instruction: ''
+              - event: SCHWERES GEWITTER mit ORKANBÖEN und HEFTIGEM STARKREGEN
+                severity: Severe
+                headline: 'BEISPIEL: Amtliche Unwetterwarnung vor SCHWEREM GEWITTER'
+                description: 'Beispiel einer längeren kombinierten Gewitterwarnung. Der kompakte Titel bleibt lesbar; dieser Bereich enthält den vollständigen Text.
 
-                    Auch Absätze bleiben erhalten.
-                  instruction: "Beispiel: Aufenthalt im Freien vermeiden."
-                -
-                  event: "EXTREMES GLATTEIS"
-                  severity: "Extreme"
-                  headline: "BEISPIEL: Amtliche Warnung vor EXTREMEM GLATTEIS"
-                  description: "Beispiel für die höchste Warnstufe. Die Sortierung setzt diese Meldung an die erste Stelle."
-                  instruction: "Beispiel: Unnötige Fahrten vermeiden."
-                -
-                  event: "VORABINFORMATION STARKER SCHNEEFALL / SCHNEEVERWEHUNG"
-                  severity: "Severe"
-                  headline: "BEISPIEL: Vorabinformation zu starkem Schneefall"
-                  description: "Beispiel einer Vorabinformation mit einem längeren Ereignistitel."
-                  instruction: ""
+
+                  Auch Absätze bleiben erhalten.'
+                instruction: 'Beispiel: Aufenthalt im Freien vermeiden.'
+              - event: EXTREMES GLATTEIS
+                severity: Extreme
+                headline: 'BEISPIEL: Amtliche Warnung vor EXTREMEM GLATTEIS'
+                description: Beispiel für die höchste Warnstufe. Die Sortierung setzt diese Meldung an die erste Stelle.
+                instruction: 'Beispiel: Unnötige Fahrten vermeiden.'
+              - event: VORABINFORMATION STARKER SCHNEEFALL / SCHNEEVERWEHUNG
+                severity: Severe
+                headline: 'BEISPIEL: Vorabinformation zu starkem Schneefall'
+                description: Beispiel einer Vorabinformation mit einem längeren Ereignistitel.
+                instruction: ''
           slots:
             default:
-              -
-                component: "div"
-                config:
-                  class: "dwd-header"
-                slots:
-                  default:
-                    -
-                      component: "Label"
+            - component: oh-link
+              config:
+                visible: =fn.display()
+                class: '=''dwd-display'' + (props.displayMode === ''compact'' ? '' dwd-display-compact'' : '''')'
+                action: popup
+                actionModal: widget:dwd_warnleiste
+                actionModalConfig:
+                  title: =props.title
+                  testMode: =props.testMode
+                  alarm1: =props.alarm1
+                  event1: =props.event1
+                  severity1: =props.severity1
+                  from1: =props.from1
+                  to1: =props.to1
+                  headline1: =props.headline1
+                  description1: =props.description1
+                  instruction1: =props.instruction1
+                  alarm2: =props.alarm2
+                  event2: =props.event2
+                  severity2: =props.severity2
+                  from2: =props.from2
+                  to2: =props.to2
+                  headline2: =props.headline2
+                  description2: =props.description2
+                  instruction2: =props.instruction2
+                  alarm3: =props.alarm3
+                  event3: =props.event3
+                  severity3: =props.severity3
+                  from3: =props.from3
+                  to3: =props.to3
+                  headline3: =props.headline3
+                  description3: =props.description3
+                  instruction3: =props.instruction3
+                  alarm4: =props.alarm4
+                  event4: =props.event4
+                  severity4: =props.severity4
+                  from4: =props.from4
+                  to4: =props.to4
+                  headline4: =props.headline4
+                  description4: =props.description4
+                  instruction4: =props.instruction4
+                  alarm5: =props.alarm5
+                  event5: =props.event5
+                  severity5: =props.severity5
+                  from5: =props.from5
+                  to5: =props.to5
+                  headline5: =props.headline5
+                  description5: =props.description5
+                  instruction5: =props.instruction5
+                  displayMode: full
+                style:
+                  height: 100%
+              slots:
+                default:
+                - component: div
+                  config:
+                    class: dwd-display-header
+                  slots:
+                    default:
+                    - component: Label
                       config:
-                        text: "=props.title || 'DWD Wetterwarnungen'"
-                        class: "dwd-heading"
-                    -
-                      component: "Label"
+                        text: '=(fn.demo() && props.displayMode === ''compact'' ? ''TEST · '' : '''') + (props.title || ''DWD
+                          Wetterwarnungen'')'
+                        class: dwd-display-heading
+                    - component: Label
                       config:
-                        text: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length + ' aktiv'"
-                        class: "dwd-count"
-              -
-                component: "Label"
-                config:
-                  text: "TESTMODUS · Beispieldaten, keine aktuellen DWD-Warnungen."
-                  class: "dwd-notice"
-                  visible: "=fn.demo()"
-              -
-                component: "Label"
-                config:
-                  text: "Bitte mindestens das Alarm-Item für Warnung 1 auswählen."
-                  class: "dwd-notice"
-                  visible: "=!fn.demo() && fn.live(fn.state).length === 0"
-              -
-                component: "Label"
-                config:
-                  text: "Warnstatus nicht verfügbar: Mindestens ein konfiguriertes Alarm-Item liefert keinen gültigen ON/OFF-Zustand."
-                  class: "dwd-notice"
-                  visible: "=fn.unknown(fn.demo(), fn.live(fn.state))"
-              -
-                component: "div"
-                config:
-                  class: "dwd-empty"
-                  visible: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length === 0 && (fn.demo() || (fn.live(fn.state).length > 0 && !fn.unknown(fn.demo(), fn.live(fn.state))))"
-                slots:
-                  default:
-                    -
-                      component: "oh-icon"
+                        text: '=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length + (props.displayMode
+                          === ''compact'' && fn.unknown(fn.demo(), fn.live(fn.state)) ? '' · Status unklar'' : '' aktiv'')'
+                        class: dwd-count
+                - component: Label
+                  config:
+                    text: TEST · Beispieldaten
+                    class: dwd-display-notice
+                    visible: =fn.demo() && props.displayMode !== 'compact'
+                - component: Label
+                  config:
+                    text: Warnstatus teilweise nicht verfügbar
+                    class: dwd-display-notice
+                    visible: =fn.unknown(fn.demo(), fn.live(fn.state)) && fn.warnings(fn.demo(), fn.live(fn.state), fn.rank,
+                      const.samples).length > 0 && props.displayMode !== 'compact'
+                - component: div
+                  config:
+                    class: dwd-display-body
+                  slots:
+                    default:
+                    - component: oh-repeater
                       config:
-                        icon: "f7:checkmark_shield"
-                        width: 20
-                        height: 20
-                    -
-                      component: "Label"
-                      config:
-                        text: "Keine aktiven DWD-Warnungen"
-              -
-                component: "f7-list"
-                config:
-                  class: "dwd-list"
-                  accordionList: false
-                  visible: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length > 0"
-                slots:
-                  default:
-                    -
-                      component: "oh-repeater"
-                      config:
-                        for: "warning"
-                        sourceType: "array"
-                        in: "=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples)"
+                        for: warning
+                        sourceType: array
+                        in: =fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).slice(0, 3)
                         fragment: true
                       slots:
                         default:
-                          -
-                            component: "f7-list-item"
-                            config:
-                              accordionItem: true
-                              class: "dwd-warning"
-                              style:
-                                "border-color": "=fn.color(loop.warning.severity)"
-                            slots:
-                              default:
-                                -
-                                  component: "f7-accordion-content"
-                                  config: {}
-                                  slots:
-                                    default:
-                                      -
-                                        component: "div"
-                                        config:
-                                          class: "dwd-detail"
-                                        slots:
-                                          default:
-                                            -
-                                              component: "Label"
-                                              config:
-                                                text: "=loop.warning.headline || loop.warning.event || 'Wetterwarnung'"
-                                                class: "dwd-detail-heading"
-                                            -
-                                              component: "Label"
-                                              config:
-                                                text: "=loop.warning.description || 'Keine Beschreibung verfügbar.'"
-                                            -
-                                              component: "Label"
-                                              config:
-                                                text: "Verhaltenshinweise"
-                                                class: "dwd-instruction-title"
-                                                visible: "=!!loop.warning.instruction"
-                                            -
-                                              component: "Label"
-                                              config:
-                                                text: "=loop.warning.instruction"
-                                                visible: "=!!loop.warning.instruction"
-                              media:
-                                -
-                                  component: "oh-icon"
+                        - component: div
+                          config:
+                            class: dwd-display-row
+                            style:
+                              border-color: =fn.color(loop.warning.severity)
+                          slots:
+                            default:
+                            - component: oh-icon
+                              config:
+                                icon: =fn.icon(loop.warning.event)
+                                width: '=props.displayMode === ''compact'' ? 22 : 30'
+                                height: '=props.displayMode === ''compact'' ? 22 : 30'
+                                class: dwd-display-icon
+                                style:
+                                  color: =fn.color(loop.warning.severity)
+                            - component: div
+                              config:
+                                class: dwd-display-copy
+                              slots:
+                                default:
+                                - component: Label
                                   config:
-                                    icon: "=fn.icon(loop.warning.event)"
-                                    width: 26
-                                    height: 26
-                                    style:
-                                      color: "=fn.color(loop.warning.severity)"
-                              title:
-                                -
-                                  component: "div"
-                                  config: {}
-                                  slots:
-                                    default:
-                                      -
-                                        component: "div"
-                                        config:
-                                          class: "dwd-title-line"
-                                        slots:
-                                          default:
-                                            -
-                                              component: "Label"
-                                              config:
-                                                text: "=(/VORABINFORMATION/i.test(loop.warning.event) ? 'Vorabinfo · ' : '') + fn.short(loop.warning.event)"
-                                                class: "dwd-event"
-                                            -
-                                              component: "Label"
-                                              config:
-                                                text: "=fn.level(loop.warning.severity)"
-                                                class: "dwd-level"
-                                      -
-                                        component: "Label"
-                                        config:
-                                          text: "=fn.date(loop.warning.from) + ' – ' + fn.date(loop.warning.to)"
-                                          class: "dwd-time"
+                                    text: '=(/VORABINFORMATION/i.test(loop.warning.event) ? ''Vorabinfo · '' : '''') + fn.short(loop.warning.event)'
+                                    class: dwd-display-event
+                                - component: Label
+                                  config:
+                                    text: =fn.level(loop.warning.severity)
+                                    class: dwd-display-level
+                                    visible: =props.displayMode !== 'compact'
+                                - component: Label
+                                  config:
+                                    text: '=props.displayMode === ''compact'' ? fn.compactPeriod(loop.warning.from, loop.warning.to,
+                                      fn.briefDate) : fn.period(loop.warning.from, loop.warning.to, fn.date)'
+                                    class: dwd-display-time
+                    - component: div
+                      config:
+                        class: dwd-display-state
+                        visible: =fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length === 0
+                      slots:
+                        default:
+                        - component: oh-icon
+                          config:
+                            icon: '=fn.demo() || (fn.live(fn.state).length > 0 && !fn.unknown(fn.demo(), fn.live(fn.state)))
+                              ? ''f7:checkmark_shield'' : ''material:help_outline'''
+                            width: 32
+                            height: 32
+                            class: dwd-display-icon
+                        - component: Label
+                          config:
+                            text: '=fn.demo() || (fn.live(fn.state).length > 0 && !fn.unknown(fn.demo(), fn.live(fn.state)))
+                              ? ''Keine DWD-Warnungen'' : fn.live(fn.state).length === 0 ? ''Warn-Items auswählen'' : ''Warnstatus
+                              nicht verfügbar'''
+                            class: ''
+                - component: div
+                  config:
+                    class: dwd-display-footer
+                  slots:
+                    default:
+                    - component: Label
+                      config:
+                        text: '=fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length > 3 ? ''+'' + (fn.warnings(fn.demo(),
+                          fn.live(fn.state), fn.rank, const.samples).length - 3) + '' weitere'' : '''''
+                        class: ''
+                    - component: Label
+                      config:
+                        text: Details ›
+                        class: ''
+            - component: div
+              config:
+                class: dwd-header
+                visible: =!fn.display()
+              slots:
+                default:
+                - component: Label
+                  config:
+                    text: =props.title || 'DWD Wetterwarnungen'
+                    class: dwd-heading
+                - component: Label
+                  config:
+                    text: =fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length + ' aktiv'
+                    class: dwd-count
+            - component: Label
+              config:
+                text: TESTMODUS · Beispieldaten, keine aktuellen DWD-Warnungen.
+                class: dwd-notice
+                visible: =!fn.display() && (fn.demo())
+            - component: Label
+              config:
+                text: Bitte mindestens das Alarm-Item für Warnung 1 auswählen.
+                class: dwd-notice
+                visible: =!fn.display() && (!fn.demo() && fn.live(fn.state).length === 0)
+            - component: Label
+              config:
+                text: 'Warnstatus nicht verfügbar: Mindestens ein konfiguriertes Alarm-Item liefert keinen gültigen ON/OFF-Zustand.'
+                class: dwd-notice
+                visible: =!fn.display() && (fn.unknown(fn.demo(), fn.live(fn.state)))
+            - component: div
+              config:
+                class: dwd-empty
+                visible: =!fn.display() && (fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length === 0
+                  && (fn.demo() || (fn.live(fn.state).length > 0 && !fn.unknown(fn.demo(), fn.live(fn.state)))))
+              slots:
+                default:
+                - component: oh-icon
+                  config:
+                    icon: f7:checkmark_shield
+                    width: 20
+                    height: 20
+                - component: Label
+                  config:
+                    text: Keine aktiven DWD-Warnungen
+            - component: f7-list
+              config:
+                class: dwd-list
+                accordionList: false
+                visible: =!fn.display() && (fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples).length > 0)
+              slots:
+                default:
+                - component: oh-repeater
+                  config:
+                    for: warning
+                    sourceType: array
+                    in: =fn.warnings(fn.demo(), fn.live(fn.state), fn.rank, const.samples)
+                    fragment: true
+                  slots:
+                    default:
+                    - component: f7-list-item
+                      config:
+                        accordionItem: true
+                        class: dwd-warning
+                        style:
+                          border-color: =fn.color(loop.warning.severity)
+                      slots:
+                        default:
+                        - component: f7-accordion-content
+                          config: {}
+                          slots:
+                            default:
+                            - component: div
+                              config:
+                                class: dwd-detail
+                              slots:
+                                default:
+                                - component: Label
+                                  config:
+                                    text: =loop.warning.headline || loop.warning.event || 'Wetterwarnung'
+                                    class: dwd-detail-heading
+                                - component: Label
+                                  config:
+                                    text: =loop.warning.description || 'Keine Beschreibung verfügbar.'
+                                - component: Label
+                                  config:
+                                    text: Verhaltenshinweise
+                                    class: dwd-instruction-title
+                                    visible: =!!loop.warning.instruction
+                                - component: Label
+                                  config:
+                                    text: =loop.warning.instruction
+                                    visible: =!!loop.warning.instruction
+                        media:
+                        - component: oh-icon
+                          config:
+                            icon: =fn.icon(loop.warning.event)
+                            width: 26
+                            height: 26
+                            style:
+                              color: =fn.color(loop.warning.severity)
+                        title:
+                        - component: div
+                          config: {}
+                          slots:
+                            default:
+                            - component: div
+                              config:
+                                class: dwd-title-line
+                              slots:
+                                default:
+                                - component: Label
+                                  config:
+                                    text: '=(/VORABINFORMATION/i.test(loop.warning.event) ? ''Vorabinfo · '' : '''') + fn.short(loop.warning.event)'
+                                    class: dwd-event
+                                - component: Label
+                                  config:
+                                    text: =fn.level(loop.warning.severity)
+                                    class: dwd-level
+                            - component: Label
+                              config:
+                                text: =fn.date(loop.warning.from) + ' – ' + fn.date(loop.warning.to)
+                                class: dwd-time

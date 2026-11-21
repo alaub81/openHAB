@@ -54,3 +54,6 @@ const sources = {format: utility('lhlab_dwd_text'), process: utility('lhlab_alar
 assert.equal(sources.format, read('tools/dwd-messages/format.js'), 'DWD source and YAML must match');
 const dwd = evaluate('tools/dwd-messages/verify.js', 'verifyDwd')(require('./time-double.cjs'), sources);
 console.log('DWD with time double: ' + dwd.assertions + ' assertions passed');
+
+console.log('DWD widget:', require('./dwd-widget.cjs')(bundle.dwd_warnleiste));
+console.log('PV forecast:', require('./pv-forecast.cjs')(bundle.pv_forecast));

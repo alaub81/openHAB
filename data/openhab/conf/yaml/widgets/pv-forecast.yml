@@ -1,0 +1,1230 @@
+# PV forecast: shared cell and fixed display views.
+version: 1
+widgets:
+  pv_forecast:
+    tags:
+    - PV
+    - Energie
+    - Forecast
+    props:
+      parameterGroups:
+      - name: display
+        label: Anzeige
+      - name: sources
+        label: Energie-Items
+      - name: traffic
+        label: Ampelschwellen
+      - name: colors
+        label: Farben
+      - name: actions
+        label: Verlauf
+      parameters:
+      - name: title
+        label: Titel
+        type: TEXT
+        groupName: display
+        default: PV-Prognose
+      - name: icon
+        label: Titel-Icon
+        type: TEXT
+        groupName: display
+        default: f7:bolt_circle
+      - name: iconColor
+        label: Titel-Icon-Farbe
+        type: TEXT
+        groupName: display
+        default: '#FFD60A'
+      - name: showTitle
+        label: Titel anzeigen
+        type: BOOLEAN
+        groupName: display
+        default: true
+      - name: showRemaining
+        label: Restprognose anzeigen
+        type: BOOLEAN
+        groupName: display
+        default: true
+      - name: showAverage
+        label: Hausdurchschnitt anzeigen
+        type: BOOLEAN
+        groupName: display
+        default: true
+      - name: demoMode
+        label: Beispielwerte verwenden
+        type: BOOLEAN
+        groupName: display
+        default: false
+      - name: decimals
+        label: Nachkommastellen
+        type: INTEGER
+        groupName: display
+        default: 1
+        min: 0
+        max: 3
+      - name: displayDecimals
+        label: Nachkommastellen Display
+        type: INTEGER
+        groupName: display
+        default: 1
+        min: 0
+        max: 3
+      - name: averageDecimals
+        label: Nachkommastellen Hausdurchschnitt
+        type: INTEGER
+        groupName: display
+        default: 1
+        min: 0
+        max: 3
+      - name: dayFontSize
+        label: Schriftgröße Tagesnamen
+        type: INTEGER
+        groupName: display
+        default: 10
+        min: 7
+        max: 16
+        description: Gilt für die Cell-Ansicht. Die Displayansicht skaliert automatisch mit der Canvas-Fläche.
+      - name: locale
+        label: Sprache für Wochentage
+        type: TEXT
+        groupName: display
+        default: de
+      - name: todayLabel
+        label: Beschriftung heute
+        type: TEXT
+        groupName: display
+        default: Heute
+      - name: tomorrowLabel
+        label: Beschriftung morgen
+        type: TEXT
+        groupName: display
+        default: Morgen
+      - name: day2Label
+        label: Beschriftung übermorgen
+        type: TEXT
+        groupName: display
+        default: ''
+      - name: day3Label
+        label: Beschriftung in drei Tagen
+        type: TEXT
+        groupName: display
+        default: ''
+      - name: todayItem
+        label: Prognose heute
+        type: TEXT
+        groupName: sources
+        context: item
+        required: true
+        description: Energie in kWh, Wh oder MWh; Zahlen ohne Einheit werden als kWh interpretiert.
+      - name: tomorrowItem
+        label: Prognose morgen
+        type: TEXT
+        groupName: sources
+        context: item
+        required: true
+        description: Energie in kWh, Wh oder MWh; Zahlen ohne Einheit werden als kWh interpretiert.
+      - name: day2Item
+        label: Prognose übermorgen
+        type: TEXT
+        groupName: sources
+        context: item
+        required: true
+        description: Energie in kWh, Wh oder MWh; Zahlen ohne Einheit werden als kWh interpretiert.
+      - name: day3Item
+        label: Prognose in drei Tagen
+        type: TEXT
+        groupName: sources
+        context: item
+        required: true
+        description: Energie in kWh, Wh oder MWh; Zahlen ohne Einheit werden als kWh interpretiert.
+      - name: remainingItem
+        label: Heute verbleibend
+        type: TEXT
+        groupName: sources
+        context: item
+        required: true
+        description: Energie in kWh, Wh oder MWh; Zahlen ohne Einheit werden als kWh interpretiert.
+      - name: averageItem
+        label: Durchschnittlicher Haus-Tagesverbrauch
+        type: TEXT
+        groupName: sources
+        context: item
+        required: true
+        description: Energie in kWh, Wh oder MWh; Zahlen ohne Einheit werden als kWh interpretiert.
+      - name: trafficIconSize
+        label: Ampel-Icon-Größe
+        type: INTEGER
+        groupName: traffic
+        default: 20
+        min: 8
+        max: 32
+        description: Gilt für die Cell-Ansicht. Die Displayansicht skaliert automatisch mit der Canvas-Fläche.
+      - name: greenPercent
+        label: Grün ab Anteil am Hausdurchschnitt (%)
+        type: DECIMAL
+        groupName: traffic
+        default: 110
+        min: 0
+      - name: orangePercent
+        label: Gelb ab Anteil am Hausdurchschnitt (%)
+        type: DECIMAL
+        groupName: traffic
+        default: 70
+        min: 0
+      - name: greenColor
+        label: Grün
+        type: TEXT
+        groupName: colors
+        default: '#34C759'
+      - name: orangeColor
+        label: Gelb
+        type: TEXT
+        groupName: colors
+        default: '#FFD60A'
+      - name: redColor
+        label: Rot
+        type: TEXT
+        groupName: colors
+        default: '#FF3B30'
+      - name: unknownColor
+        label: Unbekannt
+        type: TEXT
+        groupName: colors
+        default: 'var(--f7-list-item-after-text-color, #8e8e93)'
+      - name: textColor
+        label: Text
+        type: TEXT
+        groupName: colors
+        default: var(--f7-text-color)
+      - name: backgroundColor
+        label: Hintergrund
+        type: TEXT
+        groupName: colors
+        default: var(--f7-card-bg-color)
+      - name: forecastChartItems
+        label: 'Prognoseverlauf: Items'
+        type: TEXT
+        groupName: actions
+        context: item
+        multiple: true
+        description: Gemeinsame Leistungsprognosen für die Analyzer-Ansicht. Ohne Auswahl wird das jeweilige Energie-Item
+          verwendet.
+      - name: day3ChartItems
+        label: 'Verlauf in drei Tagen: abweichende Items'
+        type: TEXT
+        groupName: actions
+        context: item
+        multiple: true
+      - name: showRemainingTraffic
+        label: Rest-Ampel anzeigen
+        type: BOOLEAN
+        groupName: traffic
+        default: true
+      - name: remainingReference
+        label: Rest-Ampel Bezugswert
+        type: TEXT
+        groupName: traffic
+        default: house
+        options:
+        - value: house
+          label: Haus-Tagesdurchschnitt
+        - value: today
+          label: Heutige Gesamtprognose
+        description: 'house: verbleibende Energie im Verhältnis zum Haus-Tagesdurchschnitt. today: Anteil der aktuellen Gesamtprognose,
+          der noch verbleibt; kein gespeicherter Morgenwert.'
+      - name: remainingGreenPercent
+        label: 'Rest: Grün ab Anteil am Bezugswert (%)'
+        type: DECIMAL
+        groupName: traffic
+        default: 50
+        min: 0
+      - name: remainingOrangePercent
+        label: 'Rest: Gelb ab Anteil am Bezugswert (%)'
+        type: DECIMAL
+        groupName: traffic
+        default: 20
+        min: 0
+      - name: remainingTrafficIconSize
+        label: Rest-Ampel-Icon-Größe
+        type: INTEGER
+        groupName: traffic
+        default: 9
+        min: 8
+        max: 16
+        description: Gilt für die Cell-Ansicht. Die Displayansicht skaliert automatisch mit der Canvas-Fläche.
+      - name: trafficGlow
+        label: Aktive Leuchten hervorheben
+        type: BOOLEAN
+        groupName: traffic
+        default: true
+      - name: trafficInactiveOpacity
+        label: Helligkeit inaktiver Leuchten
+        type: DECIMAL
+        groupName: traffic
+        default: 0.25
+        min: 0
+        max: 1
+      - name: trafficHousingColor
+        label: Ampelgehäuse
+        type: TEXT
+        groupName: colors
+        default: color-mix(in srgb, var(--fc-muted) 55%, transparent)
+      - name: displayMode
+        label: Darstellung
+        type: TEXT
+        groupName: display
+        default: cell
+        options:
+        - value: cell
+          label: Cell – bisherige Ansicht
+        - value: display
+          label: Display – ohne Titel
+      - name: dayCount
+        label: Anzahl Tage
+        type: INTEGER
+        groupName: display
+        default: 4
+        min: 1
+        max: 4
+      - name: startDay
+        label: Erster Tag
+        type: INTEGER
+        groupName: display
+        default: 0
+        options:
+        - value: 0
+          label: Heute
+        - value: 1
+          label: Morgen
+    component: f7-card
+    config:
+      class: '=props.displayMode === ''display'' ? ''smab-pv-forecast smab-pv-display card-prevent-open'' : ''smab-pv-forecast
+        oh-cell card-prevent-open'''
+      expandable: =props.displayMode !== 'display'
+      stylesheet: '.smab-fc-summary { height: 120px; position: relative; container-type: inline-size; }
+
+        .smab-fc-header { position: absolute; top: 5px; left: 8px; right: 8px; height: 18px; display: flex; align-items: center;
+        gap: 4px; }
+
+        .smab-fc-title { display: flex; align-items: center; gap: 4px; min-width: 0; }
+
+        .smab-fc-days { position: absolute; top: 27px; bottom: 25px; left: 8px; right: 8px; display: grid; grid-template-columns:
+        repeat(4, minmax(0, 1fr)); gap: 3px; }
+
+        .smab-fc-day { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; min-width:
+        0; color: inherit; text-decoration: none; }
+
+        .smab-fc-day-title { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+        min-width: 0; max-width: 100%; font-size: clamp(7px, 3.8cqw, 10px); color: var(--fc-muted); }
+
+        .smab-fc-day-title > div:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+        }
+
+        .smab-fc-footer { position: absolute; bottom: 5px; left: 8px; right: 8px; display: flex; align-items: center; gap:
+        4px; font-size: clamp(7px, 3.2cqw, 10px); color: var(--fc-muted); }
+
+        .smab-fc-footlink { display: flex; align-items: center; gap: 3px; color: inherit; white-space: nowrap; min-width:
+        0; text-decoration: none; }
+
+        .smab-fc-details { padding: 0 8px 12px; font-size: 11px; container-type: inline-size; }
+
+        .smab-fc-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px;
+        }
+
+        .smab-fc-traffic { display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-shrink:
+        0; box-sizing: border-box; width: calc(var(--fc-signal-size) * 0.5); height: var(--fc-signal-size); padding: calc(var(--fc-signal-size)
+        * 0.07); border: 1px solid color-mix(in srgb, var(--fc-primary) 50%, var(--fc-surface)); border-radius: calc(var(--fc-signal-size) * 0.12); background: var(--fc-signal-housing); pointer-events:
+        none; }
+
+        .smab-fc-lamp { display: block; flex-shrink: 0; width: calc(var(--fc-signal-size) * 0.23); height: calc(var(--fc-signal-size)
+        * 0.23); border-radius: 50%; opacity: clamp(.35, var(--fc-signal-inactive), .55); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fc-primary) 25%, transparent); }
+
+        .smab-fc-lamp-red { background: var(--fc-signal-red); color: var(--fc-signal-red); }
+
+        .smab-fc-lamp-orange { background: var(--fc-signal-orange); color: var(--fc-signal-orange); }
+
+        .smab-fc-lamp-green { background: var(--fc-signal-green); color: var(--fc-signal-green); }
+
+        .smab-fc-traffic-red > .smab-fc-lamp-red, .smab-fc-traffic-orange > .smab-fc-lamp-orange, .smab-fc-traffic-green >
+        .smab-fc-lamp-green { opacity: 1; filter: var(--fc-signal-active-filter); box-shadow: var(--fc-signal-glow); }
+
+        .smab-fc-traffic-unknown > .smab-fc-lamp { background: var(--fc-signal-unknown); opacity: .65; }
+
+        .smab-pv-display { container-type: size; }
+
+        .smab-fc-display { --fc-footer-font: clamp(8px, min(4.1cqw, 16.667cqh), 12px); --fc-footer-signal: clamp(14px, calc(var(--fc-footer-font)
+        * 1.25), 18px); --fc-footer-space: calc(max(var(--fc-footer-traffic-space), calc(var(--fc-footer-font) * 1.2)) + 6px);
+        box-sizing: border-box; height: 100%; container-type: size; position: relative; }
+
+        .smab-fc-display-grid { --fc-unit: clamp(.8px, min(calc(2.4cqw / var(--fc-day-count)), 1.667cqh), 1.5px); --fc-day-icon:
+        clamp(22px, calc(17 * var(--fc-unit)), 30px); display: grid; grid-template-columns: repeat(var(--fc-day-count), minmax(0,
+        1fr)); gap: calc(4 * var(--fc-unit)); height: calc(100% - var(--fc-footer-height)); padding: calc(8 * var(--fc-unit))
+        calc(6 * var(--fc-unit)) calc(2 * var(--fc-unit)); box-sizing: border-box; }
+
+        .smab-fc-display .smab-fc-day { display: grid; grid-template-columns: minmax(0, max-content) max-content; grid-template-rows:
+        max-content max-content; column-gap: calc(3 * var(--fc-unit)); row-gap: calc(1 * var(--fc-unit)); align-content: center;
+        align-items: center; justify-content: center; overflow: hidden; }
+
+        .smab-fc-display .smab-fc-day-title { display: contents; }
+
+        .smab-fc-display .smab-fc-day-title > .smab-fc-traffic { grid-column: 1; grid-row: 1; justify-self: center; }
+
+        .smab-fc-display .smab-fc-day-title > div:last-child { grid-column: 1 / span 2; grid-row: 2; max-width: 100%; width: 100%;
+        text-align: center; font-weight: 500; }
+
+        .smab-fc-display-demo { position: absolute; top: 0; left: 4px; font-size: 8px; color: var(--fc-muted); }
+
+        .smab-fc-display-footer { bottom: 3px; left: 6px; right: 6px; font-size: var(--fc-footer-font); line-height: 1.2;
+        gap: 4px; }
+
+        .smab-fc-display-caption { display: flex; align-items: center; gap: 3px; flex-shrink: 0; white-space: nowrap; }
+
+        .smab-fc-display-totals { display: flex; align-items: center; margin-left: auto; gap: 6px; min-width: 0; }
+
+        .smab-fc-display-totals > .smab-fc-footlink { flex-shrink: 0; }
+
+        .smab-fc-display-footer .icon, .smab-fc-display-footer img { width: calc(var(--fc-footer-font) * 1.1) !important;
+        height: calc(var(--fc-footer-font) * 1.1) !important; font-size: calc(var(--fc-footer-font) * 1.1) !important; }
+
+
+        .smab-fc-display-value { display: flex; align-items: baseline; justify-content: flex-start; grid-column: 2; grid-row:
+        1; min-width: 0; }
+
+
+        .smab-fc-display-footer { align-items: center; font-weight: 500; }
+
+
+        '
+      style:
+        height: '=props.displayMode === ''display'' ? ''100%'' : ''auto'''
+        min-height: '=props.displayMode === ''display'' ? ''0'' : ''120px'''
+        max-height: none
+        padding: '0'
+        border: none
+        overflow: hidden
+        box-sizing: border-box
+        color: =props.textColor || 'var(--f7-text-color)'
+        background: =props.backgroundColor || 'var(--f7-card-bg-color)'
+        --fc-muted: '=props.displayMode === ''display'' ? ''color-mix(in srgb, var(--fc-primary) 85%, var(--fc-surface))''
+          : ''var(--f7-list-item-after-text-color, #8e8e93)'''
+        --fc-signal-green: =props.greenColor || '#34C759'
+        --fc-signal-orange: =props.orangeColor || '#FFD60A'
+        --fc-signal-red: =props.redColor || '#FF3B30'
+        --fc-signal-unknown: '=props.unknownColor || ''color-mix(in srgb, var(--fc-primary) 55%, var(--fc-surface))'''
+        --fc-signal-inactive: '=Number.isFinite(Number(props.trafficInactiveOpacity)) && Number(props.trafficInactiveOpacity)
+          >= 0 && Number(props.trafficInactiveOpacity) <= 1 ? Number(props.trafficInactiveOpacity) : 0.25'
+        --fc-signal-active-filter: '=''none'''
+        --fc-signal-glow: '=props.trafficGlow === false ? ''none'' : ''0 0 3px currentColor'''
+        --fc-signal-housing: '=(!props.trafficHousingColor || props.trafficHousingColor
+          === ''color-mix(in srgb, var(--fc-muted) 55%, transparent)'') ? ''color-mix(in srgb, var(--fc-primary) 14%, var(--fc-surface))''
+          : props.trafficHousingColor || ''color-mix(in srgb, var(--fc-muted) 55%, transparent)'''
+        margin: '=props.displayMode === ''display'' ? ''0'' : '''''
+        --fc-primary: =props.textColor || 'var(--f7-text-color)'
+        --fc-surface: =props.backgroundColor || 'var(--f7-card-bg-color)'
+    slots:
+      default:
+      - component: oh-context
+        config:
+          variables:
+            forecastDay: -1
+          functions:
+            energy: '=(name, demo) => props.demoMode === true ? demo : !name || !items[name] || !items[name].state || !/^\+?\d+(?:[.,]\d+)?(?:[eE][-+]?\d+)?\s*(?:kWh|Wh|MWh)?$/.test(items[name].state.trim())
+              ? Number.NaN : Number.parseFloat(items[name].state.replace('','', ''.'')) * (/MWh$/.test(items[name].state.trim())
+              ? 1000 : /(?:^|\d\s*)Wh$/.test(items[name].state.trim()) ? 0.001 : 1)'
+            format: '=(value) => !Number.isFinite(value) || value < 0 ? ''—'' : value.toFixed(Number.isInteger(Number(props.decimals))
+              && Number(props.decimals) >= 0 && Number(props.decimals) <= 3 ? Number(props.decimals) : 1).replace(''.'', '','')'
+            percent: '=(value, average) => !Number.isFinite(value) || value < 0 || !Number.isFinite(average) || average <=
+              0 ? ''—'' : Math.round(value / average * 100) + '' %'''
+            formatDisplay: '=(value) => !Number.isFinite(value) || value < 0 ? ''—'' : value.toFixed(Number.isInteger(Number(props.displayDecimals))
+              && Number(props.displayDecimals) >= 0 && Number(props.displayDecimals) <= 3 ? Number(props.displayDecimals) : 1).replace(''.'', '','')'
+            formatRemaining: '=(value) => !Number.isFinite(value) || value < 0 ? ''—'' : value.toFixed(1).replace(''.'', '','')'
+            status: '=(value, average) => !Number.isFinite(value) || value < 0 || !Number.isFinite(average) || average <=
+              0 || !Number.isFinite(Number(props.orangePercent === undefined ? 70 : props.orangePercent)) || !Number.isFinite(Number(props.greenPercent
+              === undefined ? 110 : props.greenPercent)) || Number(props.orangePercent === undefined ? 70 : props.orangePercent)
+              < 0 || Number(props.greenPercent === undefined ? 110 : props.greenPercent) <= Number(props.orangePercent ===
+              undefined ? 70 : props.orangePercent) ? ''unknown'' : value >= average * Number(props.greenPercent === undefined
+              ? 110 : props.greenPercent) / 100 ? ''green'' : value >= average * Number(props.orangePercent === undefined
+              ? 70 : props.orangePercent) / 100 ? ''orange'' : ''red'''
+            statusText: '=(status) => status === ''green'' ? ''Grün'' : status === ''orange'' ? ''Gelb'' : status === ''red''
+              ? ''Rot'' : ''Unbekannt'''
+            formatAverage: '=(value) => !Number.isFinite(value) || value < 0 ? ''—'' : value.toFixed(Number.isInteger(Number(props.averageDecimals))
+              && Number(props.averageDecimals) >= 0 && Number(props.averageDecimals) <= 3 ? Number(props.averageDecimals)
+              : 1).replace(''.'', '','')'
+            remainingStatus: '=(value, average) => props.remainingReference !== undefined && props.remainingReference !==
+              ''house'' && props.remainingReference !== ''today'' ? ''unknown'' : !Number.isFinite(value) || value < 0 ||
+              !Number.isFinite(average) || average <= 0 || !Number.isFinite(Number(props.remainingOrangePercent === undefined
+              ? 20 : props.remainingOrangePercent)) || !Number.isFinite(Number(props.remainingGreenPercent === undefined ?
+              50 : props.remainingGreenPercent)) || Number(props.remainingOrangePercent === undefined ? 20 : props.remainingOrangePercent)
+              < 0 || Number(props.remainingGreenPercent === undefined ? 50 : props.remainingGreenPercent) <= Number(props.remainingOrangePercent
+              === undefined ? 20 : props.remainingOrangePercent) ? ''unknown'' : value >= average * Number(props.remainingGreenPercent
+              === undefined ? 50 : props.remainingGreenPercent) / 100 ? ''green'' : value >= average * Number(props.remainingOrangePercent
+              === undefined ? 20 : props.remainingOrangePercent) / 100 ? ''orange'' : ''red'''
+            dayIndices: '=(start, count) => [0,1,2,3].slice(Number(start) === 1 ? 1 : 0, (Number(start) === 1 ? 1 : 0) + (Number.isInteger(Number(count))
+              && Number(count) >= 1 && Number(count) <= 4 ? Number(count) : 4))'
+        slots:
+          default:
+          - component: div
+            config:
+              class: smab-fc-display
+              visible: =props.displayMode === 'display'
+              style:
+                --fc-footer-height: '=props.showRemaining !== false || props.showAverage !== false ? ''var(--fc-footer-space)''
+                  : ''0px'''
+                --fc-footer-traffic-space: '=props.showRemaining !== false && props.showRemainingTraffic !== false ? ''var(--fc-footer-signal)''
+                  : ''0px'''
+            slots:
+              default:
+              - component: div
+                config:
+                  class: smab-fc-display-grid
+                  style:
+                    --fc-day-count: =fn.dayIndices(props.startDay, props.dayCount).length
+                slots:
+                  default:
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: analyzer
+                      tooltip: '=(props.todayLabel || ''Heute'') + '': '' + fn.format(fn.energy(props.todayItem, 19)) + ''
+                        kWh · '' + fn.statusText(fn.status(fn.energy(props.todayItem, 19), fn.energy(props.averageItem, 11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(0) >= 0
+                      actionAnalyzerChartType: day
+                      actionAnalyzerCoordSystem: time
+                      actionAnalyzerItems: '=(0 === 3 && props.day3ChartItems && props.day3ChartItems.length > 0) ? props.day3ChartItems
+                        : props.forecastChartItems && props.forecastChartItems.length > 0 ? props.forecastChartItems : props.todayItem
+                        ? [props.todayItem] : []'
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.todayItem, 19), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: var(--fc-day-icon)
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.todayLabel || 'Heute'
+                              style:
+                                font-size: clamp(9px, calc(8 * var(--fc-unit)), 16px)
+                                line-height: '1.1'
+                      - component: div
+                        config:
+                          class: smab-fc-display-value
+                          style:
+                            font-size: clamp(11px, min(calc(16cqw / var(--fc-day-count)), calc(13 * var(--fc-unit))), 22px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+                            line-height: '1.1'
+                        slots:
+                          default:
+                          - component: Label
+                            config:
+                              text: =fn.formatDisplay(fn.energy(props.todayItem, 19))
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: analyzer
+                      tooltip: '=(props.tomorrowLabel || ''Morgen'') + '': '' + fn.format(fn.energy(props.tomorrowItem, 19))
+                        + '' kWh · '' + fn.statusText(fn.status(fn.energy(props.tomorrowItem, 19), fn.energy(props.averageItem,
+                        11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(1) >= 0
+                      actionAnalyzerChartType: week
+                      actionAnalyzerCoordSystem: time
+                      actionAnalyzerItems: '=(1 === 3 && props.day3ChartItems && props.day3ChartItems.length > 0) ? props.day3ChartItems
+                        : props.forecastChartItems && props.forecastChartItems.length > 0 ? props.forecastChartItems : props.tomorrowItem
+                        ? [props.tomorrowItem] : []'
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.tomorrowItem, 19), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: var(--fc-day-icon)
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.tomorrowLabel || 'Morgen'
+                              style:
+                                font-size: clamp(9px, calc(8 * var(--fc-unit)), 16px)
+                                line-height: '1.1'
+                      - component: div
+                        config:
+                          class: smab-fc-display-value
+                          style:
+                            font-size: clamp(11px, min(calc(16cqw / var(--fc-day-count)), calc(13 * var(--fc-unit))), 22px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+                            line-height: '1.1'
+                        slots:
+                          default:
+                          - component: Label
+                            config:
+                              text: =fn.formatDisplay(fn.energy(props.tomorrowItem, 19))
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: analyzer
+                      tooltip: '=(props.day2Label || dayjs().add(2, ''day'').locale(props.locale || ''de'').format(''dd''))
+                        + '': '' + fn.format(fn.energy(props.day2Item, 11)) + '' kWh · '' + fn.statusText(fn.status(fn.energy(props.day2Item,
+                        11), fn.energy(props.averageItem, 11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(2) >= 0
+                      actionAnalyzerChartType: week
+                      actionAnalyzerCoordSystem: time
+                      actionAnalyzerItems: '=(2 === 3 && props.day3ChartItems && props.day3ChartItems.length > 0) ? props.day3ChartItems
+                        : props.forecastChartItems && props.forecastChartItems.length > 0 ? props.forecastChartItems : props.day2Item
+                        ? [props.day2Item] : []'
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.day2Item, 11), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: var(--fc-day-icon)
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.day2Label || dayjs().add(2, 'day').locale(props.locale || 'de').format('dddd')
+                              style:
+                                font-size: clamp(9px, calc(8 * var(--fc-unit)), 16px)
+                                line-height: '1.1'
+                      - component: div
+                        config:
+                          class: smab-fc-display-value
+                          style:
+                            font-size: clamp(11px, min(calc(16cqw / var(--fc-day-count)), calc(13 * var(--fc-unit))), 22px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+                            line-height: '1.1'
+                        slots:
+                          default:
+                          - component: Label
+                            config:
+                              text: =fn.formatDisplay(fn.energy(props.day2Item, 11))
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: analyzer
+                      tooltip: '=(props.day3Label || dayjs().add(3, ''day'').locale(props.locale || ''de'').format(''dd''))
+                        + '': '' + fn.format(fn.energy(props.day3Item, 19)) + '' kWh · '' + fn.statusText(fn.status(fn.energy(props.day3Item,
+                        19), fn.energy(props.averageItem, 11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(3) >= 0
+                      actionAnalyzerChartType: week
+                      actionAnalyzerCoordSystem: time
+                      actionAnalyzerItems: '=(3 === 3 && props.day3ChartItems && props.day3ChartItems.length > 0) ? props.day3ChartItems
+                        : props.forecastChartItems && props.forecastChartItems.length > 0 ? props.forecastChartItems : props.day3Item
+                        ? [props.day3Item] : []'
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.day3Item, 19), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: var(--fc-day-icon)
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.day3Label || dayjs().add(3, 'day').locale(props.locale || 'de').format('dddd')
+                              style:
+                                font-size: clamp(9px, calc(8 * var(--fc-unit)), 16px)
+                                line-height: '1.1'
+                      - component: div
+                        config:
+                          class: smab-fc-display-value
+                          style:
+                            font-size: clamp(11px, min(calc(16cqw / var(--fc-day-count)), calc(13 * var(--fc-unit))), 22px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+                            line-height: '1.1'
+                        slots:
+                          default:
+                          - component: Label
+                            config:
+                              text: =fn.formatDisplay(fn.energy(props.day3Item, 19))
+              - component: Label
+                config:
+                  text: TEST
+                  class: smab-fc-display-demo
+                  visible: =props.demoMode === true
+              - component: div
+                config:
+                  class: smab-fc-footer smab-fc-display-footer
+                  visible: =props.showRemaining !== false || props.showAverage !== false
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      class: smab-fc-display-caption
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: material:solar_power
+                          width: 10
+                          height: 10
+                          style:
+                            color: var(--fc-muted)
+                            flex-shrink: '0'
+                      - component: Label
+                        config:
+                          text: Prognosen in kWh
+                  - component: div
+                    config:
+                      class: smab-fc-display-totals
+                    slots:
+                      default:
+                      - component: oh-link
+                        config:
+                          visible: =props.showRemaining !== false
+                          class: smab-fc-footlink
+                          action: analyzer
+                          actionAnalyzerItems: '=props.forecastChartItems && props.forecastChartItems.length > 0 ? props.forecastChartItems
+                            : props.remainingItem ? [props.remainingItem] : []'
+                          actionAnalyzerChartType: day
+                          actionAnalyzerCoordSystem: time
+                          tooltip: '=''Heute verbleibende PV-Energie · '' + fn.percent(fn.energy(props.remainingItem, 19),
+                            fn.energy(props.remainingReference === ''today'' ? props.todayItem : props.averageItem, props.remainingReference
+                            === ''today'' ? 19 : 11.5)) + (props.remainingReference === ''today'' ? '' der Tagesprognose''
+                            : '' vom Haus Ø'') + '' · '' + fn.statusText(fn.remainingStatus(fn.energy(props.remainingItem,
+                            19), fn.energy(props.remainingReference === ''today'' ? props.todayItem : props.averageItem, props.remainingReference
+                            === ''today'' ? 19 : 11.5)))'
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: '=''smab-fc-traffic smab-fc-traffic-'' + fn.remainingStatus(fn.energy(props.remainingItem,
+                                19), fn.energy(props.remainingReference === ''today'' ? props.todayItem : props.averageItem,
+                                props.remainingReference === ''today'' ? 19 : 11.5))'
+                              visible: =props.showRemainingTraffic !== false
+                              style:
+                                --fc-signal-size: var(--fc-footer-signal)
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: ='Rest ' + fn.formatRemaining(fn.energy(props.remainingItem, 19))
+                              style: {}
+                      - component: oh-link
+                        config:
+                          visible: =props.showAverage !== false
+                          class: smab-fc-footlink
+                          style:
+                            margin-left: '0'
+                          action: analyzer
+                          actionAnalyzerItems: '=props.averageItem ? [props.averageItem] : []'
+                          actionAnalyzerChartType: isoWeek
+                          actionAnalyzerCoordSystem: time
+                          tooltip: Durchschnittlicher Haus-Tagesverbrauch
+                        slots:
+                          default:
+                          - component: oh-icon
+                            config:
+                              icon: f7:house
+                              width: 9
+                              height: 9
+                              style:
+                                color: var(--fc-muted)
+                                width: 9px
+                                height: 9px
+                                font-size: 9px
+                                display: block
+                                flex-shrink: '0'
+                          - component: Label
+                            config:
+                              text: ='Ø ' + fn.formatAverage(fn.energy(props.averageItem, 11.5))
+                              style: {}
+          - component: div
+            config:
+              class: smab-fc-summary
+              visible: =props.displayMode !== 'display'
+            slots:
+              default:
+              - component: div
+                config:
+                  class: smab-fc-header
+                slots:
+                  default:
+                  - component: div
+                    config:
+                      class: smab-fc-title
+                      visible: =props.showTitle !== false
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: =props.icon || 'f7:bolt_circle'
+                          width: 12
+                          height: 12
+                          style:
+                            color: =props.iconColor || '#FFD60A'
+                            width: 12px
+                            height: 12px
+                            font-size: 12px
+                            display: block
+                            flex-shrink: '0'
+                      - component: Label
+                        config:
+                          text: =props.title || 'PV-Prognose'
+                          style:
+                            font-size: clamp(7.5px, 4.8cqw, 11px)
+                            font-weight: '600'
+                            line-height: 18px
+                            white-space: nowrap
+                            overflow: hidden
+                            text-overflow: ellipsis
+                            min-width: '0'
+                  - component: Label
+                    config:
+                      text: '=props.demoMode === true ? ''Demo · kWh'' : ''kWh'''
+                      style:
+                        margin-left: auto
+                        font-size: 9px
+                        color: var(--fc-muted)
+                        white-space: nowrap
+              - component: div
+                config:
+                  class: smab-fc-days
+                  style:
+                    grid-template-columns: ='repeat(' + fn.dayIndices(props.startDay, props.dayCount).length + ', minmax(0,
+                      1fr))'
+                slots:
+                  default:
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: variable
+                      actionVariable: forecastDay
+                      actionVariableValue: '=vars.forecastDay === 0 ? -1 : 0'
+                      tooltip: '=(props.todayLabel || ''Heute'') + '': '' + fn.format(fn.energy(props.todayItem, 19)) + ''
+                        kWh · '' + fn.statusText(fn.status(fn.energy(props.todayItem, 19), fn.energy(props.averageItem, 11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(0) >= 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.todayItem, 19), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: '=(props.trafficIconSize >= 8 && props.trafficIconSize <= 32 ? props.trafficIconSize
+                                  : 20) + ''px'''
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.todayLabel || 'Heute'
+                              style:
+                                font-size: '=(props.dayFontSize >= 7 && props.dayFontSize <= 16 ? props.dayFontSize : 10)
+                                  + ''px'''
+                      - component: Label
+                        config:
+                          text: =fn.format(fn.energy(props.todayItem, 19))
+                          style:
+                            font-size: clamp(12px, 7cqw, 20px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: variable
+                      actionVariable: forecastDay
+                      actionVariableValue: '=vars.forecastDay === 1 ? -1 : 1'
+                      tooltip: '=(props.tomorrowLabel || ''Morgen'') + '': '' + fn.format(fn.energy(props.tomorrowItem, 19))
+                        + '' kWh · '' + fn.statusText(fn.status(fn.energy(props.tomorrowItem, 19), fn.energy(props.averageItem,
+                        11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(1) >= 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.tomorrowItem, 19), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: '=(props.trafficIconSize >= 8 && props.trafficIconSize <= 32 ? props.trafficIconSize
+                                  : 20) + ''px'''
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.tomorrowLabel || 'Morgen'
+                              style:
+                                font-size: '=(props.dayFontSize >= 7 && props.dayFontSize <= 16 ? props.dayFontSize : 10)
+                                  + ''px'''
+                      - component: Label
+                        config:
+                          text: =fn.format(fn.energy(props.tomorrowItem, 19))
+                          style:
+                            font-size: clamp(12px, 7cqw, 20px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: variable
+                      actionVariable: forecastDay
+                      actionVariableValue: '=vars.forecastDay === 2 ? -1 : 2'
+                      tooltip: '=(props.day2Label || dayjs().add(2, ''day'').locale(props.locale || ''de'').format(''dd''))
+                        + '': '' + fn.format(fn.energy(props.day2Item, 11)) + '' kWh · '' + fn.statusText(fn.status(fn.energy(props.day2Item,
+                        11), fn.energy(props.averageItem, 11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(2) >= 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.day2Item, 11), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: '=(props.trafficIconSize >= 8 && props.trafficIconSize <= 32 ? props.trafficIconSize
+                                  : 20) + ''px'''
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.day2Label || dayjs().add(2, 'day').locale(props.locale || 'de').format('dd')
+                              style:
+                                font-size: '=(props.dayFontSize >= 7 && props.dayFontSize <= 16 ? props.dayFontSize : 10)
+                                  + ''px'''
+                      - component: Label
+                        config:
+                          text: =fn.format(fn.energy(props.day2Item, 11))
+                          style:
+                            font-size: clamp(12px, 7cqw, 20px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+                  - component: oh-link
+                    config:
+                      class: smab-fc-day
+                      action: variable
+                      actionVariable: forecastDay
+                      actionVariableValue: '=vars.forecastDay === 3 ? -1 : 3'
+                      tooltip: '=(props.day3Label || dayjs().add(3, ''day'').locale(props.locale || ''de'').format(''dd''))
+                        + '': '' + fn.format(fn.energy(props.day3Item, 19)) + '' kWh · '' + fn.statusText(fn.status(fn.energy(props.day3Item,
+                        19), fn.energy(props.averageItem, 11.5)))'
+                      visible: =fn.dayIndices(props.startDay, props.dayCount).indexOf(3) >= 0
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: smab-fc-day-title
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: ='smab-fc-traffic smab-fc-traffic-' + fn.status(fn.energy(props.day3Item, 19), fn.energy(props.averageItem,
+                                11.5))
+                              style:
+                                --fc-signal-size: '=(props.trafficIconSize >= 8 && props.trafficIconSize <= 32 ? props.trafficIconSize
+                                  : 20) + ''px'''
+                            slots:
+                              default:
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-red
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-orange
+                              - component: div
+                                config:
+                                  class: smab-fc-lamp smab-fc-lamp-green
+                          - component: Label
+                            config:
+                              text: =props.day3Label || dayjs().add(3, 'day').locale(props.locale || 'de').format('dd')
+                              style:
+                                font-size: '=(props.dayFontSize >= 7 && props.dayFontSize <= 16 ? props.dayFontSize : 10)
+                                  + ''px'''
+                      - component: Label
+                        config:
+                          text: =fn.format(fn.energy(props.day3Item, 19))
+                          style:
+                            font-size: clamp(12px, 7cqw, 20px)
+                            font-weight: '600'
+                            font-variant-numeric: tabular-nums
+                            white-space: nowrap
+              - component: div
+                config:
+                  class: smab-fc-footer
+                slots:
+                  default:
+                  - component: oh-link
+                    config:
+                      visible: =props.showRemaining !== false
+                      class: smab-fc-footlink
+                      action: analyzer
+                      actionAnalyzerItems: '=props.forecastChartItems && props.forecastChartItems.length > 0 ? props.forecastChartItems
+                        : props.remainingItem ? [props.remainingItem] : []'
+                      actionAnalyzerChartType: day
+                      actionAnalyzerCoordSystem: time
+                      tooltip: '=''Heute verbleibende PV-Energie · '' + fn.percent(fn.energy(props.remainingItem, 19), fn.energy(props.remainingReference
+                        === ''today'' ? props.todayItem : props.averageItem, props.remainingReference === ''today'' ? 19 :
+                        11.5)) + (props.remainingReference === ''today'' ? '' der Tagesprognose'' : '' vom Haus Ø'') + ''
+                        · '' + fn.statusText(fn.remainingStatus(fn.energy(props.remainingItem, 19), fn.energy(props.remainingReference
+                        === ''today'' ? props.todayItem : props.averageItem, props.remainingReference === ''today'' ? 19 :
+                        11.5)))'
+                    slots:
+                      default:
+                      - component: div
+                        config:
+                          class: '=''smab-fc-traffic smab-fc-traffic-'' + fn.remainingStatus(fn.energy(props.remainingItem,
+                            19), fn.energy(props.remainingReference === ''today'' ? props.todayItem : props.averageItem, props.remainingReference
+                            === ''today'' ? 19 : 11.5))'
+                          visible: =props.showRemainingTraffic !== false
+                          style:
+                            --fc-signal-size: '=(props.remainingTrafficIconSize >= 8 && props.remainingTrafficIconSize <=
+                              16 ? props.remainingTrafficIconSize : 9) + ''px'''
+                        slots:
+                          default:
+                          - component: div
+                            config:
+                              class: smab-fc-lamp smab-fc-lamp-red
+                          - component: div
+                            config:
+                              class: smab-fc-lamp smab-fc-lamp-orange
+                          - component: div
+                            config:
+                              class: smab-fc-lamp smab-fc-lamp-green
+                      - component: Label
+                        config:
+                          text: ='Rest ' + fn.formatRemaining(fn.energy(props.remainingItem, 19)) + ' kWh'
+                          style: {}
+                  - component: oh-link
+                    config:
+                      visible: =props.showAverage !== false
+                      class: smab-fc-footlink
+                      style:
+                        margin-left: auto
+                      action: analyzer
+                      actionAnalyzerItems: '=props.averageItem ? [props.averageItem] : []'
+                      actionAnalyzerChartType: isoWeek
+                      actionAnalyzerCoordSystem: time
+                      tooltip: Durchschnittlicher Haus-Tagesverbrauch
+                    slots:
+                      default:
+                      - component: oh-icon
+                        config:
+                          icon: f7:house
+                          width: 9
+                          height: 9
+                          style:
+                            color: var(--fc-muted)
+                            width: 9px
+                            height: 9px
+                            font-size: 9px
+                            display: block
+                            flex-shrink: '0'
+                      - component: Label
+                        config:
+                          text: ='Ø ' + fn.formatAverage(fn.energy(props.averageItem, 11.5)) + ' kWh'
+                          style: {}
+          - component: div
+            config:
+              class: smab-fc-details
+              visible: =props.displayMode !== 'display' && vars.forecastDay >= 0 && vars.forecastDay <= 3
+            slots:
+              default:
+              - component: div
+                config:
+                  class: smab-fc-detail-row
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: '=vars.forecastDay === 0 ? (props.todayLabel || ''Heute'') : vars.forecastDay === 1 ? (props.tomorrowLabel
+                        || ''Morgen'') : vars.forecastDay === 2 ? (props.day2Label || dayjs().add(2, ''day'').locale(props.locale
+                        || ''de'').format(''dd'')) : (props.day3Label || dayjs().add(3, ''day'').locale(props.locale || ''de'').format(''dd''))'
+                      style:
+                        font-weight: '600'
+                  - component: oh-link
+                    config:
+                      text: Schließen
+                      action: variable
+                      actionVariable: forecastDay
+                      actionVariableValue: =-1
+                      style:
+                        color: var(--fc-muted)
+                        padding: 6px 0
+              - component: div
+                config:
+                  class: smab-fc-detail-row
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: PV-Prognose
+                      style:
+                        color: var(--fc-muted)
+                  - component: Label
+                    config:
+                      text: '=fn.format(fn.energy((vars.forecastDay === 0 ? props.todayItem : vars.forecastDay === 1 ? props.tomorrowItem
+                        : vars.forecastDay === 2 ? props.day2Item : props.day3Item), (vars.forecastDay === 2 ? 11 : 19)))
+                        + '' kWh'''
+                      style:
+                        font-variant-numeric: tabular-nums
+                        white-space: nowrap
+              - component: div
+                config:
+                  class: smab-fc-detail-row
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: Haus Ø
+                      style:
+                        color: var(--fc-muted)
+                  - component: Label
+                    config:
+                      text: =fn.formatAverage(fn.energy(props.averageItem, 11.5)) + ' kWh'
+                      style:
+                        font-variant-numeric: tabular-nums
+                        white-space: nowrap
+              - component: div
+                config:
+                  class: smab-fc-detail-row
+                slots:
+                  default:
+                  - component: Label
+                    config:
+                      text: Anteil am Haus Ø
+                      style:
+                        color: var(--fc-muted)
+                  - component: Label
+                    config:
+                      text: '=fn.percent(fn.energy((vars.forecastDay === 0 ? props.todayItem : vars.forecastDay === 1 ? props.tomorrowItem
+                        : vars.forecastDay === 2 ? props.day2Item : props.day3Item), (vars.forecastDay === 2 ? 11 : 19)),
+                        fn.energy(props.averageItem, 11.5))'
+                      style:
+                        font-variant-numeric: tabular-nums
+                        white-space: nowrap
+              - component: oh-link
+                config:
+                  text: Prognoseverlauf
+                  action: analyzer
+                  actionAnalyzerChartType: '=vars.forecastDay === 0 ? ''day'' : ''week'''
+                  actionAnalyzerCoordSystem: time
+                  actionAnalyzerItems: '=vars.forecastDay === 3 && props.day3ChartItems && props.day3ChartItems.length > 0
+                    ? props.day3ChartItems : props.forecastChartItems && props.forecastChartItems.length > 0 ? props.forecastChartItems
+                    : (vars.forecastDay === 0 ? props.todayItem : vars.forecastDay === 1 ? props.tomorrowItem : vars.forecastDay
+                    === 2 ? props.day2Item : props.day3Item) ? [(vars.forecastDay === 0 ? props.todayItem : vars.forecastDay
+                    === 1 ? props.tomorrowItem : vars.forecastDay === 2 ? props.day2Item : props.day3Item)] : []'
+                  style:
+                    display: block
+                    margin-top: 8px
+                    font-size: 11px

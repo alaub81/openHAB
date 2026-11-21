@@ -1,6 +1,6 @@
 # MainUI widgets
 
-The twelve YAML files in this directory are reusable, file-managed openHAB
+The thirteen YAML files in this directory are reusable, file-managed openHAB
 widgets. Each file contains `version: 1` and a `widgets:` map. Its map key is the
 widget ID used in Page YAML; that ID can differ from the filename.
 Detailed documentation stays beside its YAML source.
@@ -22,13 +22,14 @@ You do not need the full Docker stack or the local `tools/` directory to use it.
 
 | Source | Widget ID | Display and requirements | Guide |
 | --- | --- | --- | --- |
-| [astro_progress_cell.yml](astro_progress_cell.yml) | `astro_progress_cell` | Sun/moon overview; Astro Items and a regularly updated clock Item | [Astro](astro_progress_cell.md) |
+| [astro_progress_cell.yml](astro_progress_cell.yml) | `astro_progress_cell` | Sun/moon Cell and Canvas views; Astro Items and a regularly updated clock Item | [Astro](astro_progress_cell.md) |
 | [batterie_ladestaende_cell.yml](batterie_ladestaende_cell.yml) | `batterie_ladestaende_cell` | Battery levels; group of numeric percentage Items | [Batteries](batterie_ladestaende_cell.md) |
 | [fenster_tueren_cell.yml](fenster_tueren_cell.yml) | `fenster_tueren_cell` | Windows/doors; Contact group, optional alarm Items and `contactOverview` metadata | [Windows and doors](fenster_tueren_cell.md) |
 | [licht_alarm_cell.yml](licht_alarm_cell.yml) | `licht_alarm_cell` | Existing light alarms; group of ON/OFF alarm Items | [Light alarms](licht_alarm_cell.md) |
 | [luftfeuchtigkeit_alarm_cell.yml](luftfeuchtigkeit_alarm_cell.yml) | `luftfeuchtigkeit_alarm_cell` | Room humidity alarms; alarm group, sensor group and semantic root group | [Humidity](luftfeuchtigkeit_alarm_cell.md) |
 | [wetterstation_cell.yml](wetterstation_cell.yml) | `wetterstation_cell_v1` | Weather cell; temperature Item plus optional weather readings | [Weather station](wetterstation_cell.md) |
-| [dwd_warnleiste.yml](dwd_warnleiste.yml) | `dwd_warnleiste` | Expandable warnings; DWD warning-slot Items | [DWD warnings](dwd_warnleiste.md) |
+| [pv-forecast.yml](pv-forecast.yml) | `pv_forecast` | PV energy forecast; selectable days, Cell and fixed display views | [PV forecast](pv-forecast.md) |
+| [dwd_warnleiste.yml](dwd_warnleiste.yml) | `dwd_warnleiste` | Expandable warnings and fixed display views; DWD warning-slot Items | [DWD warnings](dwd_warnleiste.md) |
 | [dwd_pollenleiste.yml](dwd_pollenleiste.yml) | `dwd_pollenleiste` | Pollen exposure; DWD Pollenflug Items | [DWD pollen](dwd_pollenleiste.md) |
 | [climate_heatcool_compact_list_widget.yml](climate_heatcool_compact_list_widget.yml) | `climate_heatcool_compact_list_widget` | Compact climate row; setpoint, mode and available feedback Items | [Compact climate control](climate_heatcool_compact_list_widget.md) |
 | [thermostat_widget.yml](thermostat_widget.yml) | `thermostat_list_widget` | Heating stepper row; setpoint, Switch mode and feedback Items | [Thermostat list widgets](thermostat-list-widgets.md) |
@@ -84,7 +85,8 @@ also copies its explicit selections.
 ## Containers, behavior and dependencies
 
 - Cell widgets belong in `oh-grid-cells`. Thermostat rows belong in a list or
-  `oh-list-card`; DWD strips need a container that can grow vertically.
+  `oh-list-card`; The full DWD strip needs a container that can grow vertically; its display
+  modes use a configured fixed height.
 - Alarm overview widgets read existing alarm states. The separate
   [Blockly libraries](../block_libraries/README.md) can implement alarm rules,
   but other rules or bindings can provide those Items too.

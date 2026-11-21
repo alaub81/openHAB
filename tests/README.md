@@ -63,6 +63,10 @@ archives, accounts, devices, services or notification endpoints are used.
   default-off bridges, separate SMA ENV, external MQTT and required BMW IDs.
 - Battery/humidity widgets: actual YAML helpers and bindings, using Node on Linux
   or macOS. Optional private archived-Item comparisons remain outside CI.
+- PV forecast widget: energy units, unavailable states, threshold boundaries,
+  selectable day ranges and fixed display actions.
+- DWD widget: full/display mode behavior, severity ordering, unavailable states,
+  time labels and all warning Item mappings passed to the detail popup.
 - Window widget: synthetic contacts, metadata, loading, alarm and unknown states,
   plus current compact/detail bindings. The optional historical performance
   comparison still requires a caller-supplied old widget.

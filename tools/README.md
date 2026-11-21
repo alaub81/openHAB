@@ -34,7 +34,17 @@ comparisons remain explicit local options.
 ## Shelly link migration
 
 `migrate_shelly_links.py` is an existing Python tool, independent of the Bash
-maintenance scripts. Install `requests` in your own virtual environment.
+maintenance scripts. It requires Python 3.9+ and the Requests runtime dependency
+in [`requirements.txt`](requirements.txt), managed by Renovate. Install it in a
+separate virtual environment, from the repository root:
+
+```bash
+python3 -m venv .tools-venv
+.tools-venv/bin/python -m pip install -r tools/requirements.txt
+```
+
+The supported Requests range stays below version 3; pip selects a release
+compatible with your interpreter. Test/lint dependencies remain separate.
 Set `OPENHAB_URL`, `OPENHAB_LOG` and `OPENHAB_TOKEN_FILE` (or `OPENHAB_TOKEN`).
 There are no built-in server addresses or credentials.
 
@@ -42,9 +52,9 @@ There are no built-in server addresses or credentials.
 export OPENHAB_URL=https://openhab.example.invalid:8443
 export OPENHAB_LOG=/path/to/openhab.log
 export OPENHAB_TOKEN_FILE=/path/to/local-token
-python3 tools/migrate_shelly_links.py
+.tools-venv/bin/python tools/migrate_shelly_links.py
 # After reviewing the preview; choose a new backup filename:
-python3 tools/migrate_shelly_links.py --execute --backup-file backups/shelly-links.json
+.tools-venv/bin/python tools/migrate_shelly_links.py --execute --backup-file backups/shelly-links.json
 ```
 
 Create the `backups/` directory first. Execution saves all original links to an

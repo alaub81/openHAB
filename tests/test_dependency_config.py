@@ -5,12 +5,56 @@ import json
 import re
 import unittest
 
-from lint import ROOT, load_yaml
+from lint import ROOT, dotenv, load_yaml
 
 CONFIG = json.loads((ROOT / "renovate.json").read_text())
 
 
 class DependencyTests(unittest.TestCase):
+    def test_bridge_env_versions_are_both_extracted(self):
+        name = ".env.advanced.example"
+        content = (ROOT / name).read_text()
+        values = dotenv(content)
+        manager = next(
+            m
+            for m in CONFIG["customManagers"]
+            if any(re.search(pattern[1:-1], name) for pattern in m["managerFilePatterns"])
+        )
+        self.assertEqual(manager["datasourceTemplate"], "docker")
+        extracted = []
+        for expression in manager["matchStrings"]:
+            expression = re.sub(r"\(\?<([A-Za-z][A-Za-z0-9_]*)>", r"(?P<\1>", expression)
+            extracted.extend(
+                (m["depName"], m["currentValue"]) for m in re.finditer(expression, content)
+            )
+        self.assertCountEqual(
+            extracted,
+            [
+                ("ghcr.io/alaub81/sma-mqtt-bridge", values["SMAB_BRIDGE_VERSION"]),
+                ("ghcr.io/alaub81/bmw-mqtt-bridge", values["BMB_VERSION"]),
+            ],
+        )
+        for _, version in extracted:
+            self.assertRegex(version, r"^\d+\.\d+\.\d+$")
+
+    def test_requests_has_its_own_security_updates_and_no_check_tool_group(self):
+        requirements = (ROOT / "tools/requirements.txt").read_text()
+        self.assertRegex(requirements, r"(?m)^requests>=\d+\.\d+\.\d+,<3$")
+        self.assertNotIn("requests", (ROOT / "tests/requirements-lint.txt").read_text().lower())
+        bot = load_yaml((ROOT / ".github/dependabot.yml").read_text())
+        self.assertTrue(
+            any(
+                u["package-ecosystem"] == "pip"
+                and u["directory"] == "/tools"
+                and u["open-pull-requests-limit"] == 0
+                for u in bot["updates"]
+            )
+        )
+        group = next(
+            r for r in CONFIG["packageRules"] if r.get("groupName") == "Python check tools"
+        )
+        self.assertEqual(group["matchFileNames"], ["tests/requirements-lint.txt"])
+
     def test_influxdb_two_only_in_all_regular_updates(self):
         rule = next(
             r for r in CONFIG["packageRules"] if "influxdb" in r.get("matchPackageNames", [])

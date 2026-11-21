@@ -31,7 +31,7 @@
     ".security-reports/**",
     "docker-compose.local.yml",
     "docker-compose.yml.pi5",
-    ".env",
+    "**/.env",
     "smab.env"
   ],
   "customManagers": [
@@ -56,6 +56,18 @@
       ],
       "matchStrings": [
         "IMAGE = \"(?<depName>ghcr.io/renovatebot/renovate):(?<currentValue>[\\d.]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Track released bridge tags in the public Advanced ENV template",
+      "managerFilePatterns": [
+        "/^\\.env\\.advanced\\.example$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=docker depName=(?<depName>ghcr\\.io/alaub81/(?:sma-mqtt-bridge|bmw-mqtt-bridge))\\r?\\n(?:SMAB_BRIDGE_VERSION|BMB_VERSION)=(?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver"
@@ -92,7 +104,10 @@
         "minor",
         "patch"
       ],
-      "groupName": "Python check tools"
+      "groupName": "Python check tools",
+      "matchFileNames": [
+        "tests/requirements-lint.txt"
+      ]
     },
     {
       "matchDatasources": [

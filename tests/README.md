@@ -20,6 +20,33 @@ Matching system installations can be reused. The native tool installer supports
 Linux and macOS on x86-64 and arm64. Initial dependency preparation needs network
 access; subsequent checks run offline. System Python packages are not changed.
 
+## Node.js on macOS
+
+The check scripts require the exact version in `.node-version`, rather than
+any Node 24 release. With Homebrew already available, use the
+[fnm version manager](https://github.com/Schniz/fnm#shell-setup):
+
+```bash
+brew install fnm
+eval "$(fnm env --shell zsh)"
+cd /path/to/openHAB
+fnm install
+fnm use
+node --version
+```
+
+Use your own checkout path if different. `fnm install` and `fnm use` read
+`.node-version` in that directory. For future terminal sessions, add this line
+once to your `~/.zshrc`, then open a new terminal:
+
+```bash
+eval "$(fnm env --use-on-cd --shell zsh)"
+```
+
+When Renovate updates `.node-version`, install that version with `fnm install`
+and select it with `fnm use` before running checks. Node is a local development
+dependency; the Docker deployment does not require it on the host.
+
 ## Lint and documentation
 
 `linter-check.sh` runs checker/planner regression tests and validates tracked and

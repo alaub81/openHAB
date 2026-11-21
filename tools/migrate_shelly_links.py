@@ -52,7 +52,7 @@ Usage
 Set OPENHAB_URL, OPENHAB_TOKEN_FILE and OPENHAB_LOG in the environment.
 Run with no arguments for a dry run. Add --execute --backup-file PATH only
 when ready to apply. The backup file must not already exist. See tools/README.md.
-Requires Python 3 and requests. TLS verification stays enabled; REQUESTS_CA_BUNDLE
+Requires Python 3.9+ and requests (see tools/requirements.txt). TLS verification stays enabled; REQUESTS_CA_BUNDLE
 can select a local CA. This tool changes links only; it does not send Item commands.
 """
 

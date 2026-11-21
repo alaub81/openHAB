@@ -57,6 +57,8 @@ class ChangePlanTests(unittest.TestCase):
             "renovate.json",
             "docker-compose.yml",
             "tests/requirements-lint.txt",
+            "tools/requirements.txt",
+            ".env.advanced.example",
             "lint-tools.json",
             ".github/dependabot.yml",
             ".node-version",

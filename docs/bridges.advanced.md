@@ -19,6 +19,21 @@ The BMW bridge forwards telemetry and has no vehicle commands. The public
 adapt their synthetic settings or disable absent devices before starting. Its
 device-write gates are enabled; set them to `false` for read-only operation.
 
+## Bridge image versions and updates
+
+The public [Advanced ENV template](../.env.advanced.example) selects numbered
+release tags for both bridges. Renovate updates these assignments through a
+Docker regex manager; review release notes and installation compatibility before
+merging. These declarations are version selections, not device acceptance tests.
+
+Existing local `.env` files are never rewritten by Renovate or a repository pull.
+To adopt managed releases, deliberately copy the desired bridge version values
+into the existing `.env`, retaining credentials, profile settings and volumes.
+A local `latest` value continues to follow the upstream mutable tag. The Compose
+fallback also remains `latest` for compatibility when no version is supplied;
+it is not a Renovate-managed release pin. No bridge is enabled by this change.
+No upstream-image vulnerability scans are introduced.
+
 ## 1. Prepare the existing stack
 
 Use a Linux Docker host and complete the [standard quick start](../README.md#quick-start-docker-stack),
@@ -135,7 +150,7 @@ settings through `environment`. `.env` contains only the SMA image tag, ENV-file
 path and container UID/GID:
 
 ```dotenv
-SMAB_BRIDGE_VERSION=latest
+SMAB_BRIDGE_VERSION=0.9.3
 SMAB_ENV_FILE=./smab.env
 SMAB_UID=10001
 SMAB_GID=10001

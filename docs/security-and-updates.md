@@ -35,7 +35,12 @@ explicitly coordinated migration.
 ## Renovate and Dependabot responsibilities
 
 Renovate owns regular Docker/Compose, GitHub Actions, Python check-tool and Node
-version updates. The native-tool regex manager extracts each platform's release
+version updates. Numbered SMA/BMW image tags in `.env.advanced.example` are
+covered by a Docker regex manager; private version overrides and legacy `latest`
+fallbacks are not rewritten. The Shelly migrator's Requests range is declared in
+`tools/requirements.txt`, separately from `tests/requirements-lint.txt`, and is
+covered by Renovate and Dependabot security updates. The native-tool regex
+manager extracts each platform's release
 version and checksum together. A second regex manager tracks the isolated
 Renovate validator image. Local archives, private ENV files and tool caches are
 excluded.
